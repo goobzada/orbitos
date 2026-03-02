@@ -1,0 +1,23 @@
+{
+    "name": "saasbot-engine",
+    "version": "1.0.0",
+    "description": "Discord Bot Engine running as a microservice for SaaSBot",
+    "main": "src/index.ts",
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "deploy": "tsx src/deploy-commands.ts"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "discord.js": "^14.25.1",
+        "ws": "^8.19.0"
+    },
+    "devDependencies": {
+        "@types/ws": "^8.18.1",
+        "tsx": "^4.21.0"
+    }
+}

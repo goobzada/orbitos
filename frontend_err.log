@@ -1,0 +1,323 @@
+⨯ Failed to start server
+Error: listen EADDRINUSE: address already in use :::3001
+    at <unknown> (Error: listen EADDRINUSE: address already i⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⨯ Error: Could not parse module '[project]/src/middleware.ts'
+
+await isn't allowed in non-async function
+    at module evaluation (.next\dev\server\edge\chunks\[root-of-the-server]__8978dbac._.js:16:11)
+⚠ Fast Refresh had to perform a full reload due to a runtime error.

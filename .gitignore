@@ -1,0 +1,19 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+node_modules
+core-api/node_modules
+bot-engine/node_modules
+
+dist
+.next
+tmp
+
+.env
+.env.*
+logs
+*.log
+frontend.log
+frontend_err.log
+
+tsconfig.tsbuildinfo
+.DS_Store

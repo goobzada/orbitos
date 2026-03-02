@@ -1,0 +1,332 @@
+"use client";
+
+import { useState } from "react";
+import { useOrganizations, useStoreProducts, useCreateStoreProduct, useDeleteStoreProduct } from "@/lib/hooks";
+import { Plus, Tag, Search, Box, MoreVertical, Trash2, Edit2, Globe, Sparkles, CreditCard, Rocket, ShieldCheck, Zap, Server } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { toast } from "sonner";
+import { useActiveOrg } from "@/lib/use-org-store";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
+export default function StoreProductsPage() {
+    const { activeOrgId } = useActiveOrg();
+    const { data: orgs } = useOrganizations();
+    const org = orgs?.find(o => o.id === activeOrgId);
+    const isFree = org?.plan === 'FREE';
+
+    const { data: products, isLoading } = useStoreProducts(activeOrgId || "");
+    const createProduct = useCreateStoreProduct(activeOrgId || "");
+    const deleteProduct = useDeleteStoreProduct(activeOrgId || "");
+
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    // New Product State
+    const [newProduct, setNewProduct] = useState({
+        name: "",
+        slug: "",
+        priceCents: 0,
+        billingCycle: "ONE_TIME",
+        deliveryType: "MANUAL",
+        category: "",
+        status: "ACTIVE"
+    });
+
+    const handleCreate = async () => {
+        try {
+            await createProduct.mutateAsync({
+                ...newProduct,
+                priceCents: Number(newProduct.priceCents) * 100 // Convert to cents
+            });
+            toast.success("Produto criado com sucesso!");
+            setIsCreateOpen(false);
+            setNewProduct({
+                name: "",
+                slug: "",
+                priceCents: 0,
+                billingCycle: "ONE_TIME",
+                deliveryType: "MANUAL",
+                category: "",
+                status: "ACTIVE"
+            });
+        } catch (err) {
+            toast.error("Erro ao criar produto.");
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Tem certeza que deseja excluir este produto?")) return;
+        try {
+            await deleteProduct.mutateAsync(id);
+            toast.success("Produto removido.");
+        } catch (err) {
+            toast.error("Erro ao remover produto.");
+        }
+    };
+
+    const filteredProducts = products?.filter(p =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.category?.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
+
+    if (isFree) {
+        return (
+            <div className="max-w-6xl mx-auto space-y-8 fade-in pb-12">
+                <div className="p-12 rounded-3xl border border-border bg-card/50 backdrop-blur-xl shadow-2xl text-center flex flex-col items-center justify-center space-y-6">
+                    <div className="w-20 h-20 rounded-2xl bg-violet-500/10 flex items-center justify-center">
+                        <ShieldCheck className="w-10 h-10 text-violet-500" />
+                    </div>
+                    <div className="space-y-2">
+                        <h3 className="text-2xl font-bold tracking-tight">Recurso Exclusivo</h3>
+                        <p className="text-muted-foreground max-w-md mx-auto">
+                            A Gestão Avançada de Produtos da Store Engine está disponível apenas nos planos <span className="text-violet-500 font-semibold">PRO</span>, <span className="text-violet-500 font-semibold">ENTERPRISE</span> e <span className="text-amber-500 font-semibold">MAX</span>.
+                        </p>
+                    </div>
+                    <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold h-12 px-8 rounded-xl shadow-lg shadow-violet-500/20">
+                        Fazer Upgrade Agora
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-w-7xl mx-auto space-y-8 fade-in pb-12">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-violet-500 font-semibold text-sm uppercase tracking-wider">
+                        <Sparkles className="w-4 h-4" />
+                        Store Engine v2
+                    </div>
+                    <h1 className="text-4xl font-extrabold tracking-tight">Gestão de Inventário</h1>
+                    <p className="text-muted-foreground">
+                        Crie pacotes VIP, itens em jogo e assinaturas com entrega automatizada.
+                    </p>
+                </div>
+
+                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                    <DialogTrigger asChild>
+                        <Button className="bg-violet-600 hover:bg-violet-700 text-white font-bold h-12 px-6 rounded-xl shadow-lg shadow-violet-500/25 flex items-center gap-2 group transition-all">
+                            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                            Novo Produto
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[600px] border-border bg-card/95 backdrop-blur-xl">
+                        <DialogHeader>
+                            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                                <Box className="w-6 h-6 text-violet-500" />
+                                Cadastrar Novo Produto
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-6 py-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">Nome do Produto</Label>
+                                    <Input
+                                        placeholder="Ex: VIP Diamante"
+                                        className="bg-background/50 border-border"
+                                        value={newProduct.name}
+                                        onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">Slug (URL)</Label>
+                                    <Input
+                                        placeholder="vip-diamante"
+                                        className="bg-background/50 border-border"
+                                        value={newProduct.slug}
+                                        onChange={(e) => setNewProduct({ ...newProduct, slug: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">Preço Base (R$)</Label>
+                                    <div className="relative">
+                                        <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                        <Input
+                                            type="number"
+                                            placeholder="29.90"
+                                            className="pl-9 bg-background/50 border-border"
+                                            value={newProduct.priceCents || ""}
+                                            onChange={(e) => setNewProduct({ ...newProduct, priceCents: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">Ciclo de Cobrança</Label>
+                                    <Select
+                                        value={newProduct.billingCycle}
+                                        onValueChange={(val) => setNewProduct({ ...newProduct, billingCycle: val })}
+                                    >
+                                        <SelectTrigger className="bg-background/50 border-border">
+                                            <SelectValue placeholder="Selecione" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="ONE_TIME">Pagamento Único</SelectItem>
+                                            <SelectItem value="MONTHLY">Assinatura Mensal</SelectItem>
+                                            <SelectItem value="YEARLY">Assinatura Anual</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">Driver de Entrega</Label>
+                                    <Select
+                                        value={newProduct.deliveryType}
+                                        onValueChange={(val) => setNewProduct({ ...newProduct, deliveryType: val })}
+                                    >
+                                        <SelectTrigger className="bg-background/50 border-border">
+                                            <SelectValue placeholder="Selecione" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="MANUAL">Entrega Manual</SelectItem>
+                                            <SelectItem value="DISCORD_ROLE">Discord Role (Auto)</SelectItem>
+                                            <SelectItem value="MINECRAFT_COMMAND">MC Command (Auto)</SelectItem>
+                                            <SelectItem value="FIVEM_EVENT">FiveM Event (Auto)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">Categoria</Label>
+                                    <Input
+                                        placeholder="Ex: Ranks"
+                                        className="bg-background/50 border-border"
+                                        value={newProduct.category}
+                                        onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsCreateOpen(false)} className="rounded-xl border-border">Cancelar</Button>
+                            <Button
+                                onClick={handleCreate}
+                                disabled={createProduct.isPending}
+                                className="bg-violet-600 hover:bg-violet-700 text-white font-bold px-8 rounded-xl"
+                            >
+                                {createProduct.isPending ? "Criando..." : "Salvar Produto"}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
+            {/* Filter and Content */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-4 bg-card/40 border border-border/50 p-2 rounded-2xl backdrop-blur-sm max-w-md">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Buscar produtos ou categorias..."
+                            className="pl-9 bg-transparent border-none focus-visible:ring-0 shadow-none h-10"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                {isLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="h-64 rounded-3xl bg-card/50 border border-border animate-pulse" />
+                        ))}
+                    </div>
+                ) : filteredProducts.length === 0 ? (
+                    <div className="p-20 rounded-[2.5rem] border border-dashed border-border/60 bg-card/30 flex flex-col items-center justify-center text-center space-y-6">
+                        <div className="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center">
+                            <Tag className="w-8 h-8 text-muted-foreground/60" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-bold">Nenhum produto encontrado</h3>
+                            <p className="text-muted-foreground max-w-sm">Adicione seus primeiros itens para começar a vender na sua loja oficial.</p>
+                        </div>
+                        <Button variant="outline" onClick={() => setIsCreateOpen(true)} className="rounded-xl border-border font-bold gap-2">
+                            <Plus className="w-4 h-4" /> Cadastrar Meu Primeiro Produto
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {filteredProducts.map((product) => (
+                            <Card key={product.id} className="group overflow-hidden rounded-[2rem] border-border bg-card/50 hover:bg-card hover:shadow-2xl hover:shadow-violet-500/10 transition-all duration-300">
+                                <div className="h-48 bg-muted/40 relative overflow-hidden flex items-center justify-center">
+                                    {product.thumbnailUrl ? (
+                                        <img src={product.thumbnailUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-3 text-muted-foreground/40">
+                                            <Box className="w-12 h-12" />
+                                            <span className="text-xs font-bold uppercase tracking-widest">Sem Imagem</span>
+                                        </div>
+                                    )}
+                                    <div className="absolute top-4 left-4 flex gap-2">
+                                        <Badge className="bg-background/80 backdrop-blur-md border-border text-foreground rounded-lg px-2 py-1 flex items-center gap-1.5 shadow-sm">
+                                            {product.billingCycle === 'ONE_TIME' ? <Zap className="w-3 h-3 text-amber-500" /> : <Rocket className="w-3 h-3 text-violet-500" />}
+                                            {product.billingCycle === 'ONE_TIME' ? 'Único' : 'Recorrente'}
+                                        </Badge>
+                                        <Badge className="bg-background/80 backdrop-blur-md border-border text-foreground rounded-lg px-2 py-1 flex items-center gap-1.5 shadow-sm">
+                                            {product.deliveryType === 'MANUAL' ? <Edit2 className="w-3 h-3 text-muted-foreground" /> : <Server className="w-3 h-3 text-emerald-500" />}
+                                            {product.deliveryType === 'MANUAL' ? 'Manual' : 'Automático'}
+                                        </Badge>
+                                    </div>
+
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button size="icon" variant="secondary" className="absolute top-4 right-4 h-8 w-8 rounded-full bg-background/80 backdrop-blur-md border-none opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <MoreVertical className="w-4 h-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-md border-border rounded-xl">
+                                            <DropdownMenuItem className="gap-2 cursor-pointer">
+                                                <Edit2 className="w-4 h-4" /> Editar
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleDelete(product.id)} className="gap-2 cursor-pointer text-destructive focus:text-destructive">
+                                                <Trash2 className="w-4 h-4" /> Excluir
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                                <CardContent className="p-6 space-y-4">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-bold uppercase text-violet-500 tracking-widest">{product.category || "Geral"}</span>
+                                            <span className="text-xl font-black text-foreground">
+                                                {(product.priceCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            </span>
+                                        </div>
+                                        <h3 className="text-xl font-bold line-clamp-1">{product.name}</h3>
+                                        <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
+                                            {product.description || "Nenhuma descrição fornecida."}
+                                        </p>
+                                    </div>
+                                </CardContent>
+                                <CardFooter className="px-6 pb-6 pt-0">
+                                    <Button variant="outline" className="w-full rounded-2xl bg-violet-600/5 border-violet-500/10 hover:bg-violet-600/10 text-violet-500 font-bold gap-2">
+                                        <Globe className="w-4 h-4" /> Ver na Loja
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+

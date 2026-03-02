@@ -1,0 +1,1034 @@
+export type Language = 'pt-BR' | 'en-US' | 'es-ES';
+
+export const translations: Record<Language, any> = {
+    'pt-BR': {
+        landing: {
+            hero: {
+                badge: "OrbitOS V1.0 Lançado",
+                title1: "O sistema operacional para",
+                title2: "comunidades digitais.",
+                desc: "Infraestrutura multi-tenant para Discord, jogos e plataformas digitais. Controle total, monetização integrada e arquitetura pronta para escalar.",
+                cta1: "Começar Gratuitamente",
+                cta2: "Ver Arquitetura",
+            },
+            nav: {
+                ecosystem: "Ecossistema",
+                infra: "Infraestrutura",
+                brandEngine: "Brand Engine",
+                dashboard: "Dashboard",
+            },
+        },
+        dashboard: {
+            sidebar: {
+                analytics: "Analytics",
+                automations: "Automações",
+                servers: "Servidores",
+                tickets: "Tickets",
+                settings: "Configurações",
+                billing: "Faturamento",
+            },
+        },
+        settings: {
+            general: "Geral",
+            language: "Idioma",
+            save: "Salvar Alterações",
+            success: "Configurações atualizadas com sucesso!",
+        },
+        automations: {
+            onboarding: {
+                how_it_works: "Como funciona",
+                discord_example: "Exemplo no Discord",
+                how_to_test: "Como testar",
+                test_steps: "Passos para testar",
+                ready_config: "Exemplo de Configuração Pronta",
+                tips: "Boas práticas e limites",
+            },
+            modules: {
+                ticket: {
+                    subtitle: "Organize solicitações de ajuda dos jogadores em canais privados, com histórico e categoria.",
+                    how_it_works: "O jogador clica no botão “📩 Abrir Ticket” em uma mensagem fixa no canal de suporte. O bot cria um canal privado, visível apenas para o jogador + equipe de staff. Quando o ticket é encerrado, o canal é arquivado ou apagado.",
+                    test_steps: [
+                        "Ative o módulo Tickets de Suporte no painel.",
+                        "Configure o canal onde ficará a mensagem inicial e a categoria para os tickets.",
+                        "No Discord, use o comando /painel ticket para gerar o botão.",
+                        "Clique no botão 'Abrir Ticket' e verifique se o canal foi criado corretamente."
+                    ]
+                },
+                whitelist: {
+                    subtitle: "Filtra novos jogadores com perguntas pré-definidas antes de liberar acesso ao servidor.",
+                    how_it_works: "Quando o jogador usar o comando /whitelist, o bot inicia o fluxo de perguntas. No final, o resultado é enviado para a staff para aprovação.",
+                    test_steps: [
+                        "Ative o módulo Whitelist no painel e configure o canal da staff.",
+                        "No Discord, use o comando /whitelist como jogador.",
+                        "Responda às perguntas e verifique se as respostas chegaram no canal da staff.",
+                        "Teste a aprovação/reprovação manual (se configurado)."
+                    ]
+                },
+                welcome_message: {
+                    subtitle: "Crie uma primeira impressão marcante para novos jogadores.",
+                    how_it_works: "O bot detecta quando alguém entra no servidor e envia uma mensagem personalizada no canal escolhido. Você pode usar variáveis como {user} para marcar a pessoa.",
+                    test_steps: [
+                        "Configure o canal de boas-vindas e a mensagem desejada.",
+                        "Use o botão 'Testar' no painel (se disponível) ou convide uma conta secundária/amigo.",
+                        "Verifique se o bot enviou a mensagem e se as variáveis foram substituídas corretamente."
+                    ]
+                },
+                autorole: {
+                    subtitle: "Automatize a entrega de cargos iniciais.",
+                    how_it_works: "Assim que o jogador entra, o bot atribui os cargos selecionados instantaneamente, sem necessidade de comandos.",
+                    test_steps: [
+                        "Selecione os cargos que devem ser entregues.",
+                        "Certifique-se de que o cargo do bot (OrbitOS) está ACIMA dos cargos que ele vai entregar no Discord.",
+                        "Peça para alguém entrar no servidor e veja se o cargo foi atribuído em segundos."
+                    ]
+                },
+                whitelist_quiz: {
+                    subtitle: "Quiz automático para filtrar jogadores por conhecimento.",
+                    how_it_works: "O jogador inicia o quiz via comando ou botão. Ele deve acertar uma porcentagem X de questões para ser aprovado e ganhar o cargo automaticamente.",
+                    test_steps: [
+                        "Crie as perguntas e defina as respostas corretas.",
+                        "Configure a porcentagem mínima para passar.",
+                        "No Discord, use /quiz para iniciar e tente responder como um jogador."
+                    ]
+                },
+                server_status: {
+                    subtitle: "Exiba estatísticas do servidor no nome dos canais.",
+                    how_it_works: "O bot edita periodicamente o nome de canais de voz ou texto específicos para mostrar quantos membros online ou jogadores existem no momento.",
+                    test_steps: [
+                        "Crie um canal de voz limpo para servir de contador.",
+                        "Configure o ID desse canal e o template (ex: 👥 {players} Jogadores).",
+                        "Aguarde alguns minutos e veja o nome do canal atualizar automaticamente."
+                    ]
+                },
+                coupon: {
+                    subtitle: "Sistema de cupons para sua loja no servidor.",
+                    how_it_works: "Crie códigos de desconto que podem ser aplicados em compras. Você define a porcentagem e se pode ser usado várias vezes.",
+                    test_steps: [
+                        "Crie um cupom de teste (ex: TESTE10) com 10% de desconto.",
+                        "No sistema de loja, tente aplicar esse cupom no carrinho.",
+                        "Verifique se o valor total foi reduzido corretamente."
+                    ]
+                },
+                report: {
+                    subtitle: "Centralize denúncias e sugestões de forma anônima ou não.",
+                    how_it_works: "Membros abrem denúncias via comando. A staff recebe o alerta em um canal privado/log para análise.",
+                    test_steps: [
+                        "Defina o canal onde as denúncias serão recebidas.",
+                        "Use o comando de denúncia no Discord.",
+                        "Verifique se a staff recebeu o alerta com todos os detalhes."
+                    ]
+                },
+                application: {
+                    subtitle: "Formulários de recrutamento integrados ao Discord.",
+                    how_it_works: "Crie perguntas personalizadas. O jogador responde via bot e a staff aprova ou reprova com um clique, entregando o cargo automaticamente.",
+                    test_steps: [
+                        "Configure as perguntas do formulário.",
+                        "Tente preencher o formulário no Discord.",
+                        "Como staff, aprove o teste e veja se o jogador recebeu o cargo configurado."
+                    ]
+                },
+                level_system: {
+                    subtitle: "Gamifique seu servidor com XP e níveis automáticos.",
+                    how_it_works: "Membros ganham experiência (XP) ao enviar mensagens ou participar de calls. Ao atingir metas, eles sobem de nível e podem ganhar cargos automáticos.",
+                    test_steps: [
+                        "Configure o multiplicador de XP no painel.",
+                        "No Discord, envie algumas mensagens e use o comando /rank.",
+                        "Verifique se o bot exibe seu progresso corretamente."
+                    ]
+                },
+                anti_raid: {
+                    subtitle: "Proteção avançada contra bots e invasões.",
+                    how_it_works: "O bot monitora entradas em massa ou comportamentos suspeitos e aplica punições automáticas (kick/ban) para proteger o servidor.",
+                    test_steps: [
+                        "Configure o limite de entradas por minuto.",
+                        "O sistema trabalha silenciosamente. Verifique os logs de segurança para ver o bot em ação."
+                    ]
+                },
+                suggestion: {
+                    subtitle: "Sistema de sugestões com votação da comunidade.",
+                    how_it_works: "Membros enviam sugestões via comando. A sugestão é enviada para um canal com reações de ✅ e ❌ para votação pública.",
+                    test_steps: [
+                        "Configure o canal de sugestões.",
+                        "Use o comando de sugestão no Discord.",
+                        "Verifique se a mensagem foi enviada com os botões/reações de voto."
+                    ]
+                },
+                rules_accept: {
+                    subtitle: "Obrigatório aceitar regras antes de ver o servidor.",
+                    how_it_works: "O bot envia uma mensagem com as regras e um botão. O jogador só ganha acesso (cargo) após clicar em 'Aceitar'.",
+                    test_steps: [
+                        "Configure o cargo de membro e o canal das regras.",
+                        "Use o comando para gerar a mensagem de regras.",
+                        "Clique no botão de aceitar e verifique se o cargo foi entregue."
+                    ]
+                },
+                verification: {
+                    subtitle: "Sistema de verificação por captcha ou botão.",
+                    how_it_works: "Protege o servidor de bots maliciosos exigindo que o usuário clique em um botão ou resolva um desafio simples ao entrar.",
+                    test_steps: [
+                        "Configure a mensagem de verificação.",
+                        "Entre com uma conta de teste e clique no botão.",
+                        "Verifique se o cargo de verificado foi atribuído."
+                    ]
+                },
+                store_panel: {
+                    subtitle: "Exiba os itens da sua loja diretamente no Discord.",
+                    how_it_works: "Gera uma interface com selects e botões onde os jogadores podem navegar pelos produtos e iniciar compras sem sair do chat.",
+                    test_steps: [
+                        "Adicione produtos na sua aba de Loja.",
+                        "No Discord, use o comando /loja.",
+                        "Verifique se os produtos e preços aparecem corretamente."
+                    ]
+                },
+                growth_stats: {
+                    subtitle: "Análise de crescimento e novas entradas.",
+                    how_it_works: "Métricas detalhadas sobre quantos membros entraram e saíram do servidor nos últimos dias.",
+                    test_steps: ["Acesse a aba de Analytics para ver o gráfico atualizado."]
+                },
+                engagement_stats: {
+                    subtitle: "Métricas de atividade e mensagens.",
+                    how_it_works: "Saiba quais canais são mais usados e quais horários seus membros estão mais ativos.",
+                    test_steps: ["Acesse a aba de Analytics para ver o ranking de canais."]
+                },
+                revenue_stats: {
+                    subtitle: "Relatórios de vendas e faturamento.",
+                    how_it_works: "Acompanhe suas vendas em tempo real com gráficos de faturamento diário, mensal e anual.",
+                    test_steps: ["Confira o painel financeiro na aba de Analytics."]
+                },
+                activity_stats: {
+                    subtitle: "Monitoramento de presença em voz e chat.",
+                    how_it_works: "Relatórios sobre o tempo médio que os jogadores passam nos canais de voz.",
+                    test_steps: ["Confira os dados de retenção na aba de Analytics."]
+                },
+                ranking: {
+                    subtitle: "Exiba os melhores jogadores do seu servidor em tempo real.",
+                    how_it_works: "O bot gera uma interface que lista os jogadores com mais XP, dinheiro ou vitórias. O ranking é atualizado automaticamente conforme as métricas mudam.",
+                    test_steps: [
+                        "Defina qual categoria de ranking deseja exibir.",
+                        "No Discord, use o comando /ranking.",
+                        "Verifique se a lista de líderes aparece com as fotos e dados corretos."
+                    ]
+                },
+                giveaway: {
+                    subtitle: "Crie sorteios com requisitos de cargos e tempo.",
+                    how_it_works: "Gerencie sorteios de itens ou VIPs de forma automática. O bot sorteia o vencedor e valida se ele ainda está no servidor.",
+                    test_steps: [
+                        "Crie um sorteio de teste no Discord.",
+                        "Peça para alguém participar.",
+                        "Force o encerramento e veja se o bot anuncia o vencedor."
+                    ]
+                },
+                faction_system: {
+                    subtitle: "Gerenciamento completo para grupos e facções.",
+                    how_it_works: "Permite criar grupos onde os jogadores podem se juntar. Inclui sistema de cargos internos, banco da facção e chat exclusivo entre membros.",
+                    test_steps: [
+                        "Crie uma facção de teste no painel.",
+                        "Tente recrutar um membro usando o comando de facção.",
+                        "Verifique se o novo membro ganhou acesso ao chat privado do grupo."
+                    ]
+                },
+                judicial_system: {
+                    subtitle: "Controle de processos internos e julgamentos.",
+                    how_it_works: "Cria um fluxo para gestão de ocorrências, advogados e juízes dentro do servidor. Ideal para RP sério.",
+                    test_steps: [
+                        "Abra um processo de teste no painel judicial.",
+                        "Atribua um advogado ao caso.",
+                        "Verifique se o canal de tribunal foi criado automaticamente."
+                    ]
+                },
+                in_game_logs: {
+                    subtitle: "Sincronização de eventos do servidor de jogo.",
+                    how_it_works: "Recebe logs diretamente do seu servidor (FiveM/Minecraft) e exibe em canais específicos do Discord.",
+                    test_steps: [
+                        "Configure o Webhook no seu servidor de jogo.",
+                        "Realize uma ação in-game (ex: matar alguém).",
+                        "Verifique se o log apareceu instantaneamente no Discord."
+                    ]
+                },
+                anti_alt: {
+                    subtitle: "Bloqueio automático de contas fakes e recentes.",
+                    how_it_works: "Verifica a idade da conta do Discord e se possui avatar. Contas suspeitas são impedidas de entrar.",
+                    test_steps: [
+                        "Defina o limite de 30 dias para novas contas.",
+                        "Tente entrar com uma conta criada hoje.",
+                        "Verifique se o bot expulsou a conta e enviou o log."
+                    ]
+                },
+                mod_logs: {
+                    subtitle: "Histórico completo de punições e avisos.",
+                    how_it_works: "Centraliza todas as ações de moderação (ban, kick, mute) em um canal secreto para auditoria.",
+                    test_steps: [
+                        "Aplique um aviso (warn) em um usuário de teste.",
+                        "Verifique o canal de logs de moderação.",
+                        "Confira se o motivo e o autor da punição estão corretos."
+                    ]
+                },
+                conditional_workflow: {
+                    subtitle: "Fluxos automatizados baseados em gatilhos e condições.",
+                    how_it_works: "Você define uma regra (ex: se o jogador ganhar o cargo VIP) e uma ação (ex: enviar uma mensagem no privado).",
+                    test_steps: [
+                        "Crie uma regra de teste no painel.",
+                        "Execute a ação de gatilho no Discord.",
+                        "Verifique se a automação foi disparada."
+                    ]
+                },
+                flash_sale: {
+                    subtitle: "Crie ofertas de tempo limitado para sua loja.",
+                    how_it_works: "Define um desconto agressivo por um curto período e notifica todos os membros interessados via menção.",
+                    test_steps: [
+                        "Abra uma nova oferta relâmpago.",
+                        "Confira se a mensagem de anúncio foi enviada no canal configurado.",
+                        "Verifique se o preço na loja foi atualizado automaticamente."
+                    ]
+                },
+                staff_logs: {
+                    subtitle: "Acompanhe as ações administrativas da sua equipe.",
+                    how_it_works: "Registra quando um staff cria canais, altera cargos ou mexe em permissões sensíveis.",
+                    test_steps: [
+                        "Realize uma ação administrativa (ex: criar um novo canal).",
+                        "Verifique se o log apareceu no canal secreto da staff."
+                    ]
+                },
+                subscription: {
+                    subtitle: "Gerencie planos mensais e cargos recorrentes.",
+                    how_it_works: "Vincula cargos ao status de pagamento do usuário. Se a assinatura expira, o cargo é removido automaticamente.",
+                    test_steps: [
+                        "Vincule um cargo a um produto recorrente.",
+                        "Simule um pagamento ou atribua manualmente na loja.",
+                        "Verifique se o usuário recebeu o cargo após o processamento."
+                    ]
+                },
+                poll: {
+                    subtitle: "Crie enquetes interativas com votos ilimitados.",
+                    how_it_works: "Gera uma interface com botões para os membros votarem. O resultado é exibido em tempo real ou após o encerramento.",
+                    test_steps: [
+                        "Use o comando /poll para criar uma enquete.",
+                        "Vote usando os botões no Discord.",
+                        "Verifique se a contagem foi atualizada corretamente."
+                    ]
+                },
+                scheduled_messages: {
+                    subtitle: "Agende anúncios e lembretes periódicos.",
+                    how_it_works: "Você define o dia, hora e frequência das mensagens. O bot envia automaticamente no canal desejado.",
+                    test_steps: [
+                        "Agende uma mensagem para daqui a 5 minutos.",
+                        "Aguarde no Discord e verifique o envio."
+                    ]
+                },
+                trigger_system: {
+                    subtitle: "Respostas automáticas para palavras-chave específicas.",
+                    how_it_works: "O bot monitora o chat e responde com textos, imagens ou embeds quando alguém digita um termo configurado.",
+                    test_steps: [
+                        "Crie um gatilho para a palavra 'ajuda'.",
+                        "Digite no chat e verifique se o bot respondeu."
+                    ]
+                },
+                advanced_verification: {
+                    subtitle: "Verificação segura via site ou redes sociais.",
+                    how_it_works: "Exige que o usuário vincule uma conta externa (ex: GitHub, Steam) para provar sua identidade antes de entrar.",
+                    test_steps: [
+                        "Clique no botão de verificação avançada.",
+                        "Complete o fluxo no navegador.",
+                        "Verifique se o cargo foi liberado após o retorno."
+                    ]
+                },
+                payment_logs: {
+                    subtitle: "Log de vendas em tempo real para a staff.",
+                    how_it_works: "Envia um alerta no canal escolhido sempre que um novo pagamento é aprovado ou uma assinatura é renovada.",
+                    test_steps: [
+                        "Realize uma compra de teste na loja.",
+                        "Verifique se o log de pagamento apareceu no canal configurado."
+                    ]
+                }
+            }
+        }
+    },
+    'en-US': {
+        landing: {
+            hero: {
+                badge: "OrbitOS V1.0 Released",
+                title1: "The operating system for",
+                title2: "digital communities.",
+                desc: "Multi-tenant infrastructure for Discord, games and digital platforms. Total control, integrated monetization and architecture ready to scale.",
+                cta1: "Get Started for Free",
+                cta2: "View Architecture",
+            },
+            nav: {
+                ecosystem: "Ecosystem",
+                infra: "Infrastructure",
+                brandEngine: "Brand Engine",
+                dashboard: "Dashboard",
+            },
+        },
+        dashboard: {
+            sidebar: {
+                analytics: "Analytics",
+                automations: "Automations",
+                servers: "Servers",
+                tickets: "Tickets",
+                settings: "Settings",
+                billing: "Billing",
+            },
+        },
+        settings: {
+            general: "General",
+            language: "Language",
+            save: "Save Changes",
+            success: "Settings updated successfully!",
+        },
+        automations: {
+            onboarding: {
+                how_it_works: "How it works",
+                discord_example: "Discord Example",
+                how_to_test: "How to test",
+                test_steps: "Test steps",
+                ready_config: "Ready-to-use Config",
+                tips: "Best practices & limits",
+            },
+            modules: {
+                ticket: {
+                    subtitle: "Organize player help requests in private channels, with history and categories.",
+                    how_it_works: "The player clicks the '📩 Open Ticket' button in a fixed message. The bot creates a private channel visible only to the player + staff team.",
+                    test_steps: [
+                        "Enable the Support Tickets module in the panel.",
+                        "Configure the channel for the initial message and the ticket category.",
+                        "On Discord, use /painel ticket to generate the button.",
+                        "Click 'Open Ticket' and verify the channel creation."
+                    ]
+                },
+                whitelist: {
+                    subtitle: "Filters new players with pre-defined questions before granting server access.",
+                    how_it_works: "When a player uses /whitelist, the bot starts the question flow. The final result is sent to staff for approval.",
+                    test_steps: [
+                        "Enable the Whitelist module and configure the staff channel.",
+                        "On Discord, use /whitelist as a player.",
+                        "Answer the questions and verify staff receipt.",
+                        "Test manual approval/rejection (if configured)."
+                    ]
+                },
+                welcome_message: {
+                    subtitle: "Create a memorable first impression for new players.",
+                    how_it_works: "The bot detects when someone joins the server and sends a custom message to the chosen channel. You can use variables like {user} to mention the person.",
+                    test_steps: [
+                        "Configure the welcome channel and your desired message.",
+                        "Use the 'Test' button in the panel (if available) or invite a second account/friend.",
+                        "Check if the bot sent the message and if variables were correctly replaced."
+                    ]
+                },
+                autorole: {
+                    subtitle: "Automate initial role assignment.",
+                    how_it_works: "As soon as a player joins, the bot instantly assigns the selected roles, no commands needed.",
+                    test_steps: [
+                        "Select the roles to be assigned.",
+                        "Ensure the bot's role (OrbitOS) is ABOVE the roles it will assign in Discord settings.",
+                        "Have someone join the server and check if the role was assigned within seconds."
+                    ]
+                },
+                whitelist_quiz: {
+                    subtitle: "Automatic quiz to filter players by knowledge.",
+                    how_it_works: "The player starts the quiz via command or button. They must answer X% of questions correctly to pass and get the role automatically.",
+                    test_steps: [
+                        "Create the questions and define correct answers.",
+                        "Set the minimum passing percentage.",
+                        "On Discord, use /quiz to start and try answering as a player."
+                    ]
+                },
+                server_status: {
+                    subtitle: "Display server statistics in channel names.",
+                    how_it_works: "The bot periodically updates the names of specific channels to show real-time member or player counts.",
+                    test_steps: [
+                        "Create a voice channel to act as a counter.",
+                        "Configure the channel ID and template (e.g., 👥 {players} Players).",
+                        "Wait a few minutes and watch the channel name update automatically."
+                    ]
+                },
+                coupon: {
+                    subtitle: "Coupon system for your server store.",
+                    how_it_works: "Create discount codes for purchases. You define the percentage and usage limits.",
+                    test_steps: [
+                        "Create a test coupon (e.g., TEST10) with 10% discount.",
+                        "In the store system, try applying this coupon at checkout.",
+                        "Check if the total price was correctly reduced."
+                    ]
+                },
+                report: {
+                    subtitle: "Centralize reports and suggestions, anonymous or not.",
+                    how_it_works: "Members submit reports via command. Staff receives alerts in a private channel for review.",
+                    test_steps: [
+                        "Set the channel for receiving reports.",
+                        "Use the report command on Discord.",
+                        "Check if staff received the alert with all details."
+                    ]
+                },
+                application: {
+                    subtitle: "Recruitment forms integrated with Discord.",
+                    how_it_works: "Create custom questions. Players answer via bot, and staff can approve/deny with one click.",
+                    test_steps: [
+                        "Configure your application questions.",
+                        "Try completing the form on Discord.",
+                        "As staff, approve the test and check if the player received the configured role."
+                    ]
+                },
+                level_system: {
+                    subtitle: "Gamify your server with XP and automatic levels.",
+                    how_it_works: "Members earn experience (XP) by sending messages or participating in voice calls. Reaching milestones levels them up and grants automatic roles.",
+                    test_steps: [
+                        "Configure the XP multiplier in the panel.",
+                        "On Discord, send a few messages and use the /rank command.",
+                        "Verify that the bot displays your progress correctly."
+                    ]
+                },
+                anti_raid: {
+                    subtitle: "Advanced protection against bots and raids.",
+                    how_it_works: "The bot monitors mass joins or suspicious behavior and applies automatic punishments (kick/ban) to protect the server.",
+                    test_steps: [
+                        "Configure the joins-per-minute limit.",
+                        "The system works silently. Check security logs to see the bot in action."
+                    ]
+                },
+                suggestion: {
+                    subtitle: "Suggestion system with community voting.",
+                    how_it_works: "Members submit suggestions via command. The suggestion is sent to a channel with ✅ and ❌ reactions for public voting.",
+                    test_steps: [
+                        "Configure the suggestions channel.",
+                        "Use the suggestion command on Discord.",
+                        "Verify the message was sent with voting buttons/reactions."
+                    ]
+                },
+                rules_accept: {
+                    subtitle: "Mandatory rules acceptance before seeing the server.",
+                    how_it_works: "The bot sends a message with rules and a button. Players gain access (role) only after clicking 'Accept'.",
+                    test_steps: [
+                        "Configure the member role and rules channel.",
+                        "Use the command to generate the rules message.",
+                        "Click the accept button and verify the role was granted."
+                    ]
+                },
+                verification: {
+                    subtitle: "Verification system via captcha or button.",
+                    how_it_works: "Protects the server from malicious bots by requiring users to click a button or solve a simple challenge upon joining.",
+                    test_steps: [
+                        "Configure the verification message.",
+                        "Join with a test account and click the button.",
+                        "Verify the verified role was assigned."
+                    ]
+                },
+                store_panel: {
+                    subtitle: "Display your store items directly on Discord.",
+                    how_it_works: "Generates an interface with selects and buttons where players can browse products and start purchases without leaving chat.",
+                    test_steps: [
+                        "Add products in your Store tab.",
+                        "On Discord, use the /store command.",
+                        "Verify products and prices appear correctly."
+                    ]
+                },
+                growth_stats: {
+                    subtitle: "Analysis of growth and new joins.",
+                    how_it_works: "Detailed metrics on how many members joined and left the server in recent days.",
+                    test_steps: ["Access the Analytics tab to see the updated chart."]
+                },
+                engagement_stats: {
+                    subtitle: "Activity and message metrics.",
+                    how_it_works: "Find out which channels are most used and what times your members are most active.",
+                    test_steps: ["Access the Analytics tab to see the channel ranking."]
+                },
+                revenue_stats: {
+                    subtitle: "Sales and revenue reports.",
+                    how_it_works: "Track your sales in real-time with daily, monthly, and yearly revenue charts.",
+                    test_steps: ["Check the financial dashboard in the Analytics tab."]
+                },
+                activity_stats: {
+                    subtitle: "Voice and chat presence monitoring.",
+                    how_it_works: "Reports on the average time players spend in voice channels.",
+                    test_steps: ["Check retention data in the Analytics tab."]
+                },
+                ranking: {
+                    subtitle: "Display the top players of your server in real-time.",
+                    how_it_works: "The bot generates an interface listing players with the most XP, money, or wins. The ranking updates automatically as metrics change.",
+                    test_steps: [
+                        "Define which ranking category you want to display.",
+                        "On Discord, use the /ranking command.",
+                        "Verify that the leaderboard appears with correct photos and data."
+                    ]
+                },
+                giveaway: {
+                    subtitle: "Create giveaways with role and time requirements.",
+                    how_it_works: "Manage giveaways for items or VIPs automatically. The bot picks the winner and validates if they are still on the server.",
+                    test_steps: [
+                        "Create a test giveaway on Discord.",
+                        "Ask someone to join.",
+                        "Force end and see if the bot announces the winner."
+                    ]
+                },
+                faction_system: {
+                    subtitle: "Complete management for groups and factions.",
+                    how_it_works: "Allows creating groups for players to join. Includes internal roles, faction bank, and exclusive member chat.",
+                    test_steps: [
+                        "Create a test faction in the panel.",
+                        "Try recruiting a member using the faction command.",
+                        "Check if the new member gained access to the private group chat."
+                    ]
+                },
+                judicial_system: {
+                    subtitle: "Control of internal processes and trials.",
+                    how_it_works: "Creates a workflow for managing occurrences, lawyers, and judges within the server. Ideal for serious RP.",
+                    test_steps: [
+                        "Open a test case in the judicial panel.",
+                        "Assign a lawyer to the case.",
+                        "Check if the courtroom channel was created automatically."
+                    ]
+                },
+                in_game_logs: {
+                    subtitle: "Synchronization of game server events.",
+                    how_it_works: "Receives logs directly from your server (FiveM/Minecraft) and displays them in specific Discord channels.",
+                    test_steps: [
+                        "Configure the Webhook on your game server.",
+                        "Perform an in-game action (e.g., kill someone).",
+                        "Verify that the log appeared instantly on Discord."
+                    ]
+                },
+                anti_alt: {
+                    subtitle: "Automatic blocking of fake and recent accounts.",
+                    how_it_works: "Checks Discord account age and avatar availability. Suspicious accounts are prevented from joining.",
+                    test_steps: [
+                        "Set a 30-day limit for new accounts.",
+                        "Try to join with an account created today.",
+                        "Verify if the bot kicked the account and sent the log."
+                    ]
+                },
+                mod_logs: {
+                    subtitle: "Complete history of punishments and warnings.",
+                    how_it_works: "Centralizes all moderation actions (ban, kick, mute) in a secret channel for auditing.",
+                    test_steps: [
+                        "Apply a warning (warn) to a test user.",
+                        "Check the moderation logs channel.",
+                        "Verify if the reason and the author of the punishment are correct."
+                    ]
+                },
+                conditional_workflow: {
+                    subtitle: "Automated workflows based on triggers and conditions.",
+                    how_it_works: "You define a rule (e.g., if the player gets the VIP role) and an action (e.g., send a DM).",
+                    test_steps: [
+                        "Create a test rule in the panel.",
+                        "Execute the trigger action on Discord.",
+                        "Verify if the automation was triggered."
+                    ]
+                },
+                flash_sale: {
+                    subtitle: "Create limited-time offers for your store.",
+                    how_it_works: "Sets an aggressive discount for a short period and notifies interested members via mention.",
+                    test_steps: [
+                        "Open a new flash sale.",
+                        "Check if the announcement message was sent in the configured channel.",
+                        "Verify if the store price was updated automatically."
+                    ]
+                },
+                staff_logs: {
+                    subtitle: "Track your team's administrative actions.",
+                    how_it_works: "Records when a staff member creates channels, changes roles, or edits sensitive permissions.",
+                    test_steps: [
+                        "Perform an administrative action (e.g., create a new channel).",
+                        "Verify if the log appeared in the secret staff channel."
+                    ]
+                },
+                subscription: {
+                    subtitle: "Manage monthly plans and recurring roles.",
+                    how_it_works: "Links roles to the user's payment status. If the subscription expires, the role is automatically removed.",
+                    test_steps: [
+                        "Link a role to a recurring product.",
+                        "Simulate a payment or manually assign it in the store.",
+                        "Verify if the user received the role after processing."
+                    ]
+                },
+                poll: {
+                    subtitle: "Create interactive polls with unlimited votes.",
+                    how_it_works: "Generates an interface with buttons for members to vote. Results are displayed in real-time or after closing.",
+                    test_steps: [
+                        "Use the /poll command to create a poll.",
+                        "Vote using the buttons on Discord.",
+                        "Verify if the count was updated correctly."
+                    ]
+                },
+                scheduled_messages: {
+                    subtitle: "Schedule periodic announcements and reminders.",
+                    how_it_works: "You define the day, time, and frequency of messages. The bot sends them automatically in the desired channel.",
+                    test_steps: [
+                        "Schedule a message for 5 minutes from now.",
+                        "Wait on Discord and verify the delivery."
+                    ]
+                },
+                trigger_system: {
+                    subtitle: "Automatic responses to specific keywords.",
+                    how_it_works: "The bot monitors chat and responds with texts, images, or embeds when someone types a configured term.",
+                    test_steps: [
+                        "Create a trigger for the word 'help'.",
+                        "Type in chat and verify if the bot responded."
+                    ]
+                },
+                advanced_verification: {
+                    subtitle: "Secure verification via website or social media.",
+                    how_it_works: "Requires the user to link an external account (e.g., GitHub, Steam) to prove their identity before joining.",
+                    test_steps: [
+                        "Click the advanced verification button.",
+                        "Complete the flow in the browser.",
+                        "Verify if the role was granted after returning."
+                    ]
+                },
+                payment_logs: {
+                    subtitle: "Real-time sales logs for staff.",
+                    how_it_works: "Sends an alert in the chosen channel whenever a new payment is approved or a subscription is renewed.",
+                    test_steps: [
+                        "Perform a test purchase in the store.",
+                        "Verify if the payment log appeared in the configured channel."
+                    ]
+                }
+            }
+        }
+    },
+    'es-ES': {
+        landing: {
+            hero: {
+                badge: "OrbitOS V1.0 Lanzado",
+                title1: "El sistema operativo para",
+                title2: "comunidades digitales.",
+                desc: "Infraestructura multi-tenant para Discord, juegos y plataformas digitales. Control total, monetización integrada y arquitectura lista para escalar.",
+                cta1: "Empezar Gratis",
+                cta2: "Ver Arquitectura",
+            },
+            nav: {
+                ecosystem: "Ecosistema",
+                infra: "Infraestructura",
+                brandEngine: "Brand Engine",
+                dashboard: "Dashboard",
+            },
+        },
+        dashboard: {
+            sidebar: {
+                analytics: "Analítica",
+                automations: "Automatizaciones",
+                servers: "Servidores",
+                tickets: "Tickets",
+                settings: "Configuración",
+                billing: "Facturación",
+            },
+        },
+        settings: {
+            general: "General",
+            language: "Idioma",
+            save: "Guardar Cambios",
+            success: "¡Configuración actualizada con éxito!",
+        },
+        automations: {
+            onboarding: {
+                how_it_works: "Cómo funciona",
+                discord_example: "Ejemplo en Discord",
+                how_to_test: "Cómo probar",
+                test_steps: "Pasos para probar",
+                ready_config: "Configuración Lista",
+                tips: "Prácticas recomendadas",
+            },
+            modules: {
+                ticket: {
+                    subtitle: "Organice las solicitudes de ayuda de los jugadores en canales privados, con historial y categorías.",
+                    how_it_works: "El jugador hace clic en el botón '📩 Abrir Ticket'. El bot crea un canal privado, visible solo para el jugador + el equipo del staff.",
+                    test_steps: [
+                        "Active el módulo Tickets de Soporte en el panel.",
+                        "Configure el canal para el mensaje inicial y la categoría de tickets.",
+                        "En Discord, use /painel ticket para generar el botón.",
+                        "Haga clic en 'Abrir Ticket' y verifique la creación del canal."
+                    ]
+                },
+                whitelist: {
+                    subtitle: "Filtra a los nuevos jugadores con preguntas predefinidas antes de dar acceso al servidor.",
+                    how_it_works: "Cuando el jugador usa /whitelist, el bot inicia el flujo de preguntas. El resultado se envía al staff para su aprobación.",
+                    test_steps: [
+                        "Active el módulo Whitelist y configure el canal del staff.",
+                        "En Discord, use /whitelist como jugador.",
+                        "Responda las preguntas y verifique la recepción del staff.",
+                        "Pruebe la aprobación/rechazo manual (si está configurado)."
+                    ]
+                },
+                welcome_message: {
+                    subtitle: "Cree una primera impresión memorable para los nuevos jugadores.",
+                    how_it_works: "El bot detecta cuando alguien se une al servidor y envía un mensaje personalizado al canal elegido. Puede usar variables como {user} para mencionar a la persona.",
+                    test_steps: [
+                        "Configure el canal de bienvenida y el mensaje deseado.",
+                        "Use el botón 'Probar' en el panel (si está disponible) o invite a una cuenta secundaria/amigo.",
+                        "Verifique si el bot envió el mensaje y si las variables se reemplazaron correctamente."
+                    ]
+                },
+                autorole: {
+                    subtitle: "Automatice la asignación de roles iniciales.",
+                    how_it_works: "Tan pronto como un jugador se une, el bot asigna instantáneamente los roles seleccionados, sin necesidad de comandos.",
+                    test_steps: [
+                        "Seleccione los roles que deben asignarse.",
+                        "Asegúrese de que el rol del bot (OrbitOS) esté POR ENCIMA de los roles que asignará en la configuración de Discord.",
+                        "Pida a alguien que se una al servidor y vea si el rol se asignó en segundos."
+                    ]
+                },
+                whitelist_quiz: {
+                    subtitle: "Quiz automático para filtrar jugadores por conocimiento.",
+                    how_it_works: "El jugador inicia el quiz mediante un comando o un botón. Debe acertar un porcentaje X de preguntas para ser aprobado y obtener el rol automáticamente.",
+                    test_steps: [
+                        "Cree las preguntas y defina las respuestas correctas.",
+                        "Configure el porcentaje mínimo para aprobar.",
+                        "En Discord, use /quiz para comenzar e intente responder como un jugador."
+                    ]
+                },
+                server_status: {
+                    subtitle: "Muestre estadísticas del servidor en los nombres de los canales.",
+                    how_it_works: "El bot actualiza periódicamente los nombres de canales específicos para mostrar contadores de miembros o jugadores en tiempo real.",
+                    test_steps: [
+                        "Cree un canal de voz para que sirva de contador.",
+                        "Configure el ID del canal y la plantilla (ej: 👥 {players} Jugadores).",
+                        "Espere unos minutos y vea cómo el nombre del canal se actualiza automáticamente."
+                    ]
+                },
+                coupon: {
+                    subtitle: "Sistema de cupones para la tienda de su servidor.",
+                    how_it_works: "Cree códigos de descuento para compras. Usted define el porcentaje y los límites de uso.",
+                    test_steps: [
+                        "Cree un cupón de prueba (ej: PRUEBA10) con un 10% de descuento.",
+                        "En el sistema de la tienda, intente aplicar este cupón al pagar.",
+                        "Verifique si el precio total se redujo correctamente."
+                    ]
+                },
+                report: {
+                    subtitle: "Centralice denuncias y sugerencias, anónimas o no.",
+                    how_it_works: "Los miembros envían denuncias por comando. El staff recibe alertas en un canal privado para su revisión.",
+                    test_steps: [
+                        "Establezca el canal para recibir denuncias.",
+                        "Use el comando de denuncia en Discord.",
+                        "Verifique si el staff recibió la alerta con todos los detalles."
+                    ]
+                },
+                application: {
+                    subtitle: "Formularios de reclutamiento integrados con Discord.",
+                    how_it_works: "Cree preguntas personalizadas. Los jugadores responden vía bot y el staff puede aprobar/denegar con un clic.",
+                    test_steps: [
+                        "Configure las preguntas de su solicitud.",
+                        "Intente completar el formulario en Discord.",
+                        "Como staff, apruebe la prueba y verifique si el jugador recibió el rol configurado."
+                    ]
+                },
+                level_system: {
+                    subtitle: "Gamifica tu servidor con XP y niveles automáticos.",
+                    how_it_works: "Los miembros ganan experiencia (XP) enviando mensajes o participando en llamadas. Al alcanzar metas, suben de nivel y pueden ganar roles automáticos.",
+                    test_steps: [
+                        "Configure el multiplicador de XP en el panel.",
+                        "En Discord, envíe algunos mensajes y use el comando /rank.",
+                        "Verifique que el bot muestre su progreso correctamente."
+                    ]
+                },
+                anti_raid: {
+                    subtitle: "Protección avanzada contra bots e invasiones.",
+                    how_it_works: "El bot monitorea entradas masivas o comportamientos sospechosos y aplica castigos automáticos (kick/ban) para proteger el servidor.",
+                    test_steps: [
+                        "Configure el límite de entradas por minuto.",
+                        "El sistema funciona silenciosamente. Revise los registros de seguridad para ver al bot en acción."
+                    ]
+                },
+                suggestion: {
+                    subtitle: "Sistema de sugerencias con votación de la comunidad.",
+                    how_it_works: "Los miembros envían sugerencias mediante un comando. La sugerencia se envía a un canal con reacciones ✅ y ❌ para votación pública.",
+                    test_steps: [
+                        "Configure el canal de sugerencias.",
+                        "Use el comando de sugerencia en Discord.",
+                        "Verifique que el mensaje se haya enviado con los botones/reacciones de voto."
+                    ]
+                },
+                rules_accept: {
+                    subtitle: "Obligatorio aceptar las reglas antes de ver el servidor.",
+                    how_it_works: "El bot envía un mensaje con las reglas y un botón. El jugador solo obtiene acceso (rol) después de hacer clic en 'Aceptar'.",
+                    test_steps: [
+                        "Configure el rol de miembro y el canal de reglas.",
+                        "Use el comando para generar el mensaje de reglas.",
+                        "Haga clic en el botón de aceptar y verifique que se haya entregado el rol."
+                    ]
+                },
+                verification: {
+                    subtitle: "Sistema de verificación por captcha o botón.",
+                    how_it_works: "Protege el servidor de bots maliciosos exigiendo que el usuario haga clic en un botón o resuelva un desafío simple al entrar.",
+                    test_steps: [
+                        "Configure el mensaje de verificación.",
+                        "Entre con una cuenta de prueba y haga clic en el botón.",
+                        "Verifique que se haya asignado el rol de verificado."
+                    ]
+                },
+                store_panel: {
+                    subtitle: "Muestre los artículos de su tienda directamente en Discord.",
+                    how_it_works: "Genera una interface con selects y botones donde los jugadores pueden navegar por los productos e iniciar compras sin salir del chat.",
+                    test_steps: [
+                        "Agregue productos en su pestaña de Tienda.",
+                        "En Discord, use el comando /tienda.",
+                        "Verifique que los productos y precios aparezcan correctamente."
+                    ]
+                },
+                growth_stats: {
+                    subtitle: "Análisis de crecimiento y nuevas entradas.",
+                    how_it_works: "Métricas detalladas sobre cuántos miembros entraron y salieron del servidor en los últimos días.",
+                    test_steps: ["Acceda a la pestaña de Analytics para ver el gráfico actualizado."]
+                },
+                engagement_stats: {
+                    subtitle: "Métricas de actividad y mensajes.",
+                    how_it_works: "Descubra qué canales se usan más y a qué horas sus miembros están más activos.",
+                    test_steps: ["Acceda a la pestaña de Analytics para ver el ranking de canales."]
+                },
+                revenue_stats: {
+                    subtitle: "Informes de ventas y facturación.",
+                    how_it_works: "Siga sus ventas en tiempo real con gráficos de facturación diaria, mensual e anual.",
+                    test_steps: ["Verifique el panel financiero en la pestaña de Analytics."]
+                },
+                activity_stats: {
+                    subtitle: "Monitoreo de presencia en voz y chat.",
+                    how_it_works: "Informes sobre el tiempo promedio que los jugadores pasan en los canales de voz.",
+                    test_steps: ["Consulte los datos de retención en la pestaña de Analytics."]
+                },
+                ranking: {
+                    subtitle: "Muestre a los mejores jugadores de su servidor en tiempo real.",
+                    how_it_works: "El bot genera una interfaz que enumera a los jugadores com más XP, dinero o victorias. El ranking se atualiza automáticamente.",
+                    test_steps: [
+                        "Defina qué categoría de ranking desea mostrar.",
+                        "En Discord, use el comando /ranking.",
+                        "Verifique que la tabla de líderes aparezca con las fotos y datos correctos."
+                    ]
+                },
+                giveaway: {
+                    subtitle: "Cree sorteos con requisitos de roles y tiempo.",
+                    how_it_works: "Gestione sorteos de artículos o VIPs de forma automática. El bot elige al ganador y valida si aún está en el servidor.",
+                    test_steps: [
+                        "Cree un sorteo de prueba en Discord.",
+                        "Pida a alguien que participe.",
+                        "Fuerce el final y vea si el bot anuncia al ganador."
+                    ]
+                },
+                faction_system: {
+                    subtitle: "Gestión completa para grupos y facciones.",
+                    how_it_works: "Permite crear grupos para que los jugadores se unan. Incluye roles internos, banco de facción y chat exclusivo entre miembros.",
+                    test_steps: [
+                        "Cree una facción de prueba en el panel.",
+                        "Intente reclutar a un miembro usando el comando de facción.",
+                        "Verifique si el nuevo miembro obtuvo acceso al chat privado del grupo."
+                    ]
+                },
+                judicial_system: {
+                    subtitle: "Control de procesos internos y juicios.",
+                    how_it_works: "Crea un flujo para la gestión de incidencias, abogados y jueces dentro del servidor. Ideal para RP serio.",
+                    test_steps: [
+                        "Abra un caso de prueba en el panel judicial.",
+                        "Asigne un abogado al caso.",
+                        "Verifique si el canal del tribunal se creó automáticamente."
+                    ]
+                },
+                in_game_logs: {
+                    subtitle: "Sincronización de eventos del servidor de juego.",
+                    how_it_works: "Recibe registros directamente desde su servidor (FiveM/Minecraft) y los muestra en canales específicos de Discord.",
+                    test_steps: [
+                        "Configure el Webhook en su servidor de juego.",
+                        "Realice una acción en el juego (ej: matar a alguien).",
+                        "Verifique que el registro apareció instantáneamente en Discord."
+                    ]
+                },
+                anti_alt: {
+                    subtitle: "Bloqueo automático de cuentas falsas y recientes.",
+                    how_it_works: "Verifica la antigüedad de la cuenta de Discord y si tiene avatar. Se impide la entrada a cuentas sospechosas.",
+                    test_steps: [
+                        "Establezca un límite de 30 días para cuentas nuevas.",
+                        "Intente unirse con una cuenta creada hoy.",
+                        "Verifique si el bot expulsó la cuenta y envió el registro."
+                    ]
+                },
+                mod_logs: {
+                    subtitle: "Historial completo de castigos y avisos.",
+                    how_it_works: "Centraliza todas las acciones de moderación (ban, kick, mute) en un canal secreto para auditoría.",
+                    test_steps: [
+                        "Aplique una advertencia (warn) a un usuario de prueba.",
+                        "Verifique el canal de registros de moderación.",
+                        "Compruebe si el motivo y el autor del castigo son correctos."
+                    ]
+                },
+                conditional_workflow: {
+                    subtitle: "Flujos automatizados basados en activadores y condiciones.",
+                    how_it_works: "Usted define una regla (ej: si el jugador obtiene el rol VIP) y una acción (ej: enviar un DM).",
+                    test_steps: [
+                        "Cree una regla de prueba en el panel.",
+                        "Ejecute la acción de activación en Discord.",
+                        "Verifique si la automatización se activó."
+                    ]
+                },
+                flash_sale: {
+                    subtitle: "Cree ofertas de tiempo limitado para su tienda.",
+                    how_it_works: "Establece un descuento agresivo por un corto período y notifica a los miembros interesados mediante mención.",
+                    test_steps: [
+                        "Abra una nueva oferta relámpago.",
+                        "Verifique si el mensaje de anuncio se envió en el canal configurado.",
+                        "Verifique si el precio en la tienda se actualizó automáticamente."
+                    ]
+                },
+                staff_logs: {
+                    subtitle: "Seguimiento de las acciones administrativas de su equipo.",
+                    how_it_works: "Registra cuando un staff crea canales, cambia roles o edita permisos sensibles.",
+                    test_steps: [
+                        "Realice una acción administrativa (ej: crear un nuevo canal).",
+                        "Verifique si el registro apareció en el canal secreto del staff."
+                    ]
+                },
+                subscription: {
+                    subtitle: "Gestione planes mensuales y roles recurrentes.",
+                    how_it_works: "Vincula roles al estado de pago del usuario. Si la suscripción expira, el rol se elimina automáticamente.",
+                    test_steps: [
+                        "Vincule un rol a un producto recurrente.",
+                        "Simule un pago o asígnelo manualmente en la tienda.",
+                        "Verifique si el usuario recibió el rol después del procesamiento."
+                    ]
+                },
+                poll: {
+                    subtitle: "Cree encuestas interactivas con votos ilimitados.",
+                    how_it_works: "Genera una interfaz con botones para que los miembros voten. Los resultados se muestran en tiempo real o al cerrar.",
+                    test_steps: [
+                        "Use el comando /poll para crear una encuesta.",
+                        "Vote usando los botones en Discord.",
+                        "Verifique si el recuento se actualizó correctamente."
+                    ]
+                },
+                scheduled_messages: {
+                    subtitle: "Programe anuncios y recordatorios periódicos.",
+                    how_it_works: "Usted define el día, la hora y la frecuencia de los mensajes. El bot los envía automáticamente en el canal deseado.",
+                    test_steps: [
+                        "Programe un mensaje para dentro de 5 minutos.",
+                        "Espere en Discord y verifique el envío."
+                    ]
+                },
+                trigger_system: {
+                    subtitle: "Respuestas automáticas a palabras clave específicas.",
+                    how_it_works: "El bot monitorea el chat y responde con textos, imágenes o embeds cuando alguien escribe un término configurado.",
+                    test_steps: [
+                        "Cree un activador para la palabra 'ayuda'.",
+                        "Escriba en el chat y verifique si el bot respondió."
+                    ]
+                },
+                advanced_verification: {
+                    subtitle: "Verificación segura vía sitio web o redes sociales.",
+                    how_it_works: "Requiere que el usuario vincule una cuenta externa (ej: GitHub, Steam) para probar su identidad antes de entrar.",
+                    test_steps: [
+                        "Haga clic en el botón de verificación avanzada.",
+                        "Complete el flujo en el navegador.",
+                        "Verifique si se otorgó el rol después de regresar."
+                    ]
+                },
+                payment_logs: {
+                    subtitle: "Registros de ventas en tiempo real para el staff.",
+                    how_it_works: "Envía una alerta en el canal elegido cada vez que se aprueba um nuevo pago o se renueva una suscripción.",
+                    test_steps: [
+                        "Realice una compra de prueba en la tienda.",
+                        "Verifique si el registro de pago apareció en el canal configurado."
+                    ]
+                }
+            }
+        }
+    }
+};
+
+export const getI18n = (lang: string = 'pt-BR') => {
+    return translations[lang as Language] || translations['pt-BR'];
+};

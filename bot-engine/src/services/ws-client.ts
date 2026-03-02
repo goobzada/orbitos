@@ -1,0 +1,117 @@
+import WebSocket from 'ws';
+import { Client } from 'discord.js';
+import { log } from '../utils/logger';
+
+const BOT_WS_TOKEN = process.env.BOT_INTERNAL_TOKEN || 'dev-bot-ws-token-123';
+const WS_BASE_URL = process.env.CORE_API_WS_URL || 'ws://localhost:4000/ws/bot';
+
+export class CommunityWSClient {
+    private ws: WebSocket | null = null;
+    private discordClient: Client | null = null;
+    private moduleLoader: any = null;
+    private reconnectAttempts = 0;
+    private maxReconnectAttempts = 20;
+
+    init(discordClient: Client, moduleLoader: any) {
+        this.discordClient = discordClient;
+        this.moduleLoader = moduleLoader;
+        this.connect();
+    }
+
+    private connect() {
+        const url = `${WS_BASE_URL}?token=${encodeURIComponent(BOT_WS_TOKEN)}`;
+
+        log.info(`[WS CLIENT] 🔌 Conectando ao Core API...`);
+        this.ws = new WebSocket(url);
+
+        this.ws.on('open', () => {
+            log.info('[WS CLIENT] ✅ Conectado e autenticado ao Core API!');
+            this.reconnectAttempts = 0;
+        });
+
+        this.ws.on('message', (data) => {
+            try {
+                const { type, payload } = JSON.parse(data.toString());
+                this.handleMessage(type, payload);
+            } catch {
+                log.error('[WS CLIENT] ❌ Erro ao processar mensagem JSON');
+            }
+        });
+
+        this.ws.on('close', (code) => {
+            if (code === 1006) {
+                log.warn('[WS CLIENT] ⛔ Conexão recusada — token pode estar inválido.');
+            }
+
+            this.reconnectAttempts++;
+            if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+                log.error('[WS CLIENT] 🔴 Máximo de tentativas de reconexão atingido. Verifique BOT_INTERNAL_TOKEN.');
+                return;
+            }
+
+            const delay = Math.min(5000 * this.reconnectAttempts, 30000);
+            log.warn(`[WS CLIENT] 🔌 Reconectando em ${delay / 1000}s... (tentativa ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+            setTimeout(() => this.connect(), delay);
+        });
+
+        this.ws.on('error', (err) => {
+            // Silenciar para evitar crash
+        });
+    }
+
+    private async handleMessage(type: string, payload: any) {
+        if (type === 'DISCORD_ACTION' || type === 'RCON_ACTION' || type === 'MINECRAFT_ACTION' || type === 'FIVEM_ACTION') {
+            const { serverId, userId, action, params } = payload;
+            log.info(`[WS CLIENT] 🚀 Ação recebida [${type}]: ${action} no server ${serverId}`);
+
+            // 1. Tentar despachar via ModuleLoader (Novo padrão extensível)
+            if (this.moduleLoader) {
+                const handled = await this.moduleLoader.dispatchAction(action, params);
+                if (handled) return;
+            }
+
+            // 2. Fallback para ações hardcoded legadas
+            const guild = this.discordClient?.guilds.cache.get(serverId);
+            if (!guild) return log.error(`[WS CLIENT] ❌ Servidor ${serverId} não encontrado.`);
+
+            try {
+                switch (action) {
+                    case 'add_role': {
+                        const member = await guild.members.fetch(userId);
+                        await member.roles.add(params.roleId);
+                        log.info(`[WS CLIENT] ✅ Role ${params.roleId} adicionada a ${member.user.tag}`);
+                        break;
+                    }
+                    case 'remove_role': {
+                        const member = await guild.members.fetch(userId);
+                        await member.roles.remove(params.roleId);
+                        log.info(`[WS CLIENT] ✅ Role ${params.roleId} removida de ${member.user.tag}`);
+                        break;
+                    }
+                    case 'send_message': {
+                        const channel = await guild.channels.fetch(params.channelId);
+                        if (channel?.isTextBased()) {
+                            await (channel as any).send(params.content);
+                            log.info(`[WS CLIENT] ✅ Mensagem enviada para canal ${params.channelId}`);
+                        }
+                        break;
+                    }
+                    case 'delete_channel': {
+                        const channel = await guild.channels.fetch(params.channelId);
+                        if (channel) {
+                            await channel.delete();
+                            log.info(`[WS CLIENT] ✅ Canal ${params.channelId} excluído.`);
+                        }
+                        break;
+                    }
+                    default:
+                        log.warn(`[WS CLIENT] ⚠️ Ninguém soube processar a ação: ${action}`);
+                }
+            } catch (err: any) {
+                log.error(`[WS CLIENT] ❌ Erro ao executar ${action}: ${err.message}`);
+            }
+        }
+    }
+}
+
+export const communityWSClient = new CommunityWSClient();

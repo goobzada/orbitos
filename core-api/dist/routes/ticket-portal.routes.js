@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const ticket_portal_controller_1 = require("../controllers/ticket-portal.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const ticketPortalRoutes = (0, express_1.Router)();
+const portalCtrl = new ticket_portal_controller_1.TicketPortalController();
+ticketPortalRoutes.use(auth_middleware_1.authMiddleware);
+ticketPortalRoutes.get('/', portalCtrl.listPortals);
+ticketPortalRoutes.post('/', portalCtrl.createPortal);
+ticketPortalRoutes.put('/:id', portalCtrl.updatePortal);
+ticketPortalRoutes.delete('/:id', portalCtrl.deletePortal);
+exports.default = ticketPortalRoutes;

@@ -1,0 +1,711 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String               @id @default(uuid())
+  discordId      String?              @unique
+  googleId       String?              @unique
+  githubId       String?              @unique
+  username       String
+  avatar         String?
+  email          String?              @unique
+  role           String               @default("USER")
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  organizations        Organization[]
+  orgMemberships       OrganizationMember[]
+  staffMembers         StaffMember[]
+  ownedSupportSessions SupportSession[]     @relation("OwnerSupportSessions")
+  usedSupportSessions  SupportSession[]     @relation("UsedSupportSessions")
+}
+
+model Organization {
+  id                   String                @id @default(uuid())
+  name                 String
+  slug                 String?               @unique @default(uuid())
+  subdomain            String?               @unique
+  customDomain         String?               @unique
+  ownerId              String
+  plan                 String                @default("FREE") // FREE, PRO, ENTERPRISE
+  planLimits           Json?                 // { maxServers: 1, maxStaff: 5, maxProducts: 3 }
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  isActive             Boolean               @default(true)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  
+  allowlistForms       AllowlistForm[]
+  allowlistSubmissions AllowlistSubmission[]
+  automations          Automation[]
+  automationLogs       AutomationLog[]
+  owner                User                  @relation(fields: [ownerId], references: [id])
+  members              OrganizationMember[]
+  template             OrganizationTemplate?
+  payments             Payment[]
+  servers              Server[]
+  storeOrders          StoreOrder[]
+  storeProducts        StoreProduct[]
+  storeSettings        StoreSettings?
+  coupons              Coupon[]
+  tickets              Ticket[]
+  ticketTemplates      TicketTemplate[]
+  auditLogs            AuditLog[]
+  supportSessions      SupportSession[]
+  communityType        String                @default("general") // game, music, study, business, general, creator, dev
+  language             String                @default("pt-BR") // pt-BR, en-US, es-ES
+  modules              OrganizationModule[]
+}
+
+model OrganizationMember {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String
+  role           String       @default("HELPER")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+model Server {
+  id                   String                @id @default(uuid())
+  discordGuildId       String                @unique
+  name                 String
+  icon                 String?
+  organizationId       String
+  isActive             Boolean               @default(true)
+  config               String?
+  lastSeenAt           DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  allowlistForms       AllowlistForm[]
+  allowlistSubmissions AllowlistSubmission[]
+  automations          Automation[]
+  organization         Organization          @relation(fields: [organizationId], references: [id])
+  staffMembers         StaffMember[]
+  tickets              Ticket[]
+  ticketMacros         TicketMacro[]
+  ticketPortals        TicketPortal[]
+  ticketSlaPolicies    TicketSlaPolicy[]
+  ticketTemplates      TicketTemplate[]
+
+  @@index([organizationId])
+}
+
+model StaffMember {
+  id              String   @id @default(uuid())
+  serverId        String
+  userId          String?
+  discordUserId   String
+  username        String
+  role            String   @default("HELPER") // OWNER, ADMIN, MOD, HELPER
+  permissions     Json?    // e.g., ["manage_tickets", "manage_store", "view_analytics"]
+  ticketsResolved Int      @default(0)
+  punishments     Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  server          Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  user            User?    @relation(fields: [userId], references: [id])
+  ticketsAssigned Ticket[] @relation("TicketAssignedToStaff")
+
+  @@unique([serverId, discordUserId])
+}
+
+model TicketPortal {
+  id          String         @id @default(uuid())
+  serverId    String
+  name        String
+  description String?
+  channelId   String?
+  messageId   String?
+  bannerUrl   String?
+  embedColor  String?
+  isActive    Boolean        @default(true)
+  order       Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  tickets     Ticket[]
+  buttons     TicketButton[]
+  server      Server         @relation(fields: [serverId], references: [id], onDelete: Cascade)
+}
+
+model TicketButton {
+  id             String         @id @default(uuid())
+  portalId       String
+  label          String
+  emoji          String?
+  style          String         @default("PRIMARY")
+  templateId     String
+  requiredRoleId String?
+  isActive       Boolean        @default(true)
+  order          Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  portal         TicketPortal   @relation(fields: [portalId], references: [id])
+  template       TicketTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+}
+
+model TicketTemplate {
+  id             String            @id @default(uuid())
+  organizationId String
+  serverId       String
+  name           String
+  key            String
+  title          String
+  description    String?
+  isActive       Boolean           @default(true)
+  language       String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  tickets        Ticket[]
+  buttons        TicketButton[]
+  fields         TicketField[]
+  slaPolicies    TicketSlaPolicy[]
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  server         Server            @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([serverId])
+}
+
+model TicketField {
+  id          String              @id @default(uuid())
+  templateId  String
+  label       String
+  type        String
+  placeholder String?
+  required    Boolean             @default(true)
+  order       Int                 @default(0)
+  template    TicketTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  options     TicketFieldOption[]
+}
+
+model TicketFieldOption {
+  id      String      @id @default(uuid())
+  fieldId String
+  label   String
+  value   String
+  order   Int         @default(0)
+  field   TicketField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+}
+
+model Ticket {
+  id              String          @id @default(uuid())
+  organizationId  String
+  serverId        String
+  templateId      String?
+  portalId        String?
+  authorId        String
+  channelId       String?
+  status          TicketStatus    @default(OPEN)
+  priority        TicketPriority  @default(MEDIUM)
+  subject         String?
+  category        String?
+  assignedStaffId String?
+  language        String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  firstResponseAt DateTime?
+  closedAt        DateTime?
+  slaBreached     Boolean         @default(false)
+  formData        String?
+  transcriptUrl   String?
+  assignedStaff   StaffMember?    @relation("TicketAssignedToStaff", fields: [assignedStaffId], references: [id])
+  organization    Organization    @relation(fields: [organizationId], references: [id])
+  portal          TicketPortal?   @relation(fields: [portalId], references: [id])
+  server          Server          @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  template        TicketTemplate? @relation(fields: [templateId], references: [id])
+  messages        TicketMessage[]
+  rating          TicketRating?
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([serverId])
+}
+
+model TicketMessage {
+  id           String   @id @default(uuid())
+  ticketId     String
+  authorId     String
+  authorName   String?
+  authorAvatar String?
+  authorType   String   @default("USER")
+  isStaff      Boolean  @default(false)
+  content      String
+  meta         String?
+  createdAt    DateTime @default(now())
+  ticket       Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+model TicketRating {
+  id        String   @id @default(uuid())
+  ticketId  String   @unique
+  userId    String
+  score     Int
+  comment   String?
+  createdAt DateTime @default(now())
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+model TicketMacro {
+  id               String   @id @default(uuid())
+  serverId         String
+  name             String
+  category         String?
+  content          String
+  isActive         Boolean  @default(true)
+  createdByStaffId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  server           Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+}
+
+model TicketSlaPolicy {
+  id              String          @id @default(uuid())
+  serverId        String
+  name            String
+  description     String?
+  templateId      String?
+  responseMinutes Int?
+  resolveMinutes  Int?
+  priority        String?
+  isDefault       Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  server          Server          @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  template        TicketTemplate? @relation(fields: [templateId], references: [id])
+}
+
+model AllowlistForm {
+  id             String                @id @default(uuid())
+  organizationId String
+  serverId       String
+  name           String
+  status         String                @default("draft")
+  mode           String                @default("simple")
+  successMessage String?
+  rejectMessage  String?
+  autoApprove    Boolean               @default(false)
+  autoRoleId     String?
+  logChannelId   String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  organization   Organization          @relation(fields: [organizationId], references: [id])
+  server         Server                @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  questions      AllowlistQuestion[]
+  submissions    AllowlistSubmission[]
+
+  @@index([organizationId])
+  @@index([serverId])
+}
+
+model AllowlistQuestion {
+  id          String            @id @default(uuid())
+  formId      String
+  order       Int
+  label       String
+  placeholder String?
+  type        String
+  required    Boolean           @default(true)
+  options     String?
+  validation  String?
+  answers     AllowlistAnswer[]
+  form        AllowlistForm     @relation(fields: [formId], references: [id], onDelete: Cascade)
+}
+
+model AllowlistSubmission {
+  id             String            @id @default(uuid())
+  organizationId String
+  formId         String
+  serverId       String
+  userId         String
+  status         String            @default("pending")
+  reviewerId     String?
+  reviewComment  String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  answers        AllowlistAnswer[]
+  form           AllowlistForm     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  server         Server            @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([formId])
+  @@index([serverId])
+}
+
+model AllowlistAnswer {
+  id           String              @id @default(uuid())
+  submissionId String
+  questionId   String
+  value        String
+  question     AllowlistQuestion   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  submission   AllowlistSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model Automation {
+  id             String          @id @default(uuid())
+  organizationId String
+  serverId       String
+  name           String
+  description    String?
+  isActive       Boolean         @default(true)
+  trigger        String
+  conditions     String?
+  actions        String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  server         Server          @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  logs           AutomationLog[]
+
+  @@index([organizationId])
+  @@index([serverId])
+}
+
+model AutomationLog {
+  id             String       @id @default(uuid())
+  automationId   String
+  organizationId String
+  triggerEvent   String
+  status         String
+  error          String?
+  createdAt      DateTime     @default(now())
+  rule           Automation   @relation(fields: [automationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, triggerEvent])
+}
+
+model Payment {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String?
+  amount         Float
+  currency       String       @default("BRL")
+  status         String       @default("pending")
+  provider       String       @default("stripe")
+  providerId     String?      @unique
+  metadata       String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model AuditLog {
+  id             String        @id @default(uuid())
+  organizationId String?
+  userId         String?
+  action         String
+  resourceType   String
+  resourceId     String?
+  metadata       String?       // JSON
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime      @default(now())
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([createdAt])
+}
+
+model ModerationLog {
+  id             String   @id @default(uuid())
+  organizationId String
+  serverId       String
+  moderatorId    String
+  targetUserId   String
+  action         String
+  reason         String?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([serverId])
+}
+
+model TemplatePreset {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String
+  previewUrl  String?
+  minPlan     String   @default("FREE")
+  config      Json
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model OrganizationTemplate {
+  id              String       @id @default(uuid())
+  organizationId  String       @unique
+  templateKey     String       @default("default-classic")
+  primaryColor    String?
+  secondaryColor  String?
+  backgroundColor String?
+  surfaceColor    String?
+  navBackground   String?
+  navTextColor    String?
+  cardBackground  String?
+  borderColor     String?
+  buttonTextColor String?
+  textColor       String?
+  heroTextColor   String?
+  fontFamily      String?
+  fontSizeBasePx  Int?
+  fontWeight      String?
+  letterSpacing   Int?
+  borderRadiusPx  Int?
+  darkModeDefault Boolean      @default(true)
+  logoUrl         String?
+  logoHeightPx    Int?
+  menuConfig      Json?
+  heroConfig      Json?
+  extraConfig     Json?
+  customCss       String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model FeatureFlag {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String?
+  enabled     Boolean  @default(true)
+  env         String   @default("production")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model StoreSettings {
+  id               String       @id @default(uuid())
+  organizationId   String       @unique
+  enabled          Boolean      @default(false)
+  currency         String       @default("BRL")
+  checkoutProvider String       @default("STRIPE")
+  config           String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model StoreProduct {
+  id             String           @id @default(uuid())
+  organizationId String
+  slug           String
+  name           String
+  description    String?
+  priceCents     Int
+  currency       String           @default("BRL")
+  billingCycle   String           @default("ONE_TIME") // ONE_TIME, MONTHLY, YEARLY
+  status         String           @default("ACTIVE")   // ACTIVE, HIDDEN, ARCHIVED, DRAFT
+  stock          Int?             // null = unlimited
+  category       String?
+  tags           String?
+  thumbnailUrl   String?
+  deliveryType   String           @default("MANUAL")
+  deliveryConfig String?
+  isFeatured     Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  
+  variants       StoreProductVariant[]
+  orderItems     StoreOrderItem[]
+  licenseKeys    LicenseKey[]
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([organizationId, status])
+}
+
+model StoreProductVariant {
+  id          String       @id @default(uuid())
+  productId   String
+  name        String       // e.g., "Cor Amarela", "Tamanho G"
+  priceCents  Int?         // Override price if set
+  stock       Int?
+  isActive    Boolean      @default(true)
+  product     StoreProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  orderItems  StoreOrderItem[]
+}
+
+model Coupon {
+  id             String       @id @default(uuid())
+  organizationId String
+  code           String
+  discountType   String       @default("PERCENT") // PERCENT, FIXED
+  discountValue  Int
+  maxUses        Int?
+  usedCount      Int          @default(0)
+  expiresAt      DateTime?
+  isActive       Boolean      @default(true)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, code])
+}
+
+model LicenseKey {
+  id             String       @id @default(uuid())
+  productId      String
+  key            String       @unique
+  status         String       @default("AVAILABLE") // AVAILABLE, USED, REVOKED
+  userId         String?      // Discord ID who used it
+  orderId        String?
+  hwid           String?      // Hardware ID locking
+  issuedAt       DateTime?
+  product        StoreProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@index([productId])
+  @@index([status])
+}
+
+model StoreOrder {
+  id                 String           @id @default(uuid())
+  organizationId     String
+  userId             String?
+  externalCustomerId String?
+  paymentProvider    String           @default("STRIPE")
+  paymentIntentId    String?
+  subscriptionId     String?          // For recurring payments
+  couponCode         String?
+  status             String           @default("PENDING") // PENDING, PAID, FAILED, REFUNDED, CANCELLED
+  totalCents         Int
+  discountCents      Int              @default(0)
+  currency           String           @default("BRL")
+  metadata           String?          // JSON
+  createdAt          DateTime         @default(now())
+  paidAt             DateTime?
+  updatedAt          DateTime         @updatedAt
+  organization       Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  items              StoreOrderItem[]
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+}
+
+model StoreOrderItem {
+  id             String               @id @default(uuid())
+  orderId        String
+  productId      String
+  variantId      String?
+  quantity       Int                  @default(1)
+  unitPriceCents Int
+  totalCents     Int
+  deliveryStatus String               @default("PENDING") // PENDING, DELIVERED, FAILED
+  deliveryLog    String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  order          StoreOrder           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        StoreProduct         @relation(fields: [productId], references: [id])
+  variant        StoreProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+enum TicketStatus {
+  OPEN
+  PENDING
+  IN_PROGRESS
+  CLOSED
+  RESOLVED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+  CRITICAL
+}
+
+model SupportSession {
+  id             String       @id @default(uuid())
+  organizationId String
+  ownerId        String
+  pinHash        String
+  status         String       @default("ACTIVE") // ACTIVE, USED, EXPIRED, REVOKED
+  expiresAt      DateTime
+  maxUses        Int          @default(1)
+  usesCount      Int          @default(0)
+  permissions    Json?
+  supportUserId  String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner          User         @relation("OwnerSupportSessions", fields: [ownerId], references: [id])
+  supportUser    User?        @relation("UsedSupportSessions", fields: [supportUserId], references: [id])
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+// ─── PLATFORM DISCORD AUTOMATION V1 ─────────────────────
+
+model Module {
+  id             String   @id @default(uuid())
+  key            String   @unique // e.g. welcome_message, ticket, store_panel
+  name           String
+  description    String?
+  category       String   // e.g. Onboarding, Support, Engagement, Monetization, Security, Automation, Game Integration, Analytics
+  isActive       Boolean  @default(true)
+  settingsSchema Json?    // JSON Schema config form format
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenantModules  OrganizationModule[]
+  presets        ModulePreset[]
+}
+
+model OrganizationModule {
+  id             String       @id @default(uuid())
+  organizationId String
+  moduleId       String
+  config         Json?        // Active settings for this tenant
+  isActive       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  module         Module       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, moduleId])
+  @@index([organizationId])
+  @@index([moduleId])
+}
+
+model ModulePreset {
+  id             String   @id @default(uuid())
+  moduleId       String
+  communityType  String   // game, music, study, etc.
+  presetConfig   Json     // Default settings for this community type
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  module         Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, communityType])
+  @@index([moduleId])
+}

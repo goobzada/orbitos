@@ -1,0 +1,111 @@
+// core-api/src/middlewares/auth.middleware.ts
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET =
+    process.env.JWT_SECRET ||
+    (process.env.NODE_ENV === 'production'
+        ? ''
+        : 'dev-jwt-secret-do-not-use-in-production');
+
+// ─── Auth Middleware ──────────────────────────────────────────────────────────
+
+export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+    const authHeader = req.headers.authorization;
+
+    // 1. Sem header Authorization
+    if (!authHeader) {
+        console.warn('[AUTH] Requisição sem Authorization header', {
+            method: req.method,
+            path: req.path,
+            ip: req.ip,
+        });
+        res.status(401).json({ error: 'Token não fornecido' });
+        return;
+    }
+
+    // 2. Extrai o token do formato "Bearer <token>"
+    const [scheme, token] = authHeader.split(' ');
+
+    if (scheme !== 'Bearer' || !token) {
+        console.warn('[AUTH] Authorization header mal-formado', {
+            method: req.method,
+            path: req.path,
+            authHeader: authHeader.substring(0, 30) + '...',
+        });
+        res.status(401).json({ error: 'Formato de token inválido. Use: Bearer <token>' });
+        return;
+    }
+
+    // 3. Verifica e decodifica o JWT
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET) as {
+            id: string;
+            discordId?: string;
+            role: string;
+            username: string;
+            avatar?: string;
+            impersonatingOrgId?: string;
+            supportSessionId?: string;
+        };
+
+        // Anexa as informações do JWT para as rotas usarem via req.user
+        req.user = decoded;
+
+        return next();
+    } catch (err) {
+        console.warn('[AUTH] Token inválido ou expirado', {
+            method: req.method,
+            path: req.path,
+            error: (err as Error).message,
+        });
+        res.status(401).json({ error: 'Sessão inválida, faça login novamente.' });
+        return;
+    }
+};
+
+// ─── Require Org Access ───────────────────────────────────────────────────────
+
+export const requireOrgAccess = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const userId = req.user?.id;
+    const organizationId =
+        req.params.organizationId ||
+        req.body.organizationId ||
+        req.query.organizationId;
+
+    if (!userId || !organizationId) {
+        return res.status(401).json({ error: 'Falta identificação de usuário ou organização.' });
+    }
+
+    // SUPER_ADMIN tem acesso global (Bypass tenant isolation)
+    if (req.user?.role === 'SUPER_ADMIN') {
+        return next();
+    }
+
+    try {
+        const prisma = (await import('../lib/prisma')).default;
+
+        const isOwner = await prisma.organization.findFirst({
+            where: { id: organizationId as string, ownerId: userId },
+        });
+
+        if (isOwner) return next();
+
+        const isMember = await prisma.organizationMember.findFirst({
+            where: { organizationId: organizationId as string, userId },
+        });
+
+        if (isMember) return next();
+
+        return res.status(403).json({
+            error: 'Você não tem permissão para acessar esta organização.',
+        });
+    } catch (error) {
+        console.error('[AUTH] Erro ao validar acesso à organização:', error);
+        return res.status(500).json({ error: 'Erro ao validar acesso à organização.' });
+    }
+};

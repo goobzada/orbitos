@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const ticket_template_controller_1 = require("../controllers/ticket-template.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const ticketTemplateRoutes = (0, express_1.Router)();
+const templateCtrl = new ticket_template_controller_1.TicketTemplateController();
+ticketTemplateRoutes.use(auth_middleware_1.authMiddleware);
+ticketTemplateRoutes.get('/', templateCtrl.listTemplates);
+ticketTemplateRoutes.post('/', templateCtrl.createTemplate);
+ticketTemplateRoutes.put('/:id', templateCtrl.updateTemplate);
+exports.default = ticketTemplateRoutes;
