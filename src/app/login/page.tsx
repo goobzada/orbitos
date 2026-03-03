@@ -52,7 +52,10 @@ export default function LoginPage() {
                         <Bot className="h-8 w-8 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-extrabold tracking-tight text-white">OrbitOS</h1>
+                        <h1 className="text-4xl font-extrabold tracking-tight text-white">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-300">OrbitUp</span>
+                            <span className="text-white/80 font-light">.io</span>
+                        </h1>
                         <p className="mt-2 text-lg text-white/60">Dashboard Profissional</p>
                     </div>
                     <div className="grid grid-cols-1 gap-4 mt-4 w-full max-w-sm">
@@ -83,7 +86,7 @@ export default function LoginPage() {
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                             <Bot className="h-5 w-5" />
                         </div>
-                        <span className="text-xl font-bold tracking-tight">OrbitOS</span>
+                        <span className="text-xl font-bold tracking-tight">OrbitUp.io</span>
                     </div>
 
                     <div>

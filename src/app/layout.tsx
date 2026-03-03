@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OrbitOS",
+  title: "OrbitUp.io",
   description: "The Operating System for Digital Communities",
 };
 

@@ -67,7 +67,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-white/20 to-transparent opacity-50" />
             <Cpu className="h-5 w-5 text-white relative z-10" />
           </div>
-          <span className="text-xl font-extrabold tracking-tight text-white">Orbit<span className="text-violet-400 font-medium">OS</span></span>
+          <span className="text-xl font-extrabold tracking-tight text-white">Orbit<span className="text-violet-400 font-medium">Up.io</span></span>
         </div>
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
@@ -190,7 +190,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <h2 className="text-sm font-bold text-violet-400 tracking-wider uppercase mb-3">Expansibilidade Infinita</h2>
             <h3 className="text-3xl lg:text-5xl font-bold text-white mb-4">Um núcleo. Múltiplos ambientes.</h3>
-            <p className="text-slate-400 max-w-2xl mx-auto text-lg">O Discord é apenas o primeiro módulo. Projetamos o OrbitOS para ser o hub central de toda a sua operação digital.</p>
+            <p className="text-slate-400 max-w-2xl mx-auto text-lg">O Discord é apenas o primeiro módulo. Projetamos o OrbitUp.io para ser o hub central de toda a sua operação digital.</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -227,7 +227,7 @@ export default function Home() {
             </div>
             <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">Arquitetura construída para <span className="text-blue-400">escalar.</span></h2>
             <p className="text-slate-400 text-lg mb-10 leading-relaxed">
-              O OrbitOS roda silenciosamente sobre uma pilha robusta de nível corporativo. Seu core isola operações, roteia tráfego seguro e audita cada passo dos seus usuários.
+              O OrbitUp.io roda silenciosamente sobre uma pilha robusta de nível corporativo. Seu core isola operações, roteia tráfego seguro e audita cada passo dos seus usuários.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -279,7 +279,7 @@ export default function Home() {
           </div>
           <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">Sua comunidade. <span className="text-fuchsia-400">Sua marca.</span></h2>
           <p className="text-slate-400 max-w-2xl mx-auto text-lg mb-16">
-            O OrbitOS possui um White-Label nativo. Com o <strong>Brand Engine integrado</strong>, você implementa identidades visuais impressionantes e tokens de cor isolados em menos de um clique.
+            O OrbitUp.io possui um White-Label nativo. Com o <strong>Brand Engine integrado</strong>, você implementa identidades visuais impressionantes e tokens de cor isolados em menos de um clique.
           </p>
 
           {/* Cards dos Templates Modernos */}
@@ -361,7 +361,7 @@ export default function Home() {
               <div className="absolute -top-[1px] -left-px -right-px h-[2px] bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
 
               <h3 className="text-xl font-bold text-white flex items-center justify-center gap-2 mb-4">
-                OrbitOS
+                OrbitUp.io
               </h3>
               {[
                 { label: "Multi-tenant isolado por organização", val: true },
@@ -409,10 +409,10 @@ export default function Home() {
         <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3 opacity-50">
             <Cpu className="h-5 w-5" />
-            <span className="font-bold tracking-tight">OrbitOS</span>
+            <span className="font-bold tracking-tight">OrbitUp.io</span>
           </div>
           <p className="text-sm text-slate-600">
-            © 2026 OrbitOS. Operating System for Digital Communities.
+            © 2026 OrbitUp.io. Operating System for Digital Communities.
           </p>
           <div className="flex gap-6 text-sm text-slate-500 font-medium">
             <Link href="#" className="hover:text-white transition-colors">{lang === 'pt-BR' ? 'Termos' : 'Terms'}</Link>

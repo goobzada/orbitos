@@ -78,8 +78,9 @@ export function AppSidebar() {
                         <Bot className="h-5.5 w-5.5" />
                     </div>
                     {isExpanded && (
-                        <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent truncate animate-in fade-in slide-in-from-left-2 duration-300">
-                            OrbitOS
+                        <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent truncate animate-in fade-in slide-in-from-left-2 duration-300">
+                            <span className="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">OrbitUp</span>
+                            <span className="text-foreground/70 font-medium">.io</span>
                         </span>
                     )}
                 </div>
