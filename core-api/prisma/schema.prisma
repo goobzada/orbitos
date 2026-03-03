@@ -3,6 +3,11 @@ generator client {
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 model User {
   id             String               @id @default(uuid())
   discordId      String?              @unique
