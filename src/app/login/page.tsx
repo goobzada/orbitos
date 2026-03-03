@@ -98,11 +98,21 @@ export default function LoginPage() {
 
                     <div className="flex flex-col gap-4">
                         <Button
+                            id="btn-discord-login"
                             size="lg"
                             className="w-full h-12 bg-[#5865F2] hover:bg-[#4752C4] text-white text-base font-semibold flex items-center gap-3 transition-all hover:-translate-y-0.5 shadow-lg shadow-[#5865F2]/30"
                             onClick={() => {
+                                const discordUrl = process.env.NEXT_PUBLIC_DISCORD_LOGIN_URL;
+                                if (!discordUrl) {
+                                    toast.error('URL do Discord não configurada.', {
+                                        description: 'Defina NEXT_PUBLIC_DISCORD_LOGIN_URL no .env.local',
+                                    });
+                                    return;
+                                }
                                 setLoading('discord');
-                                window.location.href = process.env.NEXT_PUBLIC_DISCORD_LOGIN_URL || '#';
+                                // Reseta o estado caso a navegação falhe (ex: popup bloqueado)
+                                setTimeout(() => setLoading(null), 8000);
+                                window.location.href = discordUrl;
                             }}
                             disabled={loading !== null}
                         >
