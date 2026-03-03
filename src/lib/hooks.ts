@@ -26,6 +26,7 @@ export const useOrganizations = () => {
             const { data } = await api.get('/organizations/me');
             return data;
         },
+        retry: false,
     });
 };
 
