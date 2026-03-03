@@ -12,12 +12,20 @@ export async function middleware(request: NextRequest) {
     const isDashboard = pathname.startsWith('/dashboard');
     const isPlatform = pathname.startsWith('/platform');
     const isPlataforma = pathname.startsWith('/plataforma');
-    const isLogin = pathname === '/login' || pathname.startsWith('/login/');
+
+    // /login/callback e /auth/* devem SEMPRE passar — o code precisa ser processado
+    const isCallback = pathname.startsWith('/login/callback') || pathname.startsWith('/auth/');
+    const isLoginExact = pathname === '/login';
     const isProtected = isDashboard || isPlatform;
 
     // Redireciona /plataforma -> /platform (Suporte PT-BR)
     if (isPlataforma) {
         return NextResponse.redirect(new URL('/platform', request.url));
+    }
+
+    // ── Callbacks OAuth: SEMPRE deixa passar, nunca intercepta ───────────────
+    if (isCallback) {
+        return NextResponse.next();
     }
 
     // ── Força limpeza de cookie pedida pelo client (Break Loop) ───────────────
@@ -66,8 +74,8 @@ export async function middleware(request: NextRequest) {
         return resp;
     }
 
-    // Já logado e tentando acessar /login → redireciona para dashboard correto
-    if (isLogin) {
+    // Já logado e tentando acessar /login (exato) → redireciona para dashboard
+    if (isLoginExact) {
         const dest = role === 'SUPER_ADMIN' ? '/platform' : '/dashboard';
         return NextResponse.redirect(new URL(dest, request.url));
     }
