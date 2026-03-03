@@ -16,28 +16,36 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
 
   // 1. Tenta Authorization: Bearer <token>
   if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
-    const [, extracted] = authHeader.split(' ');
+    const extracted = authHeader.substring(7).trim();
     if (extracted) token = extracted;
   }
 
-  // 2. Se não tiver header, tenta cookie "orbitos_token"
+  // 2. Fallback: cookie "token" (salvo pelo frontend após Discord OAuth)
   const cookies = (req as any).cookies;
+  if (!token && cookies?.token) {
+    token = cookies.token;
+  }
+
+  // 3. Fallback extra: cookie "orbitos_token" (padrão legado)
   if (!token && cookies?.orbitos_token) {
     token = cookies.orbitos_token;
   }
 
-  // 3. Se ainda não tiver token → 401
+  // 4. Nenhum token encontrado → 401
   if (!token) {
-    console.warn('[AUTH] Token não fornecido', {
-      method: req.method,
-      path: req.path,
-      ip: req.ip,
-    });
+    // Silencia em produção para não poluir logs
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[AUTH] Requisição sem token (header nem cookie)', {
+        method: req.method,
+        path: req.path,
+        ip: req.ip,
+      });
+    }
     res.status(401).json({ error: 'Token não fornecido' });
     return;
   }
 
-  // 4. Verifica e decodifica o JWT
+  // 5. Verifica e decodifica o JWT
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as {
       id: string;
@@ -49,9 +57,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
       supportSessionId?: string;
     };
 
-    // Anexa as informações do JWT para as rotas usarem via req.user
     (req as any).user = decoded;
-
     return next();
   } catch (err) {
     console.warn('[AUTH] Token inválido ou expirado', {

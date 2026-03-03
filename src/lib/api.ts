@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000',
     timeout: 10_000,
+    withCredentials: true,   // envia cookies (token) cross-site automaticamente
     headers: {
         'Content-Type': 'application/json',
     },
@@ -68,7 +69,7 @@ api.interceptors.response.use(
             // Toast apenas uma vez (throttled pelo id único)
             if (typeof window !== 'undefined') {
                 toast.error('Servidor indisponível', {
-                    description: 'A API do OrbitOS está offline ou sua conexão falhou.',
+                    description: 'A API do OrbitUp.io está offline ou sua conexão falhou.',
                     id: 'global-api-offline',
                 });
             }
