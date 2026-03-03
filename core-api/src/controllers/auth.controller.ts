@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import jwt from 'jsonwebtoken';
+import axios from 'axios';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -194,64 +195,74 @@ export class AuthController {
 
     // ─── NOVO: Rota de Callback Real do Discord ─────────────────────
     async discordCallback(req: Request, res: Response) {
-        const { code } = req.body;
-
-        if (!code) {
-            return res.status(400).json({ error: 'Código de autorização é obrigatório' });
-        }
-
         try {
-            // 1. Trocar o código por um Access Token
-            const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
-                method: 'POST',
-                body: new URLSearchParams({
-                    client_id: process.env.DISCORD_CLIENT_ID || '',
-                    client_secret: process.env.DISCORD_CLIENT_SECRET || '',
+            const code = req.query.code as string | undefined;
+
+            if (!code) {
+                console.error('[AUTH_CALLBACK_DISCORD_ERROR] Código ausente');
+                return res.redirect(`${process.env.WEB_URL || 'https://orbitup.io'}/login?error=auth_failed`);
+            }
+
+            // 1️⃣ Troca "code" por access_token no Discord
+            const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '';
+            const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || '';
+            const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || '';
+
+            const tokenResponse = await axios.post(
+                'https://discord.com/api/oauth2/token',
+                new URLSearchParams({
+                    client_id: DISCORD_CLIENT_ID,
+                    client_secret: DISCORD_CLIENT_SECRET,
                     grant_type: 'authorization_code',
                     code,
-                    redirect_uri: process.env.DISCORD_REDIRECT_URI || '',
+                    redirect_uri: DISCORD_REDIRECT_URI,
                 }),
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                }
+            );
+
+            const { access_token, token_type } = tokenResponse.data as {
+                access_token: string;
+                token_type: string;
+            };
+
+            // 2️⃣ Busca dados do usuário no Discord
+            const userResponse = await axios.get('https://discord.com/api/users/@me', {
+                headers: {
+                    Authorization: `${token_type} ${access_token}`,
+                },
             });
 
-            const tokenData: any = await tokenResponse.json();
+            const discordUser = userResponse.data as {
+                id: string;
+                username: string;
+                global_name?: string;
+                avatar?: string | null;
+                email?: string | null;
+            };
 
-            if (tokenData.error) {
-                console.error('[AUTH] Erro ao obter token do Discord:', tokenData);
-                return res.status(400).json({ error: 'Erro ao autenticar com o Discord (token exchange)' });
-            }
-
-            // 2. Buscar informações do usuário no Discord
-            const userResponse = await fetch('https://discord.com/api/users/@me', {
-                headers: { Authorization: `Bearer ${tokenData.access_token}` },
-            });
-
-            const discordUser: any = await userResponse.json();
-
-            if (!discordUser.id) {
-                console.error('[AUTH] Erro ao obter usuário do Discord:', discordUser);
-                return res.status(400).json({ error: 'Erro ao obter dados do usuário do Discord' });
-            }
-
-            // 3. Upsert (Cria ou Atualiza) o usuário
-            const avatar = discordUser.avatar
-                ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
-                : `https://cdn.discordapp.com/embed/avatars/${parseInt(discordUser.id.slice(-1)) % 5}.png`;
-
+            // 3️⃣ Upsert no Prisma
             const user = await prisma.user.upsert({
                 where: { discordId: discordUser.id },
-                update: {
-                    username: discordUser.username,
-                    avatar,
-                    email: discordUser.email || null
-                },
                 create: {
                     discordId: discordUser.id,
-                    username: discordUser.username,
-                    avatar,
+                    username: discordUser.global_name || discordUser.username,
+                    avatar: discordUser.avatar
+                        ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+                        : null,
                     email: discordUser.email || null,
-                    role: 'USER'
-                }
+                    role: 'USER',
+                },
+                update: {
+                    username: discordUser.global_name || discordUser.username,
+                    avatar: discordUser.avatar
+                        ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+                        : null,
+                    email: discordUser.email || null,
+                },
             });
 
             // 4. Garantir Org/Membership OWNER
@@ -285,18 +296,36 @@ export class AuthController {
                 });
             }
 
-            // 5. Gerar JWT
+            // 4️⃣ Gera JWT
             const token = jwt.sign(
-                { id: user.id, discordId: user.discordId, role: user.role, username: user.username, avatar: user.avatar },
+                {
+                    id: user.id,
+                    discordId: user.discordId,
+                    role: user.role,
+                    username: user.username,
+                    avatar: user.avatar,
+                },
                 RESOLVED_SECRET,
                 { expiresIn: '7d' }
             );
 
-            return res.json({ token, user, organization: org });
+            const isProduction = process.env.NODE_ENV === 'production';
 
+            // 5️⃣ Seta cookie HTTP-Only para a raiz do servidor para o domínio correto
+            res.cookie('orbitos_token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',          // produção com HTTPS
+                sameSite: 'none',      // origin-agnostic (para suportar subdominios em localhost e prod via origin listados em CORS)
+                ...(isProduction ? { domain: '.orbitup.io' } : {}), // Apenas aplica restrição de domain se a env de web URL apontar na produção.
+                path: '/',
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
+
+            // 6️⃣ Redireciona pro dashboard
+            return res.redirect(`${process.env.WEB_URL || 'http://localhost:3000'}/dashboard`);
         } catch (error) {
             console.error('[AUTH_CALLBACK_DISCORD_ERROR]', error);
-            return res.status(500).json({ error: 'Falha interna durante callback do Discord' });
+            return res.redirect(`${process.env.WEB_URL || 'http://localhost:3000'}/login?error=auth_failed`);
         }
     }
 
