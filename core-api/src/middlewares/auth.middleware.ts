@@ -64,11 +64,14 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
 
     (req as any).user = decoded;
     return next();
-  } catch (err) {
-    console.warn('[AUTH] Token inválido ou expirado', {
+  } catch (err: any) {
+    console.warn('[AUTH] 🚨 Token inválido ou expirado. Detalhes reais:', {
       method: req.method,
       path: req.path,
-      error: (err as Error).message,
+      errorName: err.name,
+      errorMessage: err.message,
+      tokenPreview: token.substring(0, 15) + '...',
+      secretLength: JWT_SECRET.length,
     });
     res.status(401).json({ error: 'Sessão inválida, faça login novamente.' });
     return;
