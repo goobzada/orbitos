@@ -78,12 +78,51 @@ platformRoutes.patch('/organizations/:id', async (req: Request, res: Response) =
 platformRoutes.delete('/organizations/:id', async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
-        await prisma.organization.delete({ where: { id } });
-        res.json({ message: 'Organização removida com sucesso.' });
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao remover organização.' });
+
+        const org = await prisma.organization.findUnique({ where: { id } });
+        if (!org) return res.status(404).json({ error: 'Organização não encontrada.' });
+
+        // Cascata manual — deleta todos os relacionamentos antes da org
+        await prisma.$transaction(async (tx) => {
+            // 1. Module configs and automation logs
+            const orgServers = await tx.server.findMany({ where: { organizationId: id }, select: { id: true } });
+            const serverIds = orgServers.map(s => s.id);
+
+            // 2. Automation logs
+            await tx.automationLog.deleteMany({ where: { organizationId: id } });
+
+            // 3. Automations
+            await tx.automation.deleteMany({ where: { organizationId: id } });
+
+            // 4. Module configs (se existir)
+            try { await (tx as any).moduleConfig.deleteMany({ where: { organizationId: id } }); } catch { }
+
+            // 5. Tickets do servidor
+            if (serverIds.length > 0) {
+                await tx.ticket.deleteMany({ where: { serverId: { in: serverIds } } });
+                await tx.staffMember.deleteMany({ where: { serverId: { in: serverIds } } });
+            }
+
+            // 6. Membros da org
+            await tx.organizationMember.deleteMany({ where: { organizationId: id } });
+
+            // 7. Pagamentos
+            await tx.payment.deleteMany({ where: { organizationId: id } });
+
+            // 8. Servers
+            await tx.server.deleteMany({ where: { organizationId: id } });
+
+            // 9. Por fim, a organização
+            await tx.organization.delete({ where: { id } });
+        });
+
+        res.json({ message: 'Organização e todos os dados relacionados foram removidos permanentemente.' });
+    } catch (error: any) {
+        console.error('[DELETE ORG]', error);
+        res.status(500).json({ error: 'Erro ao remover organização.', detail: error?.message });
     }
 });
+
 
 // GET /platform/automations
 platformRoutes.get('/automations', async (req: Request, res: Response) => {
