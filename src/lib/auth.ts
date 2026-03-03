@@ -32,8 +32,8 @@ export const setToken = (token: string): void => {
     if (typeof window === 'undefined') return;
 
     localStorage.setItem(TOKEN_KEY, token);
-    // Cookie com 24h para o middleware Next.js ler no SSR
-    document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=86400; SameSite=Lax`;
+    // Cookie com 7 dias para o middleware Next.js ler no SSR (igual ao JWT)
+    document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=604800; SameSite=Lax`;
 };
 
 // ─── Limpeza de Storage ──────────────────────────────────────────────────────
