@@ -196,11 +196,11 @@ export class AuthController {
     // ─── NOVO: Rota de Callback Real do Discord ─────────────────────
     async discordCallback(req: Request, res: Response) {
         try {
-            const code = req.query.code as string | undefined;
+            const { code } = req.body;
 
             if (!code) {
                 console.error('[AUTH_CALLBACK_DISCORD_ERROR] Código ausente');
-                return res.redirect(`${process.env.WEB_URL || 'https://orbitup.io'}/login?error=auth_failed`);
+                return res.status(400).json({ error: 'Código de autorização é obrigatório' });
             }
 
             // 1️⃣ Troca "code" por access_token no Discord
@@ -321,11 +321,11 @@ export class AuthController {
                 maxAge: 7 * 24 * 60 * 60 * 1000,
             });
 
-            // 6️⃣ Redireciona pro dashboard
-            return res.redirect(`${process.env.WEB_URL || 'http://localhost:3000'}/dashboard`);
+            // 6️⃣ Retorna JSON pro frontend concluir o login nativamente e salvar no localStorage se precisar
+            return res.json({ token, user, organization: org });
         } catch (error) {
             console.error('[AUTH_CALLBACK_DISCORD_ERROR]', error);
-            return res.redirect(`${process.env.WEB_URL || 'http://localhost:3000'}/login?error=auth_failed`);
+            return res.status(500).json({ error: 'Falha interna durante callback do Discord' });
         }
     }
 
