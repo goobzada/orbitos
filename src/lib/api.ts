@@ -91,7 +91,19 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        // ── 4. Sessão inválida: 401 ou usuário deletado (404 em /auth/me) ─────
+        // ── 4. Página de callback OAuth → NÃO derrubar sessão ────────────────
+        // Race condition: o Next.js layout monta e faz requisições antes do
+        // token ser salvo no localStorage/cookie durante o callback do Discord.
+        // Ignorar todos os erros 401 enquanto estamos no /login/callback.
+        const isCallbackPage = typeof window !== 'undefined'
+            && window.location.pathname.startsWith('/login/callback');
+
+        if (isCallbackPage) {
+            console.warn('[API] Erro 401 ignorado — estamos no callback OAuth (race condition prevenida).', { url, status });
+            return Promise.reject(error);
+        }
+
+        // ── 5. Sessão inválida: 401 ou usuário deletado (404 em /auth/me) ─────
         const isAuthMe404 = status === 404 && url.includes('/auth/me');
         const isUnauthorized = status === 401;
 

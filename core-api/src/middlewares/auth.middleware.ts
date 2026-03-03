@@ -2,21 +2,15 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
+const JWT_SECRET =
+  process.env.JWT_SECRET ||
+  (process.env.NODE_ENV === 'production'
+    ? ''
+    : 'dev-jwt-secret-do-not-use-in-production');
+
 // ─── Auth Middleware ──────────────────────────────────────────────────────────
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-  console.log(`[AUTH-TRACE] 🚨 Entrou no authMiddleware para a rota: ${req.method} ${req.path}`);
-  console.log(`[AUTH-TRACE] Headers recebidos:`, Object.keys(req.headers));
-  console.log(`[AUTH-TRACE] Auth header:`, req.headers.authorization ? 'Sim (Bearer)' : 'NÃO');
-
-  // Lê JWT_SECRET em runtime (não como constante global) para garantir que
-  // o dotenv.config() já rodou quando o valor é lido
-  const JWT_SECRET =
-    process.env.JWT_SECRET ||
-    (process.env.NODE_ENV === 'production'
-      ? ''
-      : 'dev-jwt-secret-do-not-use-in-production');
-
   const authHeader = req.headers.authorization;
   let token: string | undefined;
 
@@ -39,15 +33,12 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
 
   // 4. Nenhum token encontrado → 401
   if (!token) {
+    // Silencia em produção para não poluir logs
     if (process.env.NODE_ENV !== 'production') {
       console.warn('[AUTH] Requisição sem token (header nem cookie)', {
         method: req.method,
         path: req.path,
         ip: req.ip,
-      });
-    } else {
-      console.warn('[AUTH] Requisição sem Authorization header', {
-        method: req.method, path: req.path, ip: req.ip,
       });
     }
     res.status(401).json({ error: 'Token não fornecido' });
@@ -68,21 +59,12 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
 
     (req as any).user = decoded;
     return next();
-  } catch (err: any) {
-    console.warn('[AUTH] 🚨 Token inválido ou expirado. Detalhes reais:', {
+  } catch (err) {
+    console.warn('[AUTH] Token inválido ou expirado', {
       method: req.method,
       path: req.path,
-      errorName: err.name,
-      errorMessage: err.message,
-      tokenPreview: token.substring(0, 15) + '...',
-      secretLength: JWT_SECRET.length,
+      error: (err as Error).message,
     });
-
-    // 🧹 Destruição Total de Cookies corrompidos (HTTP-Only)
-    const isProd = process.env.NODE_ENV === 'production';
-    res.clearCookie('token', { domain: isProd ? '.orbitup.io' : undefined, path: '/' });
-    res.clearCookie('orbitos_token', { domain: isProd ? '.orbitup.io' : undefined, path: '/' });
-
     res.status(401).json({ error: 'Sessão inválida, faça login novamente.' });
     return;
   }

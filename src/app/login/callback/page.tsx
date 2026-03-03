@@ -1,10 +1,6 @@
 'use client';
 
-// Garante que esta página NUNCA seja pre-renderizada estaticamente.
-// Sem isso, o Next.js renderiza sem query params → code=null → redirect para /login
-export const dynamic = 'force-dynamic';
-
-import { useEffect, useRef, Suspense, useState } from 'react';
+import { useEffect, Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { setToken } from '@/lib/auth';
@@ -17,18 +13,10 @@ function CallbackContent() {
     const errorParam = searchParams.get('error');
 
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    // 🔒 Garante que a troca do code acontece UMA única vez.
-    // O router muda referência no Next.js causando re-execução do useEffect
-    // com o mesmo code → Discord rejeita com invalid_grant (código single-use).
-    const exchanged = useRef(false);
 
     useEffect(() => {
-        // Já trocou — evita double-call
-        if (exchanged.current) return;
-
         // Discord retornou erro direto na URL
         if (errorParam) {
-            exchanged.current = true;
             console.error('[CALLBACK] Discord retornou erro:', errorParam);
             setErrorMsg(`Discord recusou o acesso: ${errorParam}`);
             setTimeout(() => router.push('/login?error=discord_denied'), 3000);
@@ -39,9 +27,6 @@ function CallbackContent() {
             router.push('/login');
             return;
         }
-
-        // Marca como trocado ANTES de chamar a API para evitar race condition
-        exchanged.current = true;
 
         const handleCallback = async () => {
             try {
@@ -56,9 +41,22 @@ function CallbackContent() {
                 });
 
                 if (data.token) {
-                    setToken(data.token);
-                    console.log('[CALLBACK] ✅ Token salvo. Redirecionando para /dashboard...');
-                    window.location.replace('/dashboard');
+                    // 1. Salva em localStorage
+                    localStorage.setItem('token', data.token);
+
+                    // 2. Seta cookie com 7 dias (mesmo TTL do JWT) — obrigatório para o middleware Next.js ler no SSR
+                    const maxAge = 7 * 24 * 60 * 60; // 7 dias em segundos
+                    document.cookie = `token=${encodeURIComponent(data.token)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+
+                    // 3. Verifica que o cookie foi salvo antes de redirecionar
+                    const cookieCheck = document.cookie.includes('token=');
+                    const localCheck = !!localStorage.getItem('token');
+                    console.log('[CALLBACK] ✅ Token salvo:', { cookieOk: cookieCheck, localStorageOk: localCheck });
+
+                    // 4. Pequeno delay para garantir que o browser commitou o cookie antes da navegação
+                    setTimeout(() => {
+                        window.location.replace('/dashboard');
+                    }, 100);
                 } else {
                     console.error('[CALLBACK] ❌ API respondeu sem token:', data);
                     setErrorMsg('Servidor não retornou o token de autenticação.');
@@ -66,16 +64,30 @@ function CallbackContent() {
                 }
             } catch (error: any) {
                 const status = error?.response?.status;
-                const detail = error?.response?.data?.error || error?.message || 'Erro desconhecido';
+                const discordError = error?.response?.data?.details?.error;
+                const apiError = error?.response?.data?.error;
+                const detail = discordError || apiError || error?.message || 'Erro desconhecido';
 
-                console.error('[CALLBACK] ❌ Falha na troca do code:', { status, detail });
-                setErrorMsg(`Falha na autenticação (${status || 'rede'}): ${detail}`);
-                setTimeout(() => router.push(`/login?error=auth_failed&detail=${encodeURIComponent(detail)}`), 4000);
+                console.error('[CALLBACK] ❌ Falha na troca do code:', { status, detail, discordError, apiError });
+
+                // Mensagem amigável para erros conhecidos do Discord
+                let friendlyMsg = `Falha na autenticação (${status || 'rede'}): ${detail}`;
+                if (discordError === 'invalid_client') {
+                    friendlyMsg = '❌ Discord recusou as credenciais da aplicação (invalid_client). O Client Secret no servidor está desatualizado. Contate o administrador.';
+                } else if (discordError === 'invalid_grant') {
+                    friendlyMsg = '❌ Código de autorização expirado ou já usado. Tente fazer login novamente.';
+                } else if (discordError === 'redirect_uri_mismatch') {
+                    friendlyMsg = '❌ Redirect URI não cadastrada no Discord Developer Portal.';
+                }
+
+                setErrorMsg(friendlyMsg);
+                // Não redireciona automaticamente para não esconder o erro do usuário
+                setTimeout(() => router.push(`/login?error=auth_failed&detail=${encodeURIComponent(detail)}`), 6000);
             }
         };
 
         handleCallback();
-    }, [code, errorParam]); // ← router removido das deps — não deve re-disparar a troca
+    }, [code, errorParam, router]);
 
     if (errorMsg) {
         return (

@@ -1,19 +1,38 @@
+
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# ─── Node ────────────────────────────────────────────────────────────────────
 node_modules
 core-api/node_modules
 bot-engine/node_modules
+orbit-agent/node_modules
 
+# ─── Build ───────────────────────────────────────────────────────────────────
 dist
 .next
 tmp
 
+# ─── Environment (segredos — NUNCA commitar) ──────────────────────────────────
 .env
-.env.*
+.env.local
+.env.development
+.env.production
+.env.test
+core-api/.env
+bot-engine/.env
+orbit-agent/.env
+# Permite arquivos .example (templates sem segredos)
+!*.env.example
+!.env.local.example
+
+# ─── Logs e arquivos temporários ──────────────────────────────────────────────
 logs
 *.log
 frontend.log
 frontend_err.log
+login-dump.txt
+{
 
+# ─── Misc ────────────────────────────────────────────────────────────────────
 tsconfig.tsbuildinfo
 .DS_Store

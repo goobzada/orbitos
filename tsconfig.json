@@ -37,9 +37,6 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules",
-    "core-api",
-    "bot-engine",
-    "orbit-agent"
+    "node_modules"
   ]
 }

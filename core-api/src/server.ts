@@ -108,6 +108,47 @@ app.get('/health', (req, res) => {
   });
 });
 
+// 🔧 DEV: Diagnóstico de credenciais Discord OAuth2
+app.get('/auth/discord/check-credentials', async (req, res) => {
+  const clientId = process.env.DISCORD_CLIENT_ID || '';
+  const clientSecret = process.env.DISCORD_CLIENT_SECRET || '';
+  const redirectUri = process.env.DISCORD_REDIRECT_URI || '';
+
+  const configured = {
+    DISCORD_CLIENT_ID: clientId ? `${clientId.slice(0, 6)}...` : '❌ AUSENTE',
+    DISCORD_CLIENT_SECRET: clientSecret ? `${clientSecret.slice(0, 4)}...${clientSecret.slice(-4)}` : '❌ AUSENTE',
+    DISCORD_REDIRECT_URI: redirectUri || '❌ AUSENTE',
+  };
+
+  try {
+    // Testa as credenciais via client_credentials grant (não precisa de code real)
+    const axios = (await import('axios')).default;
+    const testResp = await axios.post(
+      'https://discord.com/api/oauth2/token',
+      new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: 'client_credentials',
+        scope: 'identify',
+      }).toString(),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+    return res.json({
+      status: '✅ Credenciais válidas',
+      configured,
+      discord_response: { ok: true, scope: testResp.data.scope },
+    });
+  } catch (err: any) {
+    const discordErr = err?.response?.data;
+    return res.json({
+      status: '❌ Credenciais inválidas',
+      configured,
+      discord_error: discordErr || err.message,
+      fix: 'Acesse discord.com/developers/applications → OAuth2 → Reset Secret → atualize core-api/.env → reinicie a API',
+    });
+  }
+});
+
 // 🛰️ Agent Status — Lista os Orbit Agents conectados
 app.get('/agents/status', (req, res) => {
   const agents = communityWSServer.getConnectedAgents();
