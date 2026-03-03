@@ -314,8 +314,8 @@ export class AuthController {
             // 5️⃣ Seta cookie HTTP-Only para a raiz do servidor para o domínio correto
             res.cookie('orbitos_token', token, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',          // produção com HTTPS
-                sameSite: 'none',      // origin-agnostic (para suportar subdominios em localhost e prod via origin listados em CORS)
+                secure: isProduction,          // produção com HTTPS
+                sameSite: isProduction ? 'none' : 'lax', // localhost exige Lax/Strict se não houver HTTPS (Secure)
                 ...(isProduction ? { domain: '.orbitup.io' } : {}), // Apenas aplica restrição de domain se a env de web URL apontar na produção.
                 path: '/',
                 maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -323,9 +323,9 @@ export class AuthController {
 
             // 6️⃣ Retorna JSON pro frontend concluir o login nativamente e salvar no localStorage se precisar
             return res.json({ token, user, organization: org });
-        } catch (error) {
-            console.error('[AUTH_CALLBACK_DISCORD_ERROR]', error);
-            return res.status(500).json({ error: 'Falha interna durante callback do Discord' });
+        } catch (error: any) {
+            console.error('[AUTH_CALLBACK_DISCORD_ERROR]', error.response?.data || error.message || error);
+            return res.status(500).json({ error: 'Falha interna durante callback do Discord', details: error.response?.data });
         }
     }
 
