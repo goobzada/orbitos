@@ -77,6 +77,12 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
       tokenPreview: token.substring(0, 15) + '...',
       secretLength: JWT_SECRET.length,
     });
+
+    // 🧹 Destruição Total de Cookies corrompidos (HTTP-Only)
+    const isProd = process.env.NODE_ENV === 'production';
+    res.clearCookie('token', { domain: isProd ? '.orbitup.io' : undefined, path: '/' });
+    res.clearCookie('orbitos_token', { domain: isProd ? '.orbitup.io' : undefined, path: '/' });
+
     res.status(401).json({ error: 'Sessão inválida, faça login novamente.' });
     return;
   }
