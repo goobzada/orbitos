@@ -1,5 +1,9 @@
 'use client';
 
+// Garante que esta página NUNCA seja pre-renderizada estaticamente.
+// Sem isso, o Next.js renderiza sem query params → code=null → redirect para /login
+export const dynamic = 'force-dynamic';
+
 import { useEffect, Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
