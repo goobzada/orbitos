@@ -5,6 +5,10 @@ import jwt from 'jsonwebtoken';
 // ─── Auth Middleware ──────────────────────────────────────────────────────────
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+  console.log(`[AUTH-TRACE] 🚨 Entrou no authMiddleware para a rota: ${req.method} ${req.path}`);
+  console.log(`[AUTH-TRACE] Headers recebidos:`, Object.keys(req.headers));
+  console.log(`[AUTH-TRACE] Auth header:`, req.headers.authorization ? 'Sim (Bearer)' : 'NÃO');
+
   // Lê JWT_SECRET em runtime (não como constante global) para garantir que
   // o dotenv.config() já rodou quando o valor é lido
   const JWT_SECRET =
