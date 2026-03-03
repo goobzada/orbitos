@@ -243,9 +243,15 @@ export default function AutomationsPage() {
                             </p>
                         </div>
                     </div>
-                    <Button className="bg-amber-600 hover:bg-amber-700 text-white gap-2 h-9 px-6 font-bold shadow-lg shadow-amber-900/20 shrink-0">
-                        Convidar OrbitOS
-                    </Button>
+                    <a
+                        href={`https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1343493844221563011'}&permissions=8&scope=bot+applications.commands`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <Button className="bg-amber-600 hover:bg-amber-700 text-white gap-2 h-9 px-6 font-bold shadow-lg shadow-amber-900/20 shrink-0">
+                            Convidar OrbitOS
+                        </Button>
+                    </a>
                 </div>
             )}
 
