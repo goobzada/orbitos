@@ -1,15 +1,17 @@
 'use client';
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Bot, ArrowRight, Loader2 } from "lucide-react";
+import { Bot, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { toast } from "sonner";
 
-export default function LoginPage() {
-    const router = useRouter();
+function LoginPageContent() {
+    const searchParams = useSearchParams();
+    const authError = searchParams.get('error');
+    const authDetail = searchParams.get('detail');
     const [loading, setLoading] = useState<string | null>(null);
 
     // Mock OAuth Request para permitir QA (Bypass no Front/Auth.js)
@@ -95,6 +97,21 @@ export default function LoginPage() {
                             Conecte sua conta do Discord para continuar.
                         </p>
                     </div>
+
+                    {/* Banner de erro vindo do callback */}
+                    {authError && (
+                        <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
+                            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                            <div>
+                                <p className="font-semibold">Falha na autenticação</p>
+                                <p className="text-xs mt-0.5 text-red-400/80">
+                                    {authDetail || (authError === 'discord_denied' ? 'Você cancelou o acesso no Discord.' :
+                                        authError === 'no_token' ? 'O servidor não retornou o token.' :
+                                            'Tente novamente. Se persistir, verifique as configurações do Discord App.')}
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="flex flex-col gap-4">
                         <Button
@@ -196,5 +213,13 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={null}>
+            <LoginPageContent />
+        </Suspense>
     );
 }

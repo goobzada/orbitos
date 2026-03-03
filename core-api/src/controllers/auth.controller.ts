@@ -312,17 +312,21 @@ export class AuthController {
 
             const isProduction = process.env.NODE_ENV === 'production';
 
-            // 5️⃣ Seta cookie HTTP-Only para a raiz do servidor para o domínio correto
-            res.cookie('orbitos_token', token, {
+            // 5️⃣ Seta cookie HTTP-Only com o nome 'token' (alinhado com o frontend)
+            // Em produção: sameSite: 'none' + secure: true obrigatório para cross-subdomain
+            // (orbitup.io → api.orbitup.io)
+            res.cookie('token', token, {
                 httpOnly: true,
-                secure: isProduction,          // produção com HTTPS
-                sameSite: isProduction ? 'none' : 'lax', // localhost exige Lax/Strict se não houver HTTPS (Secure)
-                ...(isProduction ? { domain: '.orbitup.io' } : {}), // Apenas aplica restrição de domain se a env de web URL apontar na produção.
+                secure: isProduction,
+                sameSite: isProduction ? 'none' : 'lax',
+                ...(isProduction ? { domain: '.orbitup.io' } : {}),
                 path: '/',
-                maxAge: 7 * 24 * 60 * 60 * 1000,
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
             });
 
-            // 6️⃣ Retorna JSON pro frontend concluir o login nativamente e salvar no localStorage se precisar
+            console.log(`[AUTH] ✅ Discord callback OK — user: ${user.username} (${user.id})`);
+
+            // 6️⃣ Retorna JSON pro frontend também salvar em localStorage como fallback
             return res.json({ token, user, organization: org });
         } catch (error: any) {
             console.error('[AUTH_CALLBACK_DISCORD_ERROR]', error.response?.data || error.message || error);
