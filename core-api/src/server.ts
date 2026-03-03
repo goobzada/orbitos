@@ -49,8 +49,9 @@ const ALLOWED_ORIGINS = (
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Permite requisições sem origin (ex: curl, Postman, server-to-server)
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    // Permite requisições locais ou explícitas e sem origin
+    const isLocalhost = origin?.startsWith('http://localhost') || origin?.startsWith('http://127.0.0.1');
+    if (!origin || ALLOWED_ORIGINS.includes(origin) || isLocalhost) {
       callback(null, true);
     } else {
       console.warn(`[CORS] Origem bloqueada: ${origin}`);

@@ -216,7 +216,7 @@ export class AuthController {
                     grant_type: 'authorization_code',
                     code,
                     redirect_uri: DISCORD_REDIRECT_URI,
-                }),
+                }).toString(),
                 {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
@@ -233,6 +233,7 @@ export class AuthController {
             const userResponse = await axios.get('https://discord.com/api/users/@me', {
                 headers: {
                     Authorization: `${token_type} ${access_token}`,
+                    'Accept-Encoding': 'application/json'
                 },
             });
 
