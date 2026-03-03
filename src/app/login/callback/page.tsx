@@ -4,7 +4,7 @@
 // Sem isso, o Next.js renderiza sem query params → code=null → redirect para /login
 export const dynamic = 'force-dynamic';
 
-import { useEffect, Suspense, useState } from 'react';
+import { useEffect, useRef, Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { setToken } from '@/lib/auth';
@@ -17,10 +17,18 @@ function CallbackContent() {
     const errorParam = searchParams.get('error');
 
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    // 🔒 Garante que a troca do code acontece UMA única vez.
+    // O router muda referência no Next.js causando re-execução do useEffect
+    // com o mesmo code → Discord rejeita com invalid_grant (código single-use).
+    const exchanged = useRef(false);
 
     useEffect(() => {
+        // Já trocou — evita double-call
+        if (exchanged.current) return;
+
         // Discord retornou erro direto na URL
         if (errorParam) {
+            exchanged.current = true;
             console.error('[CALLBACK] Discord retornou erro:', errorParam);
             setErrorMsg(`Discord recusou o acesso: ${errorParam}`);
             setTimeout(() => router.push('/login?error=discord_denied'), 3000);
@@ -31,6 +39,9 @@ function CallbackContent() {
             router.push('/login');
             return;
         }
+
+        // Marca como trocado ANTES de chamar a API para evitar race condition
+        exchanged.current = true;
 
         const handleCallback = async () => {
             try {
@@ -45,10 +56,8 @@ function CallbackContent() {
                 });
 
                 if (data.token) {
-                    // Salva o token no localStorage + cookie
                     setToken(data.token);
                     console.log('[CALLBACK] ✅ Token salvo. Redirecionando para /dashboard...');
-                    // Força navegação hard para garantir que todos os providers recarregam
                     window.location.replace('/dashboard');
                 } else {
                     console.error('[CALLBACK] ❌ API respondeu sem token:', data);
@@ -66,7 +75,7 @@ function CallbackContent() {
         };
 
         handleCallback();
-    }, [code, errorParam, router]);
+    }, [code, errorParam]); // ← router removido das deps — não deve re-disparar a troca
 
     if (errorMsg) {
         return (
