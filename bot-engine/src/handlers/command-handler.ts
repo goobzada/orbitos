@@ -14,7 +14,8 @@ export function loadCommands(client: Client) {
     client.commands = new Collection();
 
     const commandsPath = path.join(__dirname, '..', 'commands');
-    const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.ts'));
+    const ext = __filename.endsWith('.ts') ? '.ts' : '.js'; // dev=.ts, prod=.js
+    const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(ext));
 
     let count = 0;
     for (const file of commandFiles) {

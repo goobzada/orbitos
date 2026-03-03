@@ -6,7 +6,8 @@ import { log } from '../utils/logger';
 // Carrega todos os eventos dinamicamente da pasta /events
 export function loadEvents(client: Client) {
     const eventsPath = path.join(__dirname, '..', 'events');
-    const eventFiles = fs.readdirSync(eventsPath).filter(f => f.endsWith('.ts'));
+    const ext = __filename.endsWith('.ts') ? '.ts' : '.js'; // dev=.ts, prod=.js
+    const eventFiles = fs.readdirSync(eventsPath).filter(f => f.endsWith(ext));
 
     let count = 0;
     for (const file of eventFiles) {

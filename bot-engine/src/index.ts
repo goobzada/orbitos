@@ -58,7 +58,7 @@ const sendHeartbeat = async () => {
 };
 
 log.info('Conectando ao Discord...');
-client.on('ready', () => {
+client.on('clientReady', () => {
     sendHeartbeat();
 });
 
