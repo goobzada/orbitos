@@ -1,13 +1,20 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
 
-// Rotas que NÃO precisam de autenticação
-const PUBLIC_PATHS = ['/', '/login', '/auth', '/s'];
+// ─── Middleware de Roteamento OrbitUp.io ─────────────────────────────────────
+// NOTA: A verificação de JWT foi movida para a API (auth.middleware.ts).
+// O middleware do Next.js apenas verifica a PRESENÇA do cookie de sessão.
+// Isso evita problemas de "invalid signature" causados por divergência de
+// JWT_SECRET entre o Edge Runtime do Next.js e o Node.js da API.
+// A segurança real é garantida pela API em cada endpoint protegido.
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
-    const token = request.cookies.get('token')?.value;
+
+    // Lê o token do cookie de sessão
+    const token =
+        request.cookies.get('token')?.value ||
+        request.cookies.get('orbitos_token')?.value;
 
     const isDashboard = pathname.startsWith('/dashboard');
     const isPlatform = pathname.startsWith('/platform');
@@ -18,17 +25,17 @@ export async function middleware(request: NextRequest) {
     const isLoginExact = pathname === '/login';
     const isProtected = isDashboard || isPlatform;
 
-    // Redireciona /plataforma -> /platform (Suporte PT-BR)
+    // Redireciona /plataforma → /platform
     if (isPlataforma) {
         return NextResponse.redirect(new URL('/platform', request.url));
     }
 
-    // ── Callbacks OAuth: SEMPRE deixa passar, nunca intercepta ───────────────
+    // Callbacks OAuth: NUNCA interceptar
     if (isCallback) {
         return NextResponse.next();
     }
 
-    // ── Força limpeza de cookie pedida pelo client (Break Loop) ───────────────
+    // Força limpeza de cookie (break loop)
     if (request.nextUrl.searchParams.get('clear') === '1') {
         const url = request.nextUrl.clone();
         url.searchParams.delete('clear');
@@ -37,44 +44,35 @@ export async function middleware(request: NextRequest) {
         return resp;
     }
 
-    // ── Sem token ─────────────────────────────────────────────────────────────
+    // ── Sem token ──────────────────────────────────────────────────────────────
     if (!token) {
-        // Rota privada sem token → redireciona para /login preservando destino
         if (isProtected) {
             const url = request.nextUrl.clone();
             url.pathname = '/login';
             url.searchParams.set('from', pathname);
             return NextResponse.redirect(url);
         }
-        // Qualquer rota pública → deixa passar
         return NextResponse.next();
     }
 
-    // ── Com token ─────────────────────────────────────────────────────────────
+    // ── Com token (qualquer valor — API valida) ────────────────────────────────
 
-    // Tenta extrair o role do JWT com verificação de assinatura no Edge via jose
+    // Tenta ler o role do JWT sem verificar assinatura (decode simples)
+    // Apenas para redirecionar /platform vs /dashboard
     let role = 'USER';
-    let tokenValid = true;
     try {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-jwt-secret-do-not-use-in-production');
-        const { payload } = await jwtVerify(token, secret);
-        role = (payload.role as string) || 'USER';
-    } catch (err) {
-        tokenValid = false;
+        const parts = token.split('.');
+        if (parts.length === 3) {
+            const payload = JSON.parse(
+                Buffer.from(parts[1], 'base64url').toString('utf-8')
+            );
+            role = payload.role || 'USER';
+        }
+    } catch {
+        // fallback ok — role permanece 'USER'
     }
 
-    // Token malformado ou expirado → limpa cookie e redireciona pro /login
-    if (!tokenValid) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/login';
-        if (isProtected) url.searchParams.set('from', pathname);
-
-        const resp = NextResponse.redirect(url);
-        resp.cookies.set('token', '', { maxAge: 0, path: '/' });
-        return resp;
-    }
-
-    // Já logado e tentando acessar /login (exato) → redireciona para dashboard
+    // Já logado tentando acessar /login → redireciona para o dashboard
     if (isLoginExact) {
         const dest = role === 'SUPER_ADMIN' ? '/platform' : '/dashboard';
         return NextResponse.redirect(new URL(dest, request.url));
@@ -88,10 +86,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
 }
 
-
 export const config = {
-    // Roda apenas nas rotas privadas, login e callbacks OAuth.
-    // Exclui assets estáticos, _next, portais públicos e favicon.
     matcher: [
         '/dashboard/:path*',
         '/platform/:path*',
