@@ -3,8 +3,11 @@ import dotenv from 'dotenv';
 import { exec } from 'child_process';
 import https from 'https';
 import http from 'http';
+import path from 'path';
 
-dotenv.config();
+// Garante que o .env é lido do diretório do próprio arquivo, não do cwd do processo
+// Isso resolve o "injecting env (0)" quando o PM2 sobe com cwd diferente
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 // ═══════════════════════════════════════════════════════════════
 //  🛰️  ORBITOS AGENT SUPERVISOR V3
