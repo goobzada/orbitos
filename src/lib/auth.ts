@@ -45,7 +45,7 @@ export const clearTokenStorage = (): void => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(ORG_KEY);
     localStorage.removeItem('orbitos_token');
-    localStorage.removeItem('orbitos_current_org'); // Versão legada
+    localStorage.removeItem('orbitos_current_org');
     localStorage.removeItem('orbitos_original_token');
     localStorage.removeItem('orbitos_active_org');
 
@@ -55,7 +55,7 @@ export const clearTokenStorage = (): void => {
     sessionStorage.removeItem('orbitos_token');
     sessionStorage.removeItem(ORG_KEY);
 
-    // Apaga cookie em todas as variações possíveis
+    // Apaga cookie client-side (fallback)
     const cookiesToClear = [TOKEN_KEY, 'orbitos_token', ORG_KEY, 'orbitos_current_org'];
     for (const name of cookiesToClear) {
         document.cookie = `${name}=; Max-Age=0; path=/; SameSite=Lax`;
@@ -68,10 +68,10 @@ export const exitImpersonation = (): void => {
     if (typeof window === 'undefined') return;
     const originalToken = localStorage.getItem('orbitos_original_token');
     if (originalToken) {
-        localStorage.setItem(TOKEN_KEY, originalToken);
+        setToken(originalToken); // atualiza localStorage + cookie
         localStorage.removeItem('orbitos_original_token');
         localStorage.removeItem('orbitos_active_org');
-        window.location.replace('/platform/support');
+        window.location.replace('/platform');
     }
 };
 
@@ -87,17 +87,22 @@ export const logout = (opts?: { redirect?: boolean }): void => {
     try {
         clearTokenStorage();
 
+        // Apaga cookie server-side via API (100% confiável em produção)
+        fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
+            .finally(() => {
+                if (opts?.redirect !== false && typeof window !== 'undefined') {
+                    if (window.location.pathname !== '/login') {
+                        window.location.replace('/login?clear=1');
+                    }
+                }
+                setTimeout(() => { isLoggingOut = false; }, 1000);
+            });
+    } catch {
+        // Em caso de erro na fetch, redireciona mesmo assim
         if (opts?.redirect !== false && typeof window !== 'undefined') {
-            // Só redireciona se não estiver já na página de login
-            if (window.location.pathname !== '/login') {
-                window.location.replace('/login?clear=1');
-            }
+            window.location.replace('/login?clear=1');
         }
-    } finally {
-        // Libera o guard após 1s para evitar race conditions
-        setTimeout(() => {
-            isLoggingOut = false;
-        }, 1000);
+        setTimeout(() => { isLoggingOut = false; }, 1000);
     }
 };
 

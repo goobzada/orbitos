@@ -22,12 +22,14 @@ import {
     CreditCard,
     Zap,
     Cpu,
-    Flag
+    Flag,
+    LayoutGrid,
 } from "lucide-react";
 import { logout } from "@/lib/auth";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+
 
 const items = [
     { title: "Overview Global", url: "/platform", icon: LayoutDashboard },
@@ -44,6 +46,16 @@ const secondaryItems = [
 
 export function PlatformSidebar() {
     const pathname = usePathname();
+    const router = useRouter();
+
+    const switchToDashboard = () => {
+        // Salva token original para poder voltar ao admin
+        const currentToken = localStorage.getItem('token');
+        if (currentToken && !localStorage.getItem('orbitos_original_token')) {
+            localStorage.setItem('orbitos_original_token', currentToken);
+        }
+        router.push('/dashboard');
+    };
 
     return (
         <Sidebar collapsible="icon">
@@ -128,6 +140,16 @@ export function PlatformSidebar() {
 
             <SidebarFooter className="border-t border-border">
                 <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            className="text-sky-400/80 hover:text-sky-300 hover:bg-sky-500/10 transition-all cursor-pointer"
+                            tooltip="Ver como cliente"
+                            onClick={switchToDashboard}
+                        >
+                            <LayoutGrid />
+                            <span>Minha Dashboard</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton
                             className="text-rose-500/80 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
