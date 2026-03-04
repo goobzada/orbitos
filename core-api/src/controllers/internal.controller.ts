@@ -70,6 +70,10 @@ export class InternalController {
             }
         });
 
+        // 🔔 Avisar Dashboard em tempo real
+        const { communityWSServer } = await import('../services/ws-server');
+        communityWSServer.broadcastToDashboard(server.organizationId, 'TICKET_CREATED', ticket);
+
         return res.status(201).json(ticket);
     }
 
@@ -80,8 +84,14 @@ export class InternalController {
         try {
             const ticket = await prisma.ticket.update({
                 where: { id },
-                data: { status: TicketStatus.CLOSED, closedAt: new Date() }
+                data: { status: TicketStatus.CLOSED, closedAt: new Date() },
+                include: { server: true }
             });
+
+            // 🔔 Avisar Dashboard em tempo real
+            const { communityWSServer } = await import('../services/ws-server');
+            communityWSServer.broadcastToDashboard(ticket.organizationId, 'TICKET_UPDATED', ticket);
+
             return res.json({ message: 'Ticket fechado!', ticket });
         } catch (error: any) {
             console.error(`[INTERNAL CLOSE] ❌ Erro ao fechar ticket ${id}: ${error.message}`);

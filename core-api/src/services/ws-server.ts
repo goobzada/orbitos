@@ -3,8 +3,10 @@ import { IncomingMessage } from 'http';
 import { Server } from 'http';
 import { URL } from 'url';
 import { EventEmitter } from 'events';
+import jwt from 'jsonwebtoken';
 
 const BOT_WS_TOKEN = process.env.BOT_INTERNAL_TOKEN;
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-do-not-use-in-production';
 
 // 🔒 Validação na inicialização
 if (!BOT_WS_TOKEN || BOT_WS_TOKEN.trim() === '') {
@@ -28,8 +30,10 @@ const RESOLVED_TOKEN = BOT_WS_TOKEN || (process.env.NODE_ENV === 'production' ? 
 
 interface ConnectedClient {
     ws: WebSocket;
-    type: 'BOT' | 'AGENT';
+    type: 'BOT' | 'AGENT' | 'DASHBOARD';
     serverId?: string; // Somente para AGENT
+    orgId?: string;    // Somente para DASHBOARD
+    userId?: string;   // Somente para DASHBOARD
     connectedAt: number;
     version?: string;
     isAlive: boolean;
@@ -58,12 +62,34 @@ export class CommunityWSServer extends EventEmitter {
             const url = new URL(request.url || '', `http://${request.headers.host}`);
             const pathname = url.pathname;
             const token = url.searchParams.get('token');
-            const type = pathname === '/ws/bot' ? 'BOT' : (pathname === '/ws/agent' ? 'AGENT' : null);
+            const type = pathname === '/ws/bot' ? 'BOT' : (pathname === '/ws/agent' ? 'AGENT' : (pathname === '/ws/dashboard' ? 'DASHBOARD' : null));
 
             if (!type) {
                 console.warn(`[WS SERVER] 🚫 Rota inválida: ${pathname}`);
                 socket.destroy();
                 return;
+            }
+
+            // Validação diferenciada por tipo
+            if (type === 'DASHBOARD') {
+                if (!token) {
+                    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+                    socket.destroy();
+                    return;
+                }
+                try {
+                    const decoded = jwt.verify(token, JWT_SECRET) as any;
+                    const orgId = url.searchParams.get('orgId') || undefined;
+                    this.wss!.handleUpgrade(request, socket, head, (ws) => {
+                        this.wss!.emit('connection', ws, request, 'DASHBOARD', undefined, orgId, decoded.id);
+                    });
+                    return;
+                } catch (err) {
+                    console.warn(`[WS SERVER] ⛔ Dashboard JWT inválido.`);
+                    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+                    socket.destroy();
+                    return;
+                }
             }
 
             if (!RESOLVED_TOKEN || token !== RESOLVED_TOKEN) {
@@ -79,8 +105,8 @@ export class CommunityWSServer extends EventEmitter {
             });
         });
 
-        this.wss.on('connection', (ws: WebSocket, request: IncomingMessage, type: 'BOT' | 'AGENT', serverId?: string) => {
-            const client: ConnectedClient = { ws, type, serverId, connectedAt: Date.now(), isAlive: true };
+        this.wss.on('connection', (ws: WebSocket, request: IncomingMessage, type: 'BOT' | 'AGENT' | 'DASHBOARD', serverId?: string, orgId?: string, userId?: string) => {
+            const client: ConnectedClient = { ws, type, serverId, orgId, userId, connectedAt: Date.now(), isAlive: true };
             this.clients.add(client);
 
             console.log(`[WS SERVER] ✅ ${type} conectado! ${serverId ? `(Server: ${serverId})` : ''} — Total: ${this.clients.size}`);
@@ -245,6 +271,16 @@ export class CommunityWSServer extends EventEmitter {
             if (c.type === 'AGENT' && c.serverId) agents.push(c.serverId);
         });
         return agents;
+    }
+
+    /** Broadcast para usuários do Dashboard vinculados a uma organização específica */
+    broadcastToDashboard(orgId: string, type: string, payload: any) {
+        const message = JSON.stringify({ type, payload });
+        this.clients.forEach((client) => {
+            if (client.type === 'DASHBOARD' && client.orgId === orgId && client.ws.readyState === WebSocket.OPEN) {
+                client.ws.send(message);
+            }
+        });
     }
 }
 

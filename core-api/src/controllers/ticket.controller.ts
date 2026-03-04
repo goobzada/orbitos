@@ -181,7 +181,12 @@ export class TicketController {
                 }
             });
 
+            // 🔔 Avisar Dashboard em tempo real
+            const { communityWSServer } = await import('../services/ws-server');
+            communityWSServer.broadcastToDashboard(ticket.organizationId, 'TICKET_UPDATED', { ...ticket, status: TicketStatus.CLOSED });
+
             if (ticket.channelId) {
+                // ... mantes logic do discordDriver
                 discordDriver.execute({
                     serverId: ticket.server.discordGuildId,
                     userId: 'SYSTEM',
@@ -234,6 +239,10 @@ export class TicketController {
                     updatedAt: new Date()
                 }
             });
+
+            // 🔔 Avisar Dashboard em tempo real
+            const { communityWSServer } = await import('../services/ws-server');
+            communityWSServer.broadcastToDashboard(ticket.organizationId, 'TICKET_UPDATED', updatedTicket);
 
             if (ticket.channelId) {
                 const statusLabels: Record<string, string> = {
