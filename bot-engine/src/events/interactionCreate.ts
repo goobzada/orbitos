@@ -269,6 +269,16 @@ export default {
             return;
         }
 
+        // ── APPLICATION / FORMULÁRIO (customIds: application_*, app_*) ────────
+        if ('customId' in interaction && typeof interaction.customId === 'string' && (
+            interaction.customId === 'application_start' ||
+            interaction.customId.startsWith('app_')
+        )) {
+            const { default: ApplicationModule } = await import('../modules/automation/application');
+            await ApplicationModule?.handleInteraction?.(interaction);
+            return;
+        }
+
         // ── BOTÕES: Modulos ainda não implementados ──────────────────────────────
         // Evita timeout silencioso (This interaction failed)
         if (interaction.isButton()) {

@@ -57,6 +57,8 @@ model Organization {
   tickets              Ticket[]
   ticketTemplates      TicketTemplate[]
   giveaways            Giveaway[]
+  applicationForms     ApplicationForm[]
+  applicationSubmissions ApplicationSubmission[]
   auditLogs            AuditLog[]
   supportSessions      SupportSession[]
   communityType        String                @default("general") // game, music, study, business, general, creator, dev
@@ -97,6 +99,8 @@ model Server {
   staffMembers         StaffMember[]
   tickets              Ticket[]
   giveaways            Giveaway[]
+  applicationForms     ApplicationForm[]
+  applicationSubmissions ApplicationSubmission[]
   ticketMacros         TicketMacro[]
   ticketPortals        TicketPortal[]
   ticketSlaPolicies    TicketSlaPolicy[]
@@ -748,4 +752,68 @@ model GiveawayParticipant {
   giveaway   Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
 
   @@unique([giveawayId, userId])
+}
+
+model ApplicationForm {
+  id             String                @id @default(uuid())
+  organizationId String
+  serverId       String
+  name           String
+  description    String?
+  status         String                @default("ACTIVE") // ACTIVE, INACTIVE, DRAFT
+  successMessage String?
+  logChannelId   String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  
+  organization   Organization          @relation(fields: [organizationId], references: [id])
+  server         Server                @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  questions      ApplicationQuestion[]
+  submissions    ApplicationSubmission[]
+
+  @@index([organizationId])
+  @@index([serverId])
+}
+
+model ApplicationQuestion {
+  id          String              @id @default(uuid())
+  formId      String
+  order       Int
+  label       String
+  placeholder String?
+  type        String              // TEXT, PARAGRAPH, SELECT
+  required    Boolean             @default(true)
+  options     String?             // JSON string for SELECT type
+  form        ApplicationForm     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  answers     ApplicationAnswer[]
+}
+
+model ApplicationSubmission {
+  id             String              @id @default(uuid())
+  organizationId String
+  formId         String
+  serverId       String
+  userId         String              // Discord ID
+  status         String              @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewerId     String?
+  reviewComment  String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  
+  answers        ApplicationAnswer[]
+  form           ApplicationForm     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+  server         Server              @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([serverId])
+}
+
+model ApplicationAnswer {
+  id           String                @id @default(uuid())
+  submissionId String
+  questionId   String
+  value        String
+  question     ApplicationQuestion   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  submission   ApplicationSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 }

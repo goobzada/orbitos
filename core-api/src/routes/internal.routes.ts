@@ -2,12 +2,14 @@ import { Router } from 'express';
 import { InternalController } from '../controllers/internal.controller';
 import { InternalAllowlistController } from '../controllers/internal-allowlist.controller';
 import { InternalGiveawayController } from '../controllers/internal-giveaway.controller';
+import { InternalApplicationController } from '../controllers/internal-application.controller';
 import { internalMiddleware } from '../middlewares/internal.middleware';
 
 const internalRoutes = Router();
 const ctrl = new InternalController();
 const allowlistCtrl = new InternalAllowlistController();
 const giveawayCtrl = new InternalGiveawayController();
+const appCtrl = new InternalApplicationController();
 
 // Todas as rotas aqui exigem a Service Key do Bot (x-internal-service-key header)
 internalRoutes.use(internalMiddleware);
@@ -36,6 +38,10 @@ internalRoutes.get('/giveaways/active', giveawayCtrl.listActiveGiveaways);
 internalRoutes.post('/giveaways', giveawayCtrl.createGiveaway);
 internalRoutes.post('/giveaways/join', giveawayCtrl.joinGiveaway);
 internalRoutes.patch('/giveaways/:id/end', giveawayCtrl.endGiveaway);
+
+// Formulários (Applications)
+internalRoutes.get('/applications/:guildId', appCtrl.getActiveForms);
+internalRoutes.post('/applications/submit', appCtrl.submitApplication);
 
 // Observabilidade
 internalRoutes.post('/heartbeat', ctrl.heartbeat);
