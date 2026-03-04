@@ -61,10 +61,12 @@ export function ticketClosedEmbed(username: string, closedBy: string) {
 }
 
 export function guildWelcomeEmbed(guildName: string) {
+    const dashboardUrl = process.env.DASHBOARD_URL || 'https://orbitup.io';
     return buildEmbed({
         type: 'info',
-        title: '👋 Olá! Sou o SaaSBot',
-        description: `Obrigado por me adicionar ao servidor **${guildName}**!\n\nUse o painel web para configurar canais de tickets e roles de staff.\n\n[→ Abrir Dashboard](http://localhost:3001/dashboard)`,
-        footer: 'SaaSBot • Plataforma SaaS',
+        title: '🛰️ Olá! Sou o OrbitOS',
+        description: `Obrigado por me adicionar ao servidor **${guildName}**!\n\nUse o painel web para configurar canais de tickets, automações e roles de staff.\n\n[→ Abrir Dashboard](${dashboardUrl}/dashboard)`,
+        footer: 'OrbitOS • Plataforma SaaS',
     });
 }
+
