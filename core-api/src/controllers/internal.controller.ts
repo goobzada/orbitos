@@ -240,4 +240,32 @@ export class InternalController {
         });
         return res.json(servers);
     }
+
+    // Bot busca produtos da loja para exibir no Discord
+    async getStoreProducts(req: Request, res: Response) {
+        const guildId = req.params.guildId as string;
+
+        const server = await prisma.server.findUnique({
+            where: { discordGuildId: guildId },
+            include: { organization: true }
+        });
+
+        if (!server) {
+            return res.status(404).json({ error: 'Servidor não encontrado.' });
+        }
+
+        const products = await prisma.storeProduct.findMany({
+            where: {
+                organizationId: server.organizationId,
+                status: 'ACTIVE'
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 25
+        });
+
+        return res.json({
+            organization: (server as any).organization?.name || server.name,
+            products
+        });
+    }
 }

@@ -250,6 +250,16 @@ export default {
             }
         }
 
+        // ── STORE / LOJA (customIds: store_browse, store_buy_*) ──────────────────
+        if ('customId' in interaction && typeof interaction.customId === 'string' && (
+            interaction.customId === 'store_browse' ||
+            interaction.customId.startsWith('store_buy_')
+        )) {
+            const { default: StoreModule } = await import('../modules/automation/store');
+            await StoreModule?.handleInteraction?.(interaction);
+            return;
+        }
+
         // ── BOTÕES: Modulos ainda não implementados ──────────────────────────────
         // Evita timeout silencioso (This interaction failed)
         if (interaction.isButton()) {
@@ -259,10 +269,6 @@ export default {
             }
             if (interaction.customId === 'application_start') {
                 await interaction.reply({ content: '📝 Os formulários estão sendo atualizados. Volte logo!', ephemeral: true });
-                return;
-            }
-            if (interaction.customId === 'store_browse') {
-                await interaction.reply({ content: '🛒 Loja offline para reabastecimento. Novidades em breve!', ephemeral: true });
                 return;
             }
         }

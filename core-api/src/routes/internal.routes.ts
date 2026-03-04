@@ -39,4 +39,7 @@ internalRoutes.get('/servers', ctrl.listServers.bind(ctrl));
 internalRoutes.get('/allowlist/active-form', allowlistCtrl.getActiveForm);
 internalRoutes.post('/allowlist/forms/:id/submit', allowlistCtrl.submitForm);
 
+// Loja
+internalRoutes.get('/store/products/:guildId', ctrl.getStoreProducts.bind(ctrl));
+
 export default internalRoutes;
