@@ -67,11 +67,11 @@ export class InternalGiveawayController {
 
     // Finaliza sorteio e escolhe ganhadores
     async endGiveaway(req: Request, res: Response) {
-        const { id } = req.params;
+        const { id } = req.params as { id: string };
 
         try {
             const giveaway = await prisma.giveaway.findUnique({
-                where: { id },
+                where: { id: id as string },
                 include: { participants: true }
             });
 
@@ -79,10 +79,10 @@ export class InternalGiveawayController {
                 return res.status(400).json({ error: 'Sorteio não encontrado ou já finalizado.' });
             }
 
-            const participants = giveaway.participants;
+            const participants = (giveaway as any).participants as { userId: string }[];
             if (participants.length === 0) {
                 await prisma.giveaway.update({
-                    where: { id },
+                    where: { id: id as string },
                     data: { status: 'ENDED', winners: [] }
                 });
                 return res.json({ message: 'Sorteio encerrado sem participantes.', winners: [] });
@@ -93,7 +93,7 @@ export class InternalGiveawayController {
             const winners = shuffled.slice(0, giveaway.winnersCount).map((p: { userId: string }) => p.userId);
 
             const updated = await prisma.giveaway.update({
-                where: { id },
+                where: { id: id as string },
                 data: { status: 'ENDED', winners }
             });
 

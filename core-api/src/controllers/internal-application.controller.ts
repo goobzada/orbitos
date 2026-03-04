@@ -4,7 +4,7 @@ import prisma from '../lib/prisma';
 export class InternalApplicationController {
     // Lista formulários ativos para um servidor
     async getActiveForms(req: Request, res: Response) {
-        const { guildId } = req.params;
+        const { guildId } = req.params as { guildId: string };
 
         try {
             const forms = await prisma.applicationForm.findMany({
