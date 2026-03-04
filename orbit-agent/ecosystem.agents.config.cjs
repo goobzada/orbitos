@@ -4,7 +4,7 @@
  * Configuração PM2 para os Orbit Agents.
  * Cada app = 1 servidor Discord conectado.
  * 
- * Regras de uso:
+ * Regras de uso na VPS:
  *   pm2 start ecosystem.agents.config.cjs
  *   pm2 restart ecosystem.agents.config.cjs --update-env
  *   pm2 save
@@ -12,7 +12,7 @@
  * Para adicionar um novo servidor:
  *   1. Adicionar um novo objeto no array 'apps' abaixo
  *   2. Definir SERVER_ID com o discordGuildId do servidor
- *   3. Rodar: pm2 restart ecosystem.agents.config.cjs --update-env && pm2 save
+ *   3. git pull && pm2 restart ecosystem.agents.config.cjs --update-env && pm2 save
  */
 
 const AGENT_TOKEN = process.env.AGENT_TOKEN || 'bot-ws-token-v2-change-in-production';
@@ -55,6 +55,19 @@ module.exports = {
             env: {
                 NODE_ENV: 'production',
                 SERVER_ID: '821810593236516925',
+                AGENT_TOKEN,
+                CORE_API_WS_URL: WS_URL,
+            },
+        },
+
+        // ── Urbanos (989158277089148482) ────────────────────────────────
+        {
+            name: 'orbitos-agent-urbanos',
+            script: 'dist/index.js',
+            cwd: CWD,
+            env: {
+                NODE_ENV: 'production',
+                SERVER_ID: '989158277089148482',
                 AGENT_TOKEN,
                 CORE_API_WS_URL: WS_URL,
             },
