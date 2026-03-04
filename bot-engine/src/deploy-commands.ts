@@ -57,14 +57,20 @@ const rest = new REST({ version: '10' }).setToken(TOKEN);
 
 (async () => {
     try {
-        console.log(`[DEPLOY] Registrando ${commands.length} comando(s) globalmente...`);
+        const guildId = process.env.DISCORD_GUILD_ID;
+        const scope = process.env.COMMANDS_SCOPE === 'guild' ? 'Guild' : 'Global';
 
-        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
-
-        console.log('[DEPLOY] ✅ Slash Commands registrados com sucesso!');
-        console.log('[DEPLOY] ⏳ Comandos globais levam até 1h para aparecer em todos servidores.');
-        console.log('[DEPLOY] 💡 Para registro instantâneo num servidor, use GUILD_ID=<id> npx tsx src/deploy-commands.ts');
+        if (scope === 'Guild' && guildId) {
+            console.log(`[DEPLOY] Registrando ${commands.length} comando(s) na Guilda ${guildId}...`);
+            await rest.put(Routes.applicationGuildCommands(CLIENT_ID, guildId), { body: commands });
+            console.log(`[DEPLOY] ✅ Slash Commands (modificados para a Guilda ${guildId}) registrados com sucesso! Instantâneo no Discord.`);
+        } else {
+            console.log(`[DEPLOY] Registrando ${commands.length} comando(s) globalmente (em todos os servidores)...`);
+            await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
+            console.log('[DEPLOY] ✅ Slash Commands (Globais) registrados com sucesso!');
+        }
     } catch (err) {
+        console.error('[DEPLOY] ❌ Erro ao registrar comandos no Discord API:', err);
         console.error('[DEPLOY] ❌ Erro ao registrar comandos:', err);
         process.exit(1);
     }
