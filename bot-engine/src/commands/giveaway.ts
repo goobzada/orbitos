@@ -74,7 +74,7 @@ export default {
                 const row = new ActionRowBuilder<ButtonBuilder>().addComponents(joinBtn);
 
                 // 3. Envia no canal
-                const message = await interaction.channel?.send({
+                const message = await (interaction.channel as any)?.send({
                     embeds: [embed],
                     components: [row]
                 });
