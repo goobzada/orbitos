@@ -29,9 +29,21 @@ export default {
             return;
         }
 
-        // Módulo Whitelist Simples (Dashboard Config)
+        // ── WHITELIST QUIZ (customIds: whitelist_quiz_*, quiz_ans_*) ────────────
         if ('customId' in interaction && typeof interaction.customId === 'string' && (
-            interaction.customId.startsWith('whitelist_') || interaction.customId.startsWith('wl_')
+            interaction.customId.startsWith('whitelist_quiz') ||
+            interaction.customId.startsWith('quiz_ans_')
+        )) {
+            const { default: WhitelistQuizModule } = await import('../modules/automation/whitelist_quiz');
+            await WhitelistQuizModule?.handleInteraction?.(interaction);
+            return;
+        }
+
+        // ── WHITELIST SIMPLES (customIds: whitelist_start_*, wl_*) ──────────────
+        // NOTA: whitelist_quiz_* foi tratado acima — não entra aqui
+        if ('customId' in interaction && typeof interaction.customId === 'string' && (
+            (interaction.customId.startsWith('whitelist_') && !interaction.customId.startsWith('whitelist_quiz')) ||
+            interaction.customId.startsWith('wl_')
         )) {
             await handleSimpleWhitelist(interaction);
             return;
