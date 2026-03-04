@@ -76,18 +76,46 @@ async function startQuiz(interaction: ButtonInteraction) {
     await sendQuestion(interaction, interaction.user.id);
 }
 
+// Gera uma barra de progresso visual com blocos Unicode
+function progressBar(current: number, total: number, size = 12): string {
+    const filled = Math.round((current / total) * size);
+    const empty = size - filled;
+    return `${'█'.repeat(filled)}${'░'.repeat(empty)}`;
+}
+
+// Cor dinâmica por fase do quiz
+function quizColor(current: number, total: number): number {
+    const pct = current / total;
+    if (pct < 0.33) return 0x5865F2; // Azul Discord — início
+    if (pct < 0.66) return 0xFEE75C; // Amarelo — meio caminho
+    return 0x57F287;                  // Verde — quase lá!
+}
+
+const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E'];
+
 async function sendQuestion(interaction: ButtonInteraction, userId: string) {
     const session = sessions.get(userId);
     if (!session) return;
 
     const question = session.questions[session.currentIndex];
-    const progress = `Pergunta ${session.currentIndex + 1} de ${session.questions.length}`;
+    const current = session.currentIndex + 1;
+    const total = session.questions.length;
+    const bar = progressBar(session.currentIndex, total);
+    const pct = Math.round((session.currentIndex / total) * 100);
 
     const embed = new EmbedBuilder()
-        .setTitle('📝 Quiz de Whitelist')
-        .setDescription(`**${question.text}**\n\n*${progress}*`)
-        .setColor(0x5865F2)
-        .setFooter({ text: 'OrbitOS Whitelist Engine' });
+        .setTitle(`📋  Quiz de Whitelist  —  Pergunta ${current} de ${total}`)
+        .setDescription(
+            `### ${question.text}\n\n` +
+            `\`${bar}\`  **${pct}% concluído**`
+        )
+        .addFields(
+            { name: '✅ Acertos até agora', value: `**${session.score}** de **${session.currentIndex}**`, inline: true },
+            { name: '📊 Restantes', value: `**${total - session.currentIndex}** perguntas`, inline: true },
+            { name: '🎯 Nota mínima', value: `**${session.passPercentage}%**`, inline: true },
+        )
+        .setColor(quizColor(session.currentIndex, total))
+        .setFooter({ text: 'OrbitOS Whitelist Engine  •  Escolha a alternativa correta' });
 
     const row = new ActionRowBuilder<ButtonBuilder>();
 
@@ -95,8 +123,8 @@ async function sendQuestion(interaction: ButtonInteraction, userId: string) {
         row.addComponents(
             new ButtonBuilder()
                 .setCustomId(`quiz_ans_${idx}`)
-                .setLabel(opt.substring(0, 80))
-                .setStyle(ButtonStyle.Secondary)
+                .setLabel(`${OPTION_LABELS[idx] ?? String(idx + 1)}. ${opt.substring(0, 70)}`)
+                .setStyle(idx === 0 ? ButtonStyle.Primary : idx === 1 ? ButtonStyle.Secondary : ButtonStyle.Secondary)
         );
     });
 
@@ -110,7 +138,17 @@ async function sendQuestion(interaction: ButtonInteraction, userId: string) {
 async function handleAnswer(interaction: ButtonInteraction) {
     const userId = interaction.user.id;
     const session = sessions.get(userId);
-    if (!session) return;
+
+    // Sem sessão ativa (ex: bot restartou) — responde graciosamente
+    if (!session) {
+        if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ content: '⏳ Sua sessão expirou. Use o botão **Iniciar Teste** para recomeçar.', ephemeral: true });
+        }
+        return;
+    }
+
+    // Defer IMEDIATAMENTE (evita o timeout de 3s do Discord)
+    await interaction.deferUpdate();
 
     const answerIndex = parseInt(interaction.customId.replace('quiz_ans_', ''));
     const currentQuestion = session.questions[session.currentIndex];
@@ -132,13 +170,30 @@ async function finishQuiz(interaction: ButtonInteraction, userId: string) {
     const session = sessions.get(userId);
     if (!session) return;
 
-    const percent = (session.score / session.questions.length) * 100;
+    const percent = Math.round((session.score / session.questions.length) * 100);
     const passed = percent >= session.passPercentage;
+    const bar = progressBar(session.score, session.questions.length, 14);
+
+    const resultTitle = passed
+        ? '🏆  Aprovado na Whitelist!'
+        : '❌  Reprovado — Tente Novamente';
 
     const embed = new EmbedBuilder()
-        .setTitle(passed ? '✅ Resultado: Aprovado!' : '❌ Resultado: Reprovado')
-        .setDescription(`Você acertou **${session.score}** de **${session.questions.length}** perguntas.\nSua pontuação final: **${percent.toFixed(0)}%**\nMínimo necessário: **${session.passPercentage}%**`)
-        .setColor(passed ? 0x57F287 : 0xED4245);
+        .setTitle(resultTitle)
+        .setDescription(
+            passed
+                ? `✅ **Parabéns!** Você demonstrou conhecimento suficiente das regras.\nBem-vindo(a) ao servidor!`
+                : `❌ **Que pena!** Você não atingiu a pontuação mínima.\nRevisite as regras e tente novamente.`
+        )
+        .addFields(
+            { name: '📊 Resultado', value: `\`${bar}\``, inline: false },
+            { name: '✅ Acertos', value: `**${session.score}** de **${session.questions.length}**`, inline: true },
+            { name: '📈 Pontuação', value: `**${percent}%**`, inline: true },
+            { name: '🎯 Mínimo exigido', value: `**${session.passPercentage}%**`, inline: true },
+        )
+        .setColor(passed ? 0x57F287 : 0xED4245)
+        .setFooter({ text: 'OrbitOS Whitelist Engine' })
+        .setTimestamp();
 
     if (passed && session.roleId && session.autoApprove) {
         try {
