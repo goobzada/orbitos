@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, Wifi, WifiOff, Settings, Hash, Puzzle } from "lucide-react";
+import { Loader2, RefreshCw, Wifi, WifiOff, Settings, Hash, Puzzle, Copy, Check, ExternalLink, Bot } from "lucide-react";
 import { toast } from "sonner";
 import { Server } from "@/types";
 import { useUpdateServerConfig, useDeleteServer } from "@/lib/hooks";
@@ -29,6 +29,16 @@ export function ConfigServerModal({ open, onClose, server }: ConfigServerModalPr
     const [syncing, setSyncing] = useState(false);
     const [testingFiveM, setTestingFiveM] = useState(false);
     const [fiveMResult, setFiveMResult] = useState<'ok' | 'fail' | null>(null);
+    const [copiedInvite, setCopiedInvite] = useState(false);
+
+    const CLIENT_ID = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1357217419260596425';
+    const INVITE_URL = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&permissions=8&scope=bot%20applications.commands`;
+
+    const handleCopyInvite = () => {
+        navigator.clipboard.writeText(INVITE_URL);
+        setCopiedInvite(true);
+        setTimeout(() => setCopiedInvite(false), 2000);
+    };
 
     const [form, setForm] = useState({
         logChannel: "",
@@ -169,6 +179,28 @@ export function ConfigServerModal({ open, onClose, server }: ConfigServerModalPr
                                 checked={form.isActive}
                                 onCheckedChange={(v) => setForm(f => ({ ...f, isActive: v }))}
                             />
+                        </div>
+
+                        <div className="p-3 rounded-lg border border-border bg-secondary/10 space-y-2">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Bot className="w-3.5 h-3.5 text-violet-400" />
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Link de Convite do Bot</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    readOnly
+                                    value={INVITE_URL}
+                                    className="h-9 text-[10px] font-mono text-muted-foreground bg-secondary/20 border-border/20 focus-visible:ring-0"
+                                />
+                                <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={handleCopyInvite}>
+                                    {copiedInvite ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                </Button>
+                                <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0" asChild>
+                                    <a href={INVITE_URL} target="_blank" rel="noopener noreferrer">
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="p-3 rounded-lg border border-destructive/20 bg-destructive/5">

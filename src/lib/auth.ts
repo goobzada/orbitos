@@ -85,26 +85,19 @@ export const logout = (opts?: { redirect?: boolean }): void => {
     isLoggingOut = true;
 
     try {
-        clearTokenStorage();
+        clearTokenStorage(); // limpa client-side imediatamente
 
-        // Apaga cookie server-side via API (100% confiável em produção)
-        fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
-            .finally(() => {
-                if (opts?.redirect !== false && typeof window !== 'undefined') {
-                    if (window.location.pathname !== '/login') {
-                        window.location.replace('/login?clear=1');
-                    }
-                }
-                setTimeout(() => { isLoggingOut = false; }, 1000);
-            });
-    } catch {
-        // Em caso de erro na fetch, redireciona mesmo assim
         if (opts?.redirect !== false && typeof window !== 'undefined') {
-            window.location.replace('/login?clear=1');
+            // Navegar para GET /api/auth/logout que limpa o cookie
+            // e redireciona para /login num único response server-side.
+            // Sem fetch, sem async, sem race condition.
+            window.location.replace('/api/auth/logout');
         }
-        setTimeout(() => { isLoggingOut = false; }, 1000);
+    } finally {
+        setTimeout(() => { isLoggingOut = false; }, 1500);
     }
 };
+
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
