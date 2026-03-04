@@ -23,7 +23,8 @@ import {
     LogOut,
     Bot,
     CreditCard,
-    Command
+    Command,
+    UserCircle
 } from "lucide-react";
 import { logout, exitImpersonation } from "@/lib/auth";
 import { useMe } from "@/lib/hooks";
@@ -32,6 +33,7 @@ import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { useTranslation } from "@/components/providers/language-provider";
 
@@ -195,6 +197,39 @@ export function AppSidebar() {
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     )}
+
+                    {/* Avatar + nome → link para /dashboard/profile */}
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            asChild
+                            tooltip="Meu Perfil"
+                            className={cn(
+                                "transition-all h-auto py-2",
+                                pathname === '/dashboard/profile'
+                                    ? "bg-violet-500/10 text-violet-400"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            <Link href="/dashboard/profile" className="flex items-center gap-2.5">
+                                <Avatar className="w-7 h-7 shrink-0">
+                                    <AvatarImage
+                                        src={user?.avatar && user?.discordId
+                                            ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png?size=64`
+                                            : undefined}
+                                    />
+                                    <AvatarFallback className="bg-violet-600/20 text-violet-300 text-xs font-bold">
+                                        {user?.username?.[0]?.toUpperCase() || 'U'}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold truncate">{user?.username || 'Perfil'}</p>
+                                    <p className="text-[10px] text-muted-foreground/60 truncate">Ver perfil</p>
+                                </div>
+                                <UserCircle className="w-3.5 h-3.5 shrink-0 opacity-50" />
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+
                     <SidebarMenuItem>
                         <SidebarMenuButton
                             className="text-rose-500/80 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
