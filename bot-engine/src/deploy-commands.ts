@@ -28,7 +28,27 @@ if (!TOKEN || !CLIENT_ID) {
 console.log(`[DEPLOY] Bot Client ID: ${CLIENT_ID}`);
 
 const commands: object[] = [];
-const commandsPath = path.join(__dirname, 'commands');
+
+// Resolve os paths que o build do TypeScript usa
+const possiblePaths = [
+    path.join(__dirname, 'commands'),         // Quando rodar via npx tsx src/deploy-commands.ts
+    path.join(__dirname, '..', 'commands'),       // Quando rodar node dist/deploy-commands.js (no qual `__dirname` é `dist`) // AQUI o dist build guarda na subpasta!
+    path.join(process.cwd(), 'dist', 'commands'), // Diretório absoluto para fallback
+    path.join(process.cwd(), 'src', 'commands')
+];
+
+let commandsPath = '';
+for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+        commandsPath = p;
+        break; // Achei a pasta correta! 
+    }
+}
+
+if (!commandsPath) {
+    console.error('[DEPLOY] ❌ Diretório de commands não encontrado em nenhum dos caminhos:', possiblePaths);
+    process.exit(1);
+}
 
 // Aceita tanto .ts (tsx) quanto .js (node após build)
 const commandFiles = fs.readdirSync(commandsPath)
