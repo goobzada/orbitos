@@ -174,6 +174,23 @@ export default {
             }
         }
 
+        // ── BOTÕES: Modulos ainda não implementados ──────────────────────────────
+        // Evita timeout silencioso (This interaction failed)
+        if (interaction.isButton()) {
+            if (interaction.customId === 'giveaway_join') {
+                await interaction.reply({ content: '🎉 Sorteios estão em manutenção! Tente novamente mais tarde.', ephemeral: true });
+                return;
+            }
+            if (interaction.customId === 'application_start') {
+                await interaction.reply({ content: '📝 Os formulários estão sendo atualizados. Volte logo!', ephemeral: true });
+                return;
+            }
+            if (interaction.customId === 'store_browse') {
+                await interaction.reply({ content: '🛒 Loja offline para reabastecimento. Novidades em breve!', ephemeral: true });
+                return;
+            }
+        }
+
         // ── SELECT MENU: Open Ticket Category ───────────────────────────────
         // CRITICO: mostrar modal IMEDIATAMENTE (sem API call — Discord tem 3s de limite)
         if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_select_category') {
