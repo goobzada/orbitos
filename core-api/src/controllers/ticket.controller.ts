@@ -244,15 +244,28 @@ export class TicketController {
                     RESOLVED: 'Resolvido'
                 };
 
-                discordDriver.execute({
-                    serverId: ticket.server.discordGuildId,
-                    userId: 'SYSTEM',
-                    action: 'send_message',
-                    params: {
-                        channelId: ticket.channelId,
-                        content: `**[Sistema]** O status deste ticket foi alterado para: **${statusLabels[status] || status}**.`
-                    }
-                });
+                // Se houver transição para FECHADO, aciona o flow de fechamento no bot
+                if (status === 'CLOSED') {
+                    discordDriver.execute({
+                        serverId: ticket.server.discordGuildId,
+                        userId: 'SYSTEM',
+                        action: 'ticket.close_ticket_flow',
+                        params: {
+                            channelId: ticket.channelId,
+                            staffName: (req.user as any)?.username || 'Staff'
+                        }
+                    });
+                } else {
+                    discordDriver.execute({
+                        serverId: ticket.server.discordGuildId,
+                        userId: 'SYSTEM',
+                        action: 'send_message',
+                        params: {
+                            channelId: ticket.channelId,
+                            content: `**[Sistema]** O status deste ticket foi alterado para: **${statusLabels[status] || status}**.`
+                        }
+                    });
+                }
             }
 
             return res.json(updatedTicket);

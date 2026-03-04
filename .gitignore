@@ -31,7 +31,6 @@ logs
 frontend.log
 frontend_err.log
 login-dump.txt
-{
 
 # ─── Misc ────────────────────────────────────────────────────────────────────
 tsconfig.tsbuildinfo
