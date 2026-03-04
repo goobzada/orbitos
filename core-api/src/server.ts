@@ -172,7 +172,6 @@ app.get('/agents/servers', async (req, res) => {
     const { PrismaClient } = await import('@prisma/client');
     const p = new PrismaClient();
     const servers = await p.server.findMany({
-      where: { isActive: true },
       select: { discordGuildId: true, name: true },
     });
     await p.$disconnect();

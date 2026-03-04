@@ -32,6 +32,7 @@ interface ConnectedClient {
     serverId?: string; // Somente para AGENT
     connectedAt: number;
     version?: string;
+    isAlive: boolean;
 }
 
 export interface AgentResponse {
@@ -79,10 +80,14 @@ export class CommunityWSServer extends EventEmitter {
         });
 
         this.wss.on('connection', (ws: WebSocket, request: IncomingMessage, type: 'BOT' | 'AGENT', serverId?: string) => {
-            const client: ConnectedClient = { ws, type, serverId, connectedAt: Date.now() };
+            const client: ConnectedClient = { ws, type, serverId, connectedAt: Date.now(), isAlive: true };
             this.clients.add(client);
 
             console.log(`[WS SERVER] ✅ ${type} conectado! ${serverId ? `(Server: ${serverId})` : ''} — Total: ${this.clients.size}`);
+
+            ws.on('pong', () => {
+                client.isAlive = true;
+            });
 
             ws.on('close', () => {
                 console.log(`[WS SERVER] 🔌 ${type} desconectado.${serverId ? ` (Server: ${serverId})` : ''}`);
@@ -108,6 +113,22 @@ export class CommunityWSServer extends EventEmitter {
                 }
             });
         });
+
+        // Loop de Keep-Alive (mata conexões fantasmas via Ping/Pong)
+        setInterval(() => {
+            this.clients.forEach((client) => {
+                if (client.isAlive === false) {
+                    console.warn(`[WS SERVER] 👻 Conexão Zumbi detectada (${client.type} ${client.serverId || ''}). Terminando WS...`);
+                    client.ws.terminate();
+                    this.clients.delete(client);
+                    return;
+                }
+                client.isAlive = false;
+                if (client.ws.readyState === WebSocket.OPEN) {
+                    client.ws.ping();
+                }
+            });
+        }, 30000);
 
         console.log('[WS SERVER] ✅ WebSocket Server inicializado (Bot & Agent SDK).');
     }

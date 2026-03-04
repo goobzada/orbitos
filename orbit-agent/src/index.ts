@@ -17,7 +17,6 @@ const WS_URL = process.env.CORE_API_WS_URL || 'ws://127.0.0.1:4000/ws/agent';
 const HTTP_API_URL = process.env.CORE_API_HTTP_URL || 'http://127.0.0.1:4000';
 const AGENT_TOKEN = process.env.AGENT_TOKEN || 'dev-bot-ws-token-123';
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL_MS || '30000', 10); // 30s default
-const RECONNECT_MS = 5000;
 const HEARTBEAT_MS = 30000;
 
 // 🔒 Allowlist de comandos permitidos
@@ -68,6 +67,7 @@ class ServerAgent {
     private ws: WebSocket | null = null;
     private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
     private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    private reconnectAttempts = 0;
     private stopped = false;
 
     constructor(serverId: string, name: string) {
@@ -125,8 +125,13 @@ class ServerAgent {
 
         this.ws.on('open', () => {
             console.log(`[SUPERVISOR] ✅ [${this.name}] conectado`);
+            this.reconnectAttempts = 0;
             this.startHeartbeat();
             this.send({ type: 'AGENT_READY', payload: { serverId: this.serverId, ts: Date.now(), version: '3.0.0' } });
+        });
+
+        this.ws.on('ping', () => {
+            this.ws?.pong();
         });
 
         this.ws.on('message', (data) => {
@@ -138,12 +143,15 @@ class ServerAgent {
             } catch { /* ignore */ }
         });
 
-        this.ws.on('close', () => {
+        this.ws.on('close', (code) => {
             this.stopHeartbeat();
             this.ws = null;
             if (!this.stopped) {
-                console.warn(`[SUPERVISOR] 🔌 [${this.name}] desconectado. Reconectando em ${RECONNECT_MS / 1000}s...`);
-                this.reconnectTimer = setTimeout(() => this.connect(), RECONNECT_MS);
+                this.reconnectAttempts++;
+                // Exponencial backoff até cap de 30s (ex: 2s, 4s, 8s, 16s, 30s)
+                const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+                console.warn(`[SUPERVISOR] 🔌 [${this.name}] desconectado (Code: ${code}). Reconectando em ${delay / 1000}s... (Tentativa ${this.reconnectAttempts})`);
+                this.reconnectTimer = setTimeout(() => this.connect(), delay);
             }
         });
 
