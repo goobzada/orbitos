@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Trash2, CheckCircle2, Info } from 'lucide-react';
@@ -18,7 +18,6 @@ interface ConfirmOptions {
 
 interface ConfirmState extends ConfirmOptions {
     open: boolean;
-    resolve: ((value: boolean) => void) | null;
 }
 
 interface ConfirmContextType {
@@ -67,11 +66,14 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
         confirmLabel: 'Confirmar',
         cancelLabel: 'Cancelar',
         variant: 'danger',
-        resolve: null,
     });
+
+    // useRef garante que handleClose sempre acessa o resolve mais recente (sem stale closure)
+    const resolveRef = useRef<((value: boolean) => void) | null>(null);
 
     const confirm = useCallback((options: ConfirmOptions): Promise<boolean> => {
         return new Promise((resolve) => {
+            resolveRef.current = resolve;
             setState({
                 open: true,
                 title: options.title,
@@ -79,15 +81,15 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                 confirmLabel: options.confirmLabel ?? 'Confirmar',
                 cancelLabel: options.cancelLabel ?? 'Cancelar',
                 variant: options.variant ?? 'danger',
-                resolve,
             });
         });
     }, []);
 
-    const handleClose = (result: boolean) => {
-        state.resolve?.(result);
-        setState(s => ({ ...s, open: false, resolve: null }));
-    };
+    const handleClose = useCallback((result: boolean) => {
+        resolveRef.current?.(result);
+        resolveRef.current = null;
+        setState(s => ({ ...s, open: false }));
+    }, []);
 
     const variant = state.variant ?? 'danger';
     const cfg = variantConfig[variant];
