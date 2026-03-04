@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { useOrganizations, useAddServer } from "@/lib/hooks";
 import { CreateOrgModal } from "./create-org-modal";
 
-const CLIENT_ID = "1357217419260596425";
+const CLIENT_ID = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "1357217419260596425";
 const INVITE_URL = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&permissions=8&scope=bot%20applications.commands`;
 
 interface AddServerModalProps {
@@ -32,6 +32,7 @@ export function AddServerModal({ open, onClose }: AddServerModalProps) {
     const [showCreateOrg, setShowCreateOrg] = useState(false);
     const [copiedLink, setCopiedLink] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
     const [form, setForm] = useState({ orgId: "", guildId: "", name: "" });
     const [error, setError] = useState("");
 
@@ -41,6 +42,13 @@ export function AddServerModal({ open, onClose }: AddServerModalProps) {
             setForm(f => ({ ...f, orgId: orgs[0].id }));
         }
     }, [orgs, form.orgId]);
+
+    const handleClose = () => {
+        setSuccess(false);
+        setForm({ orgId: "", guildId: "", name: "" });
+        setError("");
+        onClose();
+    };
 
     const handleCopy = () => {
         navigator.clipboard.writeText(INVITE_URL);
@@ -69,12 +77,7 @@ export function AddServerModal({ open, onClose }: AddServerModalProps) {
                 discordGuildId: form.guildId,
                 name: form.name || "Enterprise Node",
             });
-
-            toast.success("Servidor integrado com sucesso!", {
-                description: "O bot agora começará a sincronizar os dados."
-            });
-            onClose();
-            setForm({ orgId: "", guildId: "", name: "" });
+            setSuccess(true); // Mostrar tela de sucesso com link em destaque
         } catch (err: any) {
             const msg = err?.response?.data?.error || err?.message || "Erro desconhecido";
             setError(msg);
@@ -84,149 +87,203 @@ export function AddServerModal({ open, onClose }: AddServerModalProps) {
     };
 
     return (
-        <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[480px] border-border/40 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden p-0 gap-0">
-                {/* Decorative TOP bar */}
-                <div className="h-1.5 w-full bg-gradient-to-r from-violet-600 via-blue-500 to-emerald-500" />
+        <>
+            <Dialog open={open} onOpenChange={handleClose}>
+                <DialogContent className="sm:max-w-[480px] border-border/40 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden p-0 gap-0">
+                    {/* Decorative TOP bar */}
+                    <div className="h-1.5 w-full bg-gradient-to-r from-violet-600 via-blue-500 to-emerald-500" />
 
-                <div className="p-6 space-y-6">
-                    <DialogHeader>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600/15 text-violet-400 border border-violet-500/20 shadow-inner">
-                                <Bot className="w-5.5 h-5.5" />
-                            </div>
-                            <div>
-                                <DialogTitle className="text-xl font-bold tracking-tight">Provisionar Servidor</DialogTitle>
-                                <DialogDescription className="text-muted-foreground/80">Vincule um cluster do Discord à sua infraestrutura.</DialogDescription>
-                            </div>
-                        </div>
-                    </DialogHeader>
-
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {error && (
-                            <div className="flex items-start gap-2 text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 animate-in fade-in zoom-in-95">
-                                <ShieldCheck className="w-4 h-4 shrink-0" />
-                                <span>{error}</span>
-                            </div>
-                        )}
-
-                        <div className="space-y-4">
-                            {/* Step 1: INVITE */}
-                            <div className="space-y-2.5">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground/70">1. Autorização Obrigatória</Label>
-                                    <Badge variant="outline" className="text-[9px] py-0 h-4 border-violet-500/30 text-violet-400 bg-violet-500/5 uppercase font-black">Recomendado</Badge>
+                    {success ? (
+                        /* ── TELA DE SUCESSO ── */
+                        <div className="p-6 space-y-5 text-center">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                                    <Check className="w-7 h-7" />
                                 </div>
-                                <div className="flex items-center gap-2 group">
+                                <div>
+                                    <h3 className="text-lg font-bold">Servidor vinculado! 🎉</h3>
+                                    <p className="text-sm text-muted-foreground mt-1">Agora convide o bot para o seu servidor Discord.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 text-left">
+                                <Label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground/70">Link de Convite do Bot</Label>
+                                <div className="flex items-center gap-2">
                                     <div className="relative flex-1">
                                         <Input
                                             readOnly
                                             value={INVITE_URL}
-                                            className="h-10 text-[10px] font-mono text-muted-foreground bg-secondary/20 border-border/20 pr-10 focus-visible:ring-0 focus-visible:border-border/20"
+                                            className="h-10 text-[10px] font-mono text-muted-foreground bg-secondary/20 border-border/20 pr-10 focus-visible:ring-0"
                                         />
-                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                                            <button
-                                                type="button"
-                                                onClick={handleCopy}
-                                                className="p-1.5 rounded-md hover:bg-secondary/50 text-muted-foreground hover:text-primary transition-colors"
-                                            >
-                                                {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                                            </button>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleCopy}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-secondary/50 text-muted-foreground hover:text-primary transition-colors"
+                                        >
+                                            {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                        </button>
                                     </div>
-                                    <Button type="button" variant="outline" size="icon" className="h-10 w-10 border-border/20 bg-secondary/20 hover:bg-secondary/40" asChild>
+                                    <Button type="button" variant="outline" size="icon" className="h-10 w-10 border-border/20 bg-secondary/20 hover:bg-secondary/40 shrink-0" asChild>
                                         <a href={INVITE_URL} target="_blank" rel="noopener noreferrer">
                                             <ExternalLink className="w-4 h-4" />
                                         </a>
                                     </Button>
                                 </div>
-                                <div className="p-3 bg-violet-500/5 border border-violet-500/10 rounded-xl">
-                                    <p className="text-[11px] leading-relaxed text-muted-foreground flex items-start gap-2">
-                                        <Sparkles className="w-3.5 h-3.5 text-violet-400 shrink-0 mt-0.5" />
-                                        <span>Instale o core no seu servidor primeiro para habilitar o log e as ferramentas de gestão.</span>
-                                    </p>
-                                </div>
+                                <p className="text-[11px] text-muted-foreground/60 flex items-center gap-1.5">
+                                    <Sparkles className="w-3 h-3 text-violet-400 shrink-0" />
+                                    Clique no ícone para abrir o Discord e concluir a autorização.
+                                </p>
                             </div>
 
-                            {/* Destination */}
-                            <div className="space-y-2.5">
-                                <div className="flex justify-between items-center">
-                                    <Label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground/70">2. Destino de Provisionamento</Label>
-                                    <button
-                                        type="button"
-                                        className="text-[10px] text-violet-400 hover:text-violet-300 font-bold transition-colors uppercase tracking-tighter"
-                                        onClick={() => setShowCreateOrg(true)}
-                                    >
-                                        + Novo Workspace
-                                    </button>
-                                </div>
-                                <Select value={form.orgId} onValueChange={(v) => setForm(f => ({ ...f, orgId: v }))}>
-                                    <SelectTrigger className="h-11 bg-secondary/20 border-border/20 focus:ring-violet-500/20">
-                                        <SelectValue placeholder={orgsLoading ? "Consultando APIs..." : "Selecionar Workspace..."} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {orgs.map(o => (
-                                            <SelectItem key={o.id} value={o.id} className="text-sm font-medium">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 rounded bg-violet-500/20 text-violet-400 flex items-center justify-center text-[8px] font-bold">{o.name[0]}</div>
-                                                    {o.name}
-                                                </div>
-                                            </SelectItem>
-                                        ))}
-                                        {orgs.length === 0 && !orgsLoading && (
-                                            <div className="p-4 text-center text-xs text-muted-foreground">Você ainda não possui nenhum workspace.</div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* IDs */}
-                            <div className="grid grid-cols-1 gap-4">
-                                <div className="space-y-2.5">
-                                    <Label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground/70">3. Identificadores</Label>
-                                    <Input
-                                        placeholder="Discord Guild ID (Ex: 82181059...)"
-                                        value={form.guildId}
-                                        onChange={(e) => setForm(f => ({ ...f, guildId: e.target.value }))}
-                                        className="h-11 bg-secondary/20 border-border/20"
-                                    />
-                                    <Input
-                                        placeholder="Nome Amigável (Opcional)"
-                                        value={form.name}
-                                        onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
-                                        className="h-11 bg-secondary/20 border-border/20"
-                                    />
-                                </div>
-                            </div>
+                            <Button
+                                className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl gap-2"
+                                onClick={handleClose}
+                            >
+                                Concluído ✓
+                            </Button>
                         </div>
+                    ) : (
+                        /* ── FORMULÁRIO ── */
+                        <div className="p-6 space-y-6">
+                            <DialogHeader>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600/15 text-violet-400 border border-violet-500/20 shadow-inner">
+                                        <Bot className="w-5.5 h-5.5" />
+                                    </div>
+                                    <div>
+                                        <DialogTitle className="text-xl font-bold tracking-tight">Provisionar Servidor</DialogTitle>
+                                        <DialogDescription className="text-muted-foreground/80">Vincule um cluster do Discord à sua infraestrutura.</DialogDescription>
+                                    </div>
+                                </div>
+                            </DialogHeader>
 
-                        <DialogFooter className="mt-8 flex gap-3">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={onClose}
-                                disabled={loading}
-                                className="flex-1 h-11 font-bold text-muted-foreground hover:bg-secondary/40 transition-all rounded-xl"
-                            >
-                                Cancelar
-                            </Button>
-                            <Button
-                                type="submit"
-                                disabled={loading}
-                                className="flex-1 h-11 bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-lg shadow-violet-600/20 transition-all active:scale-95 gap-2 rounded-xl"
-                            >
-                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
-                                {loading ? "Processando..." : "Confirmar Vínculo"}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </div>
-            </DialogContent>
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                {error && (
+                                    <div className="flex items-start gap-2 text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 animate-in fade-in zoom-in-95">
+                                        <ShieldCheck className="w-4 h-4 shrink-0" />
+                                        <span>{error}</span>
+                                    </div>
+                                )}
+
+                                <div className="space-y-4">
+                                    {/* Step 1: INVITE */}
+                                    <div className="space-y-2.5">
+                                        <div className="flex items-center justify-between">
+                                            <Label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground/70">1. Autorização Obrigatória</Label>
+                                            <Badge variant="outline" className="text-[9px] py-0 h-4 border-violet-500/30 text-violet-400 bg-violet-500/5 uppercase font-black">Recomendado</Badge>
+                                        </div>
+                                        <div className="flex items-center gap-2 group">
+                                            <div className="relative flex-1">
+                                                <Input
+                                                    readOnly
+                                                    value={INVITE_URL}
+                                                    className="h-10 text-[10px] font-mono text-muted-foreground bg-secondary/20 border-border/20 pr-10 focus-visible:ring-0 focus-visible:border-border/20"
+                                                />
+                                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleCopy}
+                                                        className="p-1.5 rounded-md hover:bg-secondary/50 text-muted-foreground hover:text-primary transition-colors"
+                                                    >
+                                                        {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <Button type="button" variant="outline" size="icon" className="h-10 w-10 border-border/20 bg-secondary/20 hover:bg-secondary/40" asChild>
+                                                <a href={INVITE_URL} target="_blank" rel="noopener noreferrer">
+                                                    <ExternalLink className="w-4 h-4" />
+                                                </a>
+                                            </Button>
+                                        </div>
+                                        <div className="p-3 bg-violet-500/5 border border-violet-500/10 rounded-xl">
+                                            <p className="text-[11px] leading-relaxed text-muted-foreground flex items-start gap-2">
+                                                <Sparkles className="w-3.5 h-3.5 text-violet-400 shrink-0 mt-0.5" />
+                                                <span>Instale o core no seu servidor primeiro para habilitar o log e as ferramentas de gestão.</span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Destination */}
+                                    <div className="space-y-2.5">
+                                        <div className="flex justify-between items-center">
+                                            <Label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground/70">2. Destino de Provisionamento</Label>
+                                            <button
+                                                type="button"
+                                                className="text-[10px] text-violet-400 hover:text-violet-300 font-bold transition-colors uppercase tracking-tighter"
+                                                onClick={() => setShowCreateOrg(true)}
+                                            >
+                                                + Novo Workspace
+                                            </button>
+                                        </div>
+                                        <Select value={form.orgId} onValueChange={(v) => setForm(f => ({ ...f, orgId: v }))}>
+                                            <SelectTrigger className="h-11 bg-secondary/20 border-border/20 focus:ring-violet-500/20">
+                                                <SelectValue placeholder={orgsLoading ? "Consultando APIs..." : "Selecionar Workspace..."} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {orgs.map(o => (
+                                                    <SelectItem key={o.id} value={o.id} className="text-sm font-medium">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-4 h-4 rounded bg-violet-500/20 text-violet-400 flex items-center justify-center text-[8px] font-bold">{o.name[0]}</div>
+                                                            {o.name}
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                                {orgs.length === 0 && !orgsLoading && (
+                                                    <div className="p-4 text-center text-xs text-muted-foreground">Você ainda não possui nenhum workspace.</div>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {/* IDs */}
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <div className="space-y-2.5">
+                                            <Label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground/70">3. Identificadores</Label>
+                                            <Input
+                                                placeholder="Discord Guild ID (Ex: 82181059...)"
+                                                value={form.guildId}
+                                                onChange={(e) => setForm(f => ({ ...f, guildId: e.target.value }))}
+                                                className="h-11 bg-secondary/20 border-border/20"
+                                            />
+                                            <Input
+                                                placeholder="Nome Amigável (Opcional)"
+                                                value={form.name}
+                                                onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                                                className="h-11 bg-secondary/20 border-border/20"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <DialogFooter className="mt-8 flex gap-3">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={handleClose}
+                                        disabled={loading}
+                                        className="flex-1 h-11 font-bold text-muted-foreground hover:bg-secondary/40 transition-all rounded-xl"
+                                    >
+                                        Cancelar
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="flex-1 h-11 bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-lg shadow-violet-600/20 transition-all active:scale-95 gap-2 rounded-xl"
+                                    >
+                                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
+                                        {loading ? "Processando..." : "Confirmar Vínculo"}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
 
             <CreateOrgModal
                 open={showCreateOrg}
                 onClose={() => setShowCreateOrg(false)}
             />
-        </Dialog>
+        </>
     );
 }
