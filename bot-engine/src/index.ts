@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Partials } from 'discord.js';
+import { Client, GatewayIntentBits, Partials, REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
 import { loadEvents } from './handlers/event-handler';
 import { loadCommands } from './handlers/command-handler';
@@ -6,6 +6,8 @@ import { log } from './utils/logger';
 import coreApi from './utils/api-client';
 import { communityWSClient } from './services/ws-client';
 import { ModuleLoader } from './modules/ModuleLoader';
+import path from 'path';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -42,6 +44,39 @@ loadCommands(client);
 // Carrega os eventos dinamicamente da pasta /events
 loadEvents(client);
 
+// ── AUTO-DEPLOY de Slash Commands ────────────────────────────────────────────
+const autoDeployCommands = async () => {
+    const clientId = process.env.DISCORD_CLIENT_ID;
+    const token = process.env.DISCORD_TOKEN;
+    if (!clientId || !token) {
+        log.warn('[COMMANDS] DISCORD_CLIENT_ID não definido — skip auto-deploy.');
+        return;
+    }
+
+    try {
+        const commandsPath = path.join(__dirname, 'commands');
+        const commandFiles = fs.readdirSync(commandsPath)
+            .filter(f => f.endsWith('.js') || f.endsWith('.ts'));
+
+        const body: object[] = [];
+        for (const file of commandFiles) {
+            try {
+                const mod = require(path.join(commandsPath, file));
+                const cmd = mod.default ?? mod;
+                if (cmd?.data) body.push(cmd.data.toJSON());
+            } catch { /* ignora arquivo inválido */ }
+        }
+
+        if (body.length === 0) return;
+
+        const rest = new REST({ version: '10' }).setToken(token);
+        await rest.put(Routes.applicationCommands(clientId), { body });
+        log.info(`[COMMANDS] ✅ ${body.length} slash command(s) registrados globalmente.`);
+    } catch (err: any) {
+        log.warn(`[COMMANDS] Auto-deploy falhou (não crítico): ${err?.message}`);
+    }
+};
+
 // ── HEARTBEAT — Sincroniza status do bot com a API ─────────────────────
 const sendHeartbeat = async () => {
     if (!client.isReady()) return;
@@ -60,6 +95,7 @@ const sendHeartbeat = async () => {
 log.info('Conectando ao Discord...');
 client.on('clientReady', () => {
     sendHeartbeat();
+    autoDeployCommands(); // registra comandos automaticamente a cada startup
 });
 
 client.login(DISCORD_TOKEN).then(() => {
