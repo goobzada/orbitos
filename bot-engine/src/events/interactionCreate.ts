@@ -260,11 +260,20 @@ export default {
             return;
         }
 
+        // ── GIVEAWAY / SORTEIO (customIds: giveaway_join_*) ────────────────────
+        if ('customId' in interaction && typeof interaction.customId === 'string' && (
+            interaction.customId.startsWith('giveaway_join_')
+        )) {
+            const { default: GiveawayModule } = await import('../modules/automation/giveaway');
+            await GiveawayModule?.handleInteraction?.(interaction);
+            return;
+        }
+
         // ── BOTÕES: Modulos ainda não implementados ──────────────────────────────
         // Evita timeout silencioso (This interaction failed)
         if (interaction.isButton()) {
             if (interaction.customId === 'giveaway_join') {
-                await interaction.reply({ content: '🎉 Sorteios estão em manutenção! Tente novamente mais tarde.', ephemeral: true });
+                await interaction.reply({ content: '🎉 Use o comando `/giveaway start` para criar um sorteio real!', ephemeral: true });
                 return;
             }
             if (interaction.customId === 'application_start') {

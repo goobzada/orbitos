@@ -56,6 +56,7 @@ model Organization {
   coupons              Coupon[]
   tickets              Ticket[]
   ticketTemplates      TicketTemplate[]
+  giveaways            Giveaway[]
   auditLogs            AuditLog[]
   supportSessions      SupportSession[]
   communityType        String                @default("general") // game, music, study, business, general, creator, dev
@@ -95,6 +96,7 @@ model Server {
   organization         Organization          @relation(fields: [organizationId], references: [id])
   staffMembers         StaffMember[]
   tickets              Ticket[]
+  giveaways            Giveaway[]
   ticketMacros         TicketMacro[]
   ticketPortals        TicketPortal[]
   ticketSlaPolicies    TicketSlaPolicy[]
@@ -709,4 +711,41 @@ model ModulePreset {
 
   @@unique([moduleId, communityType])
   @@index([moduleId])
+}
+
+model Giveaway {
+  id             String    @id @default(uuid())
+  organizationId String
+  serverId       String
+  title          String
+  description    String?
+  prize          String
+  winnersCount   Int       @default(1)
+  status         String    @default("ACTIVE") // ACTIVE, ENDED, CANCELLED
+  endsAt         DateTime
+  channelId      String?   // Canal do Discord onde o sorteio está rodando
+  messageId      String?   // ID da mensagem do sorteio no Discord
+  authorId       String?   // ID do usuário que iniciou o sorteio
+  winners        Json?     // Lista de IDs dos vencedores
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  server         Server       @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  participants   GiveawayParticipant[]
+
+  @@index([organizationId])
+  @@index([serverId])
+}
+
+model GiveawayParticipant {
+  id         String   @id @default(uuid())
+  giveawayId String
+  userId     String   // Discord User ID
+  username   String?
+  joinedAt   DateTime @default(now())
+
+  giveaway   Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+
+  @@unique([giveawayId, userId])
 }

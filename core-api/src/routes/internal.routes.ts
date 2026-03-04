@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { InternalController } from '../controllers/internal.controller';
 import { InternalAllowlistController } from '../controllers/internal-allowlist.controller';
+import { InternalGiveawayController } from '../controllers/internal-giveaway.controller';
 import { internalMiddleware } from '../middlewares/internal.middleware';
 
 const internalRoutes = Router();
 const ctrl = new InternalController();
 const allowlistCtrl = new InternalAllowlistController();
+const giveawayCtrl = new InternalGiveawayController();
 
 // Todas as rotas aqui exigem a Service Key do Bot (x-internal-service-key header)
 internalRoutes.use(internalMiddleware);
@@ -28,6 +30,12 @@ internalRoutes.post('/moderation/ban', ctrl.logModeration);
 
 // Membros
 internalRoutes.post('/members/join', ctrl.memberJoin);
+
+// Sorteios (Giveaways)
+internalRoutes.get('/giveaways/active', giveawayCtrl.listActiveGiveaways);
+internalRoutes.post('/giveaways', giveawayCtrl.createGiveaway);
+internalRoutes.post('/giveaways/join', giveawayCtrl.joinGiveaway);
+internalRoutes.patch('/giveaways/:id/end', giveawayCtrl.endGiveaway);
 
 // Observabilidade
 internalRoutes.post('/heartbeat', ctrl.heartbeat);
