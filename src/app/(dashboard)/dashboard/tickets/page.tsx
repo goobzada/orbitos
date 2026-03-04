@@ -20,6 +20,7 @@ import { TableSkeleton } from "@/components/ui/skeletons";
 import { Ticket } from "@/types";
 import { useTickets, useDeleteTicket } from "@/lib/hooks";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/providers/confirm-provider";
 
 const MOCK_TICKETS: any[] = [
     { id: "TK-1042", subject: "Ajuda com pagamento via Pix", authorName: "Kaiky", authorId: "1", server: { name: "Gamer Haven", icon: null }, priority: "HIGH", status: "OPEN", updatedAt: "10 min atrás" },
@@ -31,13 +32,21 @@ const MOCK_TICKETS: any[] = [
 export default function TicketsPage() {
     const { data: apiTickets, isLoading } = useTickets();
     const deleteTicket = useDeleteTicket();
+    const confirm = useConfirm();
     const tickets = process.env.NODE_ENV === "development"
         ? (apiTickets && apiTickets.length > 0 ? apiTickets : MOCK_TICKETS)
         : (apiTickets || []);
 
     const handleDelete = async (e: React.MouseEvent, ticketId: string) => {
         e.stopPropagation();
-        if (!confirm("Deseja realmente deletar este ticket? Esta ação é irreversível.")) return;
+        const ok = await confirm({
+            title: 'Deletar Ticket',
+            description: 'Esta ação é irreversível. O ticket será removido permanentemente.',
+            confirmLabel: 'Deletar',
+            cancelLabel: 'Cancelar',
+            variant: 'danger',
+        });
+        if (!ok) return;
         try {
             await deleteTicket.mutateAsync(ticketId);
             toast.success("Ticket deletado com sucesso.");

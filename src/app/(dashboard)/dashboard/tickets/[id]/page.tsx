@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useConfirm } from "@/components/providers/confirm-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,9 +65,17 @@ export default function TicketDetailPage() {
     const { mutateAsync: updatePriority, isPending: updatingPriority } = useUpdateTicketPriority(ticketId);
     const { mutateAsync: assignStaff, isPending: assigningStaff } = useAssignTicketStaff(ticketId);
     const { data: staffMembers } = useStaffMembers(ticket?.serverId);
+    const confirm = useConfirm();
 
     const handleDeleteTicket = async () => {
-        if (!confirm("Deseja realmente DELETAR este ticket? Esta ação é irreversível.")) return;
+        const ok = await confirm({
+            title: 'Deletar Ticket',
+            description: 'Esta ação é irreversível. O ticket e todas as mensagens serão removidos permanentemente.',
+            confirmLabel: 'Deletar',
+            cancelLabel: 'Cancelar',
+            variant: 'danger',
+        });
+        if (!ok) return;
         try {
             await deleteTicket(ticketId);
             toast.success("Ticket deletado.");
@@ -112,14 +121,20 @@ export default function TicketDetailPage() {
     };
 
     const handleClose = async () => {
-        if (confirm("Deseja realmente fechar este ticket?")) {
-            try {
-                await closeTicket(ticketId);
-                toast.success("Ticket fechado com sucesso.");
-                router.push('/dashboard/tickets');
-            } catch (e) {
-                toast.error("Erro ao fechar ticket.");
-            }
+        const ok = await confirm({
+            title: 'Fechar Ticket',
+            description: 'O ticket será fechado e o canal no Discord será excluído em 10 segundos.',
+            confirmLabel: 'Fechar Ticket',
+            cancelLabel: 'Cancelar',
+            variant: 'warning',
+        });
+        if (!ok) return;
+        try {
+            await closeTicket(ticketId);
+            toast.success("Ticket fechado com sucesso.");
+            router.push('/dashboard/tickets');
+        } catch (e) {
+            toast.error("Erro ao fechar ticket.");
         }
     };
 
