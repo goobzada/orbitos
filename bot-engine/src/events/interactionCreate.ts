@@ -61,6 +61,70 @@ export default {
             return;
         }
 
+        // ── BOTÃO: Abrir Ticket (criado pelo /setup) ─────────────────────────────
+        // customId = 'open_ticket' — Deve mostrar select de categorias ou modal direto
+        if (interaction.isButton() && interaction.customId === 'open_ticket') {
+            let lang = 'pt-BR';
+            let categories: any[] = [];
+            try {
+                const { data } = await coreApi.get(`/internal/guilds/${interaction.guildId}/modules`);
+                lang = data.language || 'pt-BR';
+                const ticketMod = data.modules?.find((m: any) => m.key === 'ticket');
+                categories = ticketMod?.config?.ticketCategories || [];
+            } catch (e) { /* usa padrão */ }
+
+            const { tickets: ticketStrings } = getTranslation(lang);
+
+            if (categories.length === 0) {
+                // Sem categorias configuradas → abre modal direto (fluxo simples)
+                const modal = new ModalBuilder()
+                    .setCustomId('ticket_modal_Z2VyYWw=') // base64 de "geral"
+                    .setTitle(lang === 'pt-BR' ? 'Abrir Ticket' : 'Open Ticket');
+
+                modal.addComponents(
+                    new ActionRowBuilder<TextInputBuilder>().addComponents(
+                        new TextInputBuilder()
+                            .setCustomId('ticket_subject')
+                            .setLabel(lang === 'pt-BR' ? 'Assunto' : 'Subject')
+                            .setStyle(TextInputStyle.Short)
+                            .setPlaceholder(lang === 'pt-BR' ? 'Descreva brevemente o motivo' : 'Brief description')
+                            .setRequired(true)
+                            .setMaxLength(100)
+                    ),
+                    new ActionRowBuilder<TextInputBuilder>().addComponents(
+                        new TextInputBuilder()
+                            .setCustomId('ticket_description')
+                            .setLabel(lang === 'pt-BR' ? 'Descrição' : 'Description')
+                            .setStyle(TextInputStyle.Paragraph)
+                            .setPlaceholder(lang === 'pt-BR' ? 'Explique em detalhes o que você precisa...' : 'Explain in detail...')
+                            .setRequired(true)
+                            .setMaxLength(800)
+                    )
+                );
+                return interaction.showModal(modal);
+            }
+
+            // Com categorias → mostra select menu
+            const selectMenu = new StringSelectMenuBuilder()
+                .setCustomId('ticket_select_category')
+                .setPlaceholder(ticketStrings.selectCategory)
+                .addOptions(
+                    categories.slice(0, 25).map((cat: any) => {
+                        const isStr = typeof cat === 'string';
+                        const name = isStr ? cat : (cat.name || 'Categoria');
+                        return {
+                            label: name,
+                            value: `cat_${Buffer.from(name).toString('base64').slice(0, 50)}`,
+                            description: isStr ? ticketStrings.modalTitle : (cat.description || ticketStrings.modalTitle),
+                            emoji: isStr ? '🎫' : (cat.emoji || '🎫'),
+                        };
+                    })
+                );
+
+            const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+            return interaction.reply({ content: lang === 'pt-BR' ? '📂 Selecione a categoria do seu ticket:' : '📂 Select your ticket category:', components: [row], ephemeral: true });
+        }
+
         // ── SELECT MENU: /painel deploy panel ────────────────────────
         if (interaction.isStringSelectMenu() && interaction.customId === 'painel_select_module') {
             const value = interaction.values[0];
