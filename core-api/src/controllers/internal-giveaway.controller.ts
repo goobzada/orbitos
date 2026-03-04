@@ -90,7 +90,7 @@ export class InternalGiveawayController {
 
             // Embaralha e escolhe vencedores
             const shuffled = participants.sort(() => 0.5 - Math.random());
-            const winners = shuffled.slice(0, giveaway.winnersCount).map(p => p.userId);
+            const winners = shuffled.slice(0, giveaway.winnersCount).map((p: { userId: string }) => p.userId);
 
             const updated = await prisma.giveaway.update({
                 where: { id },
