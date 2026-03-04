@@ -9,8 +9,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+} from "@/components/ui/dialog";
+import {
     Search, Plus, Filter, MoreHorizontal, Settings2, AlertCircle,
-    Satellite, Wifi, WifiOff, Terminal
+    Satellite, Wifi, WifiOff, Terminal, Copy, CheckCheck, ExternalLink
 } from "lucide-react";
 import { useServers, useDeleteServer, useAgentStatus } from "@/lib/hooks";
 import { TableSkeleton, PageHeaderSkeleton } from "@/components/ui/skeletons";
@@ -24,6 +27,7 @@ import {
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
 } from "@/components/ui/tooltip";
+
 
 const planBadgeClass = (plan: string) => {
     if (plan === "ENTERPRISE" || plan === "MAX") return "bg-amber-500/10 text-amber-400 border-amber-500/20";
@@ -40,6 +44,22 @@ export default function ServersPage() {
     const [addOpen, setAddOpen] = useState(false);
     const [configServer, setConfigServer] = useState<Server | null>(null);
     const [search, setSearch] = useState('');
+    const [agentGuideOpen, setAgentGuideOpen] = useState(false);
+    const [copiedStep, setCopiedStep] = useState<number | null>(null);
+
+    const copyToClipboard = (text: string, step: number) => {
+        navigator.clipboard.writeText(text);
+        setCopiedStep(step);
+        setTimeout(() => setCopiedStep(null), 2000);
+    };
+
+    const installSteps = [
+        { label: '1. Clonar o repositório', cmd: 'git clone https://github.com/goobzada/orbitos.git ~/orbitos && cd ~/orbitos/orbit-agent' },
+        { label: '2. Instalar dependências', cmd: 'npm install' },
+        { label: '3. Configurar variáveis de ambiente', cmd: 'cp .env.example .env && nano .env' },
+        { label: '4. Build de produção', cmd: 'npm run build' },
+        { label: '5. Iniciar com PM2', cmd: 'pm2 start dist/index.js --name orbitos-agent && pm2 save' },
+    ];
 
     const connectedAgents = new Set(agentStatus?.agents ?? []);
 
@@ -72,6 +92,55 @@ export default function ServersPage() {
                     server={configServer}
                 />
 
+                {/* Agent Install Guide Dialog */}
+                <Dialog open={agentGuideOpen} onOpenChange={setAgentGuideOpen}>
+                    <DialogContent className="max-w-2xl bg-card border-border">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-xl">
+                                <Satellite className="w-5 h-5 text-sky-400" />
+                                Instalar Orbit Agent na VPS
+                            </DialogTitle>
+                            <DialogDescription>
+                                O Orbit Agent permite execução remota de comandos e monitoramento avançado do seu servidor.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-3 mt-2">
+                            {installSteps.map((step, i) => (
+                                <div key={i} className="rounded-xl border border-border bg-muted/30 overflow-hidden">
+                                    <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
+                                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{step.label}</span>
+                                        <button
+                                            onClick={() => copyToClipboard(step.cmd, i)}
+                                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                        >
+                                            {copiedStep === i
+                                                ? <><CheckCheck className="w-3.5 h-3.5 text-emerald-400" /><span className="text-emerald-400">Copiado!</span></>
+                                                : <><Copy className="w-3.5 h-3.5" />Copiar</>
+                                            }
+                                        </button>
+                                    </div>
+                                    <pre className="px-4 py-3 text-sm font-mono text-sky-300 overflow-x-auto whitespace-pre-wrap break-all">{step.cmd}</pre>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400">
+                            <strong>⚠️ Importante:</strong> No arquivo <code className="bg-black/20 px-1 rounded">.env</code>, defina <code className="bg-black/20 px-1 rounded">CORE_API_URL=https://api.orbitup.io</code> e o <code className="bg-black/20 px-1 rounded">INTERNAL_SERVICE_KEY</code> correto.
+                        </div>
+
+                        <div className="flex justify-end gap-2 mt-2">
+                            <Button variant="outline" size="sm" onClick={() => setAgentGuideOpen(false)}>Fechar</Button>
+                            <a href="https://orbitup.io/docs/orbit-agent" target="_blank" rel="noopener noreferrer">
+                                <Button size="sm" className="gap-2 bg-sky-600 hover:bg-sky-700 text-white">
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                    Documentação Completa
+                                </Button>
+                            </a>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
                 {/* Header */}
                 {isLoading ? <PageHeaderSkeleton /> : (
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -97,8 +166,8 @@ export default function ServersPage() {
                 {/* Orbit Agent Status Banner */}
                 {!isLoading && agentStatus !== undefined && (
                     <div className={`flex items-center gap-4 px-5 py-4 rounded-xl border text-sm font-medium transition-all ${agentStatus.online
-                            ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400'
-                            : 'bg-muted/30 border-border text-muted-foreground'
+                        ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400'
+                        : 'bg-muted/30 border-border text-muted-foreground'
                         }`}>
                         <div className={`p-2 rounded-lg ${agentStatus.online ? 'bg-emerald-500/10' : 'bg-muted'}`}>
                             <Satellite className={`w-4 h-4 ${agentStatus.online ? 'text-emerald-400' : 'text-muted-foreground'}`} />
@@ -120,7 +189,7 @@ export default function ServersPage() {
                             )}
                         </div>
                         {!agentStatus.online && (
-                            <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={() => toast.info('Na próxima sessão veremos como instalar o Orbit Agent no seu servidor VPS.')}>
+                            <Button variant="outline" size="sm" className="gap-2 text-xs border-sky-500/30 text-sky-400 hover:bg-sky-500/10" onClick={() => setAgentGuideOpen(true)}>
                                 <Terminal className="w-3.5 h-3.5" />
                                 Como instalar
                             </Button>

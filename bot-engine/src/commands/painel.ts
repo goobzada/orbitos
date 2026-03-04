@@ -57,7 +57,7 @@ export default {
                 const dashboardBtn = new ButtonBuilder()
                     .setLabel(ui.openDashboard)
                     .setStyle(ButtonStyle.Link)
-                    .setURL('http://localhost:3001/dashboard/automations')
+                    .setURL(`${process.env.DASHBOARD_URL || 'https://orbitup.io'}/dashboard/automations`)
                     .setEmoji('🚀');
 
                 const row = new ActionRowBuilder<ButtonBuilder>().addComponents(dashboardBtn);
@@ -88,17 +88,56 @@ export default {
             console.error('[PainelCmd] ❌ Erro:', error?.response?.data || error?.message);
 
             const status = error?.response?.status;
-            let errorMsg = '❌ Error fetching server configuration.';
+            const dashboardUrl = process.env.DASHBOARD_URL || 'https://orbitup.io';
+
+            // Embed de erro amigável
+            let errorEmbed: EmbedBuilder;
 
             if (!error.response) {
-                errorMsg = '❌ **API offline** — OrbitOS server is not responding.';
+                errorEmbed = new EmbedBuilder()
+                    .setColor(0xFF4444)
+                    .setTitle('⚠️ API Offline')
+                    .setDescription('O servidor OrbitOS não está respondendo no momento.\n\nTente novamente em alguns instantes ou verifique o status em [orbitup.io](https://orbitup.io).')
+                    .setFooter({ text: 'OrbitOS • status.orbitup.io' });
+
             } else if (status === 404) {
-                errorMsg = '❌ **Server not linked** — This Discord server is not associated with any organization.';
+                errorEmbed = new EmbedBuilder()
+                    .setColor(0xFFAA00)
+                    .setTitle('🔗 Servidor não vinculado')
+                    .setDescription(
+                        `Este servidor Discord (**${interaction.guild?.name || interaction.guildId}**) ainda não está associado a nenhuma organização OrbitOS.\n\n` +
+                        `**Para vincular este servidor:**\n` +
+                        `1️⃣ Acesse o painel em [orbitup.io](${dashboardUrl})\n` +
+                        `2️⃣ Vá em **Servidores → Adicionar Servidor**\n` +
+                        `3️⃣ Use o Guild ID: \`${interaction.guildId}\`\n\n` +
+                        `Após vincular, use \`/painel\` novamente.`
+                    )
+                    .setFooter({ text: `Guild ID: ${interaction.guildId}` })
+                    .setTimestamp();
+
+                const linkBtn = new ButtonBuilder()
+                    .setLabel('Vincular Agora')
+                    .setStyle(ButtonStyle.Link)
+                    .setURL(`${dashboardUrl}/dashboard/servers`)
+                    .setEmoji('🔗');
+
+                const row = new ActionRowBuilder<ButtonBuilder>().addComponents(linkBtn);
+                return interaction.editReply({ embeds: [errorEmbed], components: [row] });
+
             } else if (status === 401 || status === 403) {
-                errorMsg = '❌ **Internal authentication failed**.';
+                errorEmbed = new EmbedBuilder()
+                    .setColor(0xFF4444)
+                    .setTitle('🔒 Erro de Autenticação')
+                    .setDescription('Falha na autenticação interna. Contate o administrador da plataforma.');
+            } else {
+                errorEmbed = new EmbedBuilder()
+                    .setColor(0xFF4444)
+                    .setTitle('❌ Erro Inesperado')
+                    .setDescription(`Não foi possível carregar a configuração deste servidor.\nCódigo: \`${status || 'UNKNOWN'}\``);
             }
 
-            return interaction.editReply({ content: errorMsg });
+            return interaction.editReply({ embeds: [errorEmbed] });
         }
+
     }
 };
