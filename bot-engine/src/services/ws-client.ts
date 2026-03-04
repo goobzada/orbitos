@@ -104,6 +104,30 @@ export class CommunityWSClient {
                         }
                         break;
                     }
+                    case 'ticket.close_ticket_flow': {
+                        // Fallback hardcoded: avisa no canal e deleta após 10s
+                        log.info(`[WS CLIENT] 🔐 Fechando ticket no canal ${params.channelId}`);
+                        try {
+                            const channel = await guild.channels.fetch(params.channelId);
+                            if (channel?.isTextBased()) {
+                                await (channel as any).send(
+                                    `**[Staff] ${params.staffName || 'Staff'}** fechou este ticket pelo Dashboard. Este canal será excluído em 10 segundos.`
+                                );
+                            }
+                            setTimeout(async () => {
+                                try {
+                                    const ch = await guild.channels.fetch(params.channelId).catch(() => null);
+                                    if (ch) await ch.delete();
+                                    log.info(`[WS CLIENT] 🗑️ Canal de ticket deletado: ${params.channelId}`);
+                                } catch (e) {
+                                    log.error(`[WS CLIENT] ❌ Erro ao deletar canal: ${e}`);
+                                }
+                            }, 10000);
+                        } catch (e) {
+                            log.error(`[WS CLIENT] ❌ Erro no close_ticket_flow: ${e}`);
+                        }
+                        break;
+                    }
                     default:
                         log.warn(`[WS CLIENT] ⚠️ Ninguém soube processar a ação: ${action}`);
                 }

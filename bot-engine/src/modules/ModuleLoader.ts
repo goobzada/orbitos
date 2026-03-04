@@ -18,7 +18,11 @@ export class ModuleLoader {
 
         for (const folder of folders) {
             const folderPath = path.join(modulesPath, folder);
-            const files = fs.readdirSync(folderPath).filter(f => f.endsWith('.ts') && !f.endsWith('.d.ts'));
+            // Suporta .ts (dev/ts-node) e .js (produção compilada)
+            const allFiles = fs.readdirSync(folderPath);
+            const tsFiles = allFiles.filter(f => f.endsWith('.ts') && !f.endsWith('.d.ts'));
+            const jsFiles = allFiles.filter(f => f.endsWith('.js') && !f.endsWith('.d.js'));
+            const files = tsFiles.length > 0 ? tsFiles : jsFiles;
 
             for (const file of files) {
                 try {
@@ -28,7 +32,7 @@ export class ModuleLoader {
                         if (moduleImport.init) {
                             moduleImport.init(this.client);
                         }
-                        log.info(`[MODULE SERVER] 📦 Módulo carregado: ${moduleImport.name} (${folder})`);
+                        log.info(`[MODULE SERVER] 📦 Módulo carregado: ${moduleImport.name} (${folder}) [${file}]`);
                     }
                 } catch (error: any) {
                     log.error(`[MODULE SERVER] ❌ Falha ao carregar o módulo ${file}: ${error.message}`);
