@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { useOrganizations, useAddServer } from "@/lib/hooks";
 import { CreateOrgModal } from "./create-org-modal";
 
-const CLIENT_ID = "1343493844221563011";
+const CLIENT_ID = "1357217419260596425";
 const INVITE_URL = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&permissions=8&scope=bot%20applications.commands`;
 
 interface AddServerModalProps {

@@ -247,7 +247,7 @@ export default function AutomationsPage() {
                         </div>
                     </div>
                     <a
-                        href={`https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1343493844221563011'}&permissions=8&scope=bot+applications.commands`}
+                        href={`https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1357217419260596425'}&permissions=8&scope=bot+applications.commands`}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
