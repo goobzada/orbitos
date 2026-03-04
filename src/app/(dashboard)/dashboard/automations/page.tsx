@@ -61,10 +61,13 @@ export default function AutomationsPage() {
     };
 
     const activeServers = servers?.filter(s => {
-        if (!s.isActive || !s.lastSeenAt) return false;
+        if (!s.isActive) return false;
+        // Se não tem lastSeenAt mas isActive=true, considera online (sincronização manual)
+        if (!s.lastSeenAt) return true;
         const lastSeen = new Date(s.lastSeenAt).getTime();
         const now = new Date().getTime();
-        return Math.abs(now - lastSeen) < 180000;
+        // Janela de 10 minutos (heartbeat a cada 60s, tolerância para rede lenta)
+        return Math.abs(now - lastSeen) < 600000;
     }) || [];
     const isBotOnline = activeServers.length > 0;
 
