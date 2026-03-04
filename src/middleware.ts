@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
         const url = request.nextUrl.clone();
         url.searchParams.delete('clear');
         const resp = NextResponse.redirect(url);
-        resp.cookies.set('token', '', { maxAge: 0, path: '/' });
+        resp.cookies.set({ name: 'token', value: '', maxAge: 0, path: '/', sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
         return resp;
     }
 
@@ -62,7 +62,7 @@ export async function middleware(request: NextRequest) {
         if (isProtected) url.searchParams.set('from', pathname);
 
         const resp = NextResponse.redirect(url);
-        resp.cookies.set('token', '', { maxAge: 0, path: '/' });
+        resp.cookies.set({ name: 'token', value: '', maxAge: 0, path: '/', sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
         return resp;
     }
 

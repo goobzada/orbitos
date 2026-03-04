@@ -4,23 +4,26 @@ const COOKIE_NAMES = ['token', 'orbitos_token', 'orbitos_current_org', 'orbitos_
 
 function clearCookies(response: NextResponse) {
     COOKIE_NAMES.forEach(name => {
-        response.cookies.set(name, '', { maxAge: 0, path: '/', sameSite: 'lax' });
+        response.cookies.set({
+            name: name,
+            value: '',
+            httpOnly: false, // Foi setado no via document.cookie, então httpOnly: false para garantir match (ou true se fosse HttpOnly original)
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 0,
+        });
     });
 }
 
 function getPublicOrigin(request: NextRequest): string {
-    // Quando Next.js está atrás de um reverse proxy (Nginx), o request.url
-    // é a URL interna (ex: http://localhost:3001). Precisamos usar os headers
-    // x-forwarded-proto e x-forwarded-host para reconstruir a URL pública.
     const forwardedProto = request.headers.get('x-forwarded-proto');
     const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
 
     if (forwardedProto && forwardedHost) {
-        // Em produção atrás do Nginx: https://orbitup.io
         return `${forwardedProto}://${forwardedHost}`;
     }
 
-    // Em desenvolvimento: usa o origin da request.url (http://localhost:3001)
     try {
         return new URL(request.url).origin;
     } catch {
@@ -28,8 +31,7 @@ function getPublicOrigin(request: NextRequest): string {
     }
 }
 
-// GET /api/auth/logout — limpa cookie E redireciona para /login num único response
-// Sem fetch, sem async no client, sem race condition
+// GET /api/auth/logout — limpa cookie E redireciona para /login
 export async function GET(request: NextRequest) {
     const origin = getPublicOrigin(request);
     const response = NextResponse.redirect(`${origin}/login`);
@@ -37,9 +39,11 @@ export async function GET(request: NextRequest) {
     return response;
 }
 
-// POST /api/auth/logout — só limpa cookie (para uso via fetch())
-export async function POST() {
-    const response = NextResponse.json({ success: true });
+// POST /api/auth/logout — limpa cookie e retorna JSON (ou redireciona)
+export async function POST(request: NextRequest) {
+    // Para funcionar em action calls via POST
+    const origin = getPublicOrigin(request);
+    const response = NextResponse.json({ success: true, redirectUrl: `${origin}/login` });
     clearCookies(response);
     return response;
 }

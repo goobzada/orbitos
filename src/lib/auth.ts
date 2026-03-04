@@ -80,7 +80,7 @@ export const removeToken = clearTokenStorage;
 
 // ─── Logout Centralizado ─────────────────────────────────────────────────────
 
-export const logout = (opts?: { redirect?: boolean }): void => {
+export const logout = async (opts?: { redirect?: boolean }) => {
     if (isLoggingOut) return;
     isLoggingOut = true;
 
@@ -88,9 +88,16 @@ export const logout = (opts?: { redirect?: boolean }): void => {
         clearTokenStorage(); // limpa client-side imediatamente
 
         if (opts?.redirect !== false && typeof window !== 'undefined') {
-            // Navegar para GET /api/auth/logout que limpa o cookie
-            // e redireciona para /login num único response server-side.
-            // Sem fetch, sem async, sem race condition.
+            // Fix definitivo: Chama POST para limpar cookies no browser (com credenciais) e redireciona depois
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include', // forca o envio dos cookies pro endpoint limpar
+            });
+            window.location.href = '/login';
+        }
+    } catch (e) {
+        // Fallback: se o POST falhar, redirecionamos para o GET que também limpa e redireciona
+        if (opts?.redirect !== false && typeof window !== 'undefined') {
             window.location.replace('/api/auth/logout');
         }
     } finally {
