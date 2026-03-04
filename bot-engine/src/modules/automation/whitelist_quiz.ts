@@ -39,15 +39,36 @@ const DEFAULT_QUESTIONS = [
 ];
 
 // Normaliza formato antigo (answer: string) para novo (correctAnswer: índice numérico)
-function normalizeQuestions(raw: any[]): typeof DEFAULT_QUESTIONS {
+// E embaralha as opções para não serem previsíveis
+function prepareQuestions(raw: any[]): typeof DEFAULT_QUESTIONS {
     return raw.map(q => {
-        if (typeof q.correctAnswer === 'number') return q; // já no formato novo
-        // Formato antigo: question/answer strings
         const text = q.text || q.question || 'Pergunta';
-        const options: string[] = q.options || [];
-        const answerStr: string = q.answer || '';
-        const correctAnswer = options.findIndex(o => o === answerStr);
-        return { text, options, correctAnswer: correctAnswer >= 0 ? correctAnswer : 0 };
+        const rawOptions: string[] = [...(q.options || [])];
+
+        // Determina qual é o texto da resposta correta ANTES de embaralhar
+        let correctText = '';
+        if (typeof q.correctAnswer === 'number' && rawOptions[q.correctAnswer]) {
+            correctText = rawOptions[q.correctAnswer];
+        } else if (typeof q.answer === 'string') {
+            correctText = q.answer;
+        } else {
+            correctText = rawOptions[0] || '';
+        }
+
+        // Embaralha as opções (Fisher-Yates)
+        for (let i = rawOptions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [rawOptions[i], rawOptions[j]] = [rawOptions[j], rawOptions[i]];
+        }
+
+        // Encontra o novo índice da resposta correta
+        const newCorrectIndex = rawOptions.indexOf(correctText);
+
+        return {
+            text,
+            options: rawOptions,
+            correctAnswer: newCorrectIndex >= 0 ? newCorrectIndex : 0
+        };
     });
 }
 
@@ -58,10 +79,12 @@ async function startQuiz(interaction: ButtonInteraction) {
     const config = await moduleLoader.getGuildModuleConfig(interaction.guildId, 'whitelist_quiz');
 
     // Usa as perguntas do config OU o fallback padrão de 12 perguntas
-    const rawQuestions = config?.questions;
-    const questions = (rawQuestions && rawQuestions.length > 0)
-        ? normalizeQuestions(rawQuestions)
+    const rawQuestions = (config?.questions && config.questions.length > 0)
+        ? config.questions
         : DEFAULT_QUESTIONS;
+
+    // Prepara e embaralha
+    const questions = prepareQuestions(rawQuestions);
 
     sessions.set(interaction.user.id, {
         guildId: interaction.guildId,
@@ -124,7 +147,7 @@ async function sendQuestion(interaction: ButtonInteraction, userId: string) {
             new ButtonBuilder()
                 .setCustomId(`quiz_ans_${idx}`)
                 .setLabel(`${OPTION_LABELS[idx] ?? String(idx + 1)}. ${opt.substring(0, 70)}`)
-                .setStyle(idx === 0 ? ButtonStyle.Primary : idx === 1 ? ButtonStyle.Secondary : ButtonStyle.Secondary)
+                .setStyle(ButtonStyle.Secondary) // Mantém cor neutra para não dar a resposta!
         );
     });
 
@@ -195,21 +218,45 @@ async function finishQuiz(interaction: ButtonInteraction, userId: string) {
         .setFooter({ text: 'OrbitOS Whitelist Engine' })
         .setTimestamp();
 
-    if (passed && session.roleId && session.autoApprove) {
+    if (passed && session.roleId && session.roleId.trim() !== '' && session.autoApprove) {
         try {
-            const member = await interaction.guild?.members.fetch(userId);
-            if (member) {
-                await member.roles.add(session.roleId);
-                embed.addFields({ name: 'Cargo Atribuído', value: `<@&${session.roleId}>`, inline: true });
+            const guild = interaction.guild;
+            if (guild) {
+                const member = await guild.members.fetch(userId);
+                const role = await guild.roles.fetch(session.roleId);
+
+                if (member && role) {
+                    // Verifica se o bot tem o cargo acima do cargo que vai dar
+                    const botMember = guild.members.me;
+                    if (botMember && botMember.roles.highest.position <= role.position) {
+                        log.warn(`[WhitelistQuiz] Bot n\u00e3o pode dar o cargo ${role.name} pois ele est\u00e1 acima na hierarquia.`);
+                        embed.setFooter({ text: '\u26a0\ufe0f O cargo configurado est\u00e1 acima da hierarquia do bot.' });
+                    } else {
+                        await member.roles.add(role);
+                        embed.addFields({ name: 'Cargo Atribu\u00eddo', value: `<@&${session.roleId}>`, inline: true });
+                        log.info(`[WhitelistQuiz] Cargo ${role.name} dado para ${member.user.tag}`);
+                    }
+                } else {
+                    log.warn(`[WhitelistQuiz] Cargo (${session.roleId}) ou Membro (${userId}) n\u00e3o encontrado.`);
+                }
             }
         } catch (err) {
-            log.error(`[WhitelistQuiz] Erro ao adicionar cargo: ${err}`);
-            embed.setFooter({ text: '⚠️ Erro ao aplicar cargo. Contate um admin.' });
+            log.error(`[WhitelistQuiz] Erro crítico ao adicionar cargo: ${err}`);
+            embed.setFooter({ text: '\u26a0\ufe0f Erro ao aplicar cargo. Verifique as permiss\u00f5es do bot.' });
         }
     }
 
     sessions.delete(userId);
-    await interaction.editReply({ embeds: [embed], components: [] });
+
+    // Botão para fechar/limpar a mensagem efêmera
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+            .setCustomId('quiz_close_result')
+            .setLabel('Fechar')
+            .setStyle(ButtonStyle.Secondary)
+    );
+
+    await interaction.editReply({ embeds: [embed], components: [row] });
 }
 
 const WhitelistQuizModule: BaseModule = {
@@ -231,6 +278,12 @@ const WhitelistQuizModule: BaseModule = {
 
         if (interaction.customId.startsWith('quiz_ans_')) {
             await handleAnswer(interaction as ButtonInteraction);
+            return;
+        }
+
+        if (interaction.customId === 'quiz_close_result') {
+            await interaction.deferUpdate();
+            await interaction.deleteReply();
             return;
         }
     }
