@@ -160,6 +160,28 @@ app.get('/agents/status', (req, res) => {
   });
 });
 
+// 🛰️ Agent Discovery — Lista servidores ativos para o Orbit Agent Supervisor
+// Autenticado com BOT_INTERNAL_TOKEN (mesmo token usado no WebSocket)
+app.get('/agents/servers', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '').trim();
+  const expected = process.env.BOT_INTERNAL_TOKEN;
+  if (!expected || token !== expected) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const { PrismaClient } = await import('@prisma/client');
+    const p = new PrismaClient();
+    const servers = await p.server.findMany({
+      where: { isActive: true },
+      select: { discordGuildId: true, name: true },
+    });
+    await p.$disconnect();
+    return res.json(servers);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // Middleware de Erros Globais
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err);

@@ -32,6 +32,9 @@ internalRoutes.post('/members/join', ctrl.memberJoin);
 // Observabilidade
 internalRoutes.post('/heartbeat', ctrl.heartbeat);
 
+// Orbit Agent Supervisor — lista todos os servidores ativos
+internalRoutes.get('/servers', ctrl.listServers.bind(ctrl));
+
 // Rotas do Módulo Allowlist V2
 internalRoutes.get('/allowlist/active-form', allowlistCtrl.getActiveForm);
 internalRoutes.post('/allowlist/forms/:id/submit', allowlistCtrl.submitForm);

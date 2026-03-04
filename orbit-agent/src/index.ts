@@ -1,244 +1,216 @@
 import WebSocket from 'ws';
 import dotenv from 'dotenv';
 import { exec } from 'child_process';
+import https from 'https';
+import http from 'http';
 
 dotenv.config();
 
 // ═══════════════════════════════════════════════════════════════
-//  🛰️  ORBITOS AGENT SDK V2
-//  Canal WebSocket seguro entre o servidor do cliente e o Orbit Cloud.
-//  Permite que o painel execute ações remotas sem abrir portas inbound.
+//  🛰️  ORBITOS AGENT SUPERVISOR V3
+//  Processo único que gerencia TODOS os servidores automaticamente.
+//  Descobre servidores via API e cria conexões WS para cada um.
+//  Novos servidores são detectados a cada POLL_INTERVAL ms.
 // ═══════════════════════════════════════════════════════════════
 
-const API_URL = process.env.CORE_API_WS_URL || 'ws://127.0.0.1:4000/ws/agent';
+const WS_URL = process.env.CORE_API_WS_URL || 'ws://127.0.0.1:4000/ws/agent';
+const HTTP_API_URL = process.env.CORE_API_HTTP_URL || 'http://127.0.0.1:4000';
 const AGENT_TOKEN = process.env.AGENT_TOKEN || 'dev-bot-ws-token-123';
-const SERVER_ID = process.env.SERVER_ID || 'local-dev-server';
-const RECONNECT_DELAY_MS = 5000;
-const HEARTBEAT_INTERVAL_MS = 30000;
+const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL_MS || '30000', 10); // 30s default
+const RECONNECT_MS = 5000;
+const HEARTBEAT_MS = 30000;
 
-// 🔒 Allowlist de prefixos de comandos permitidos (segurança básica).
-// Em produção, a lista deve ser carregada de variável de ambiente ou config file assinado.
+// 🔒 Allowlist de comandos permitidos
 const COMMAND_ALLOWLIST: string[] = [
-    'systemctl',
-    'pm2',
-    'docker',
-    'ls',
-    'df',
-    'free',
-    'uptime',
-    'cat /var/log',
-    'tail',
-    'echo',
-    'tmux',
-    'screen',
-    'kill',
-    'pkill',
-    'service',
-    'nginx',
-    'certbot',
+    'systemctl', 'pm2', 'docker', 'ls', 'df', 'free',
+    'uptime', 'cat /var/log', 'tail', 'echo', 'kill',
+    'pkill', 'service', 'nginx', 'certbot', 'tmux', 'screen',
 ];
 
 function isCommandAllowed(command: string): boolean {
-    const trimmed = command.trim().toLowerCase();
-    return COMMAND_ALLOWLIST.some(prefix => trimmed.startsWith(prefix.toLowerCase()));
+    return COMMAND_ALLOWLIST.some(p => command.trim().toLowerCase().startsWith(p.toLowerCase()));
 }
 
-console.log('═══════════════════════════════════════════════════════');
-console.log(' 🛰️  ORBITOS AGENT SDK V2 - Inicializando...           ');
-console.log(`   Server ID : ${SERVER_ID}`);
-console.log(`   Orbit API  : ${API_URL}`);
-console.log('═══════════════════════════════════════════════════════');
-
-let ws: WebSocket | null = null;
-let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-let isShuttingDown = false;
-
-function sendToCloud(message: Record<string, unknown>) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(message));
-    } else {
-        console.warn('[AGENT] ⚠️  Tentativa de envio sem conexão ativa.');
-    }
-}
-
-function startHeartbeat() {
-    stopHeartbeat();
-    heartbeatTimer = setInterval(() => {
-        sendToCloud({ type: 'AGENT_HEARTBEAT', payload: { serverId: SERVER_ID, ts: Date.now() } });
-    }, HEARTBEAT_INTERVAL_MS);
-}
-
-function stopHeartbeat() {
-    if (heartbeatTimer) {
-        clearInterval(heartbeatTimer);
-        heartbeatTimer = null;
-    }
-}
-
-function handleCommand(type: string, payload: any) {
-    console.log(`[AGENT] 📥 Comando recebido: [${type}]`);
-
-    const correlationId: string | undefined = payload?.correlationId;
-    const action: string = payload?.action || type;
-
-    if (type === 'SSH_ACTION' || type === 'RCON_ACTION') {
-        const command: string = payload?.params?.command;
-
-        if (!command) {
-            console.error('[AGENT] ❌ Comando ausente no payload.');
-            sendToCloud({
-                type: 'AGENT_RESPONSE',
-                payload: {
-                    correlationId,
-                    serverId: SERVER_ID,
-                    status: 'ERROR',
-                    error: 'Nenhum comando fornecido no payload.',
-                    action,
-                    ts: Date.now(),
+// ── Busca lista de servidores na API ───────────────────────────────────────────
+async function fetchServerList(): Promise<{ discordGuildId: string; name: string }[]> {
+    return new Promise((resolve) => {
+        const url = `${HTTP_API_URL}/agents/servers`;
+        const isHttps = url.startsWith('https');
+        const lib = isHttps ? https : http;
+        const req = lib.request(url, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${AGENT_TOKEN}` },
+        }, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(data);
+                    if (Array.isArray(parsed)) resolve(parsed);
+                    else resolve([]);
+                } catch {
+                    resolve([]);
                 }
             });
-            return;
+        });
+        req.on('error', (err) => {
+            console.warn(`[SUPERVISOR] ⚠ Falha ao buscar servidores: ${err.message}`);
+            resolve([]);
+        });
+        req.end();
+    });
+}
+
+// ── Classe de conexão por servidor ─────────────────────────────────────────────
+class ServerAgent {
+    public readonly serverId: string;
+    public readonly name: string;
+    private ws: WebSocket | null = null;
+    private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+    private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    private stopped = false;
+
+    constructor(serverId: string, name: string) {
+        this.serverId = serverId;
+        this.name = name;
+        this.connect();
+    }
+
+    private send(msg: Record<string, unknown>) {
+        if (this.ws?.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify(msg));
         }
+    }
 
-        // 🔒 Segurança: Verificar allowlist antes de executar
-        if (!isCommandAllowed(command)) {
-            console.warn(`[AGENT] 🚫 Comando BLOQUEADO pela allowlist: ${command}`);
-            sendToCloud({
-                type: 'AGENT_RESPONSE',
-                payload: {
-                    correlationId,
-                    serverId: SERVER_ID,
-                    status: 'BLOCKED',
-                    error: `Comando não permitido pela política de segurança do agente: "${command.split(' ')[0]}"`,
-                    action,
-                    command,
-                    ts: Date.now(),
-                }
-            });
-            return;
-        }
+    private startHeartbeat() {
+        this.stopHeartbeat();
+        this.heartbeatTimer = setInterval(() => {
+            this.send({ type: 'AGENT_HEARTBEAT', payload: { serverId: this.serverId, ts: Date.now() } });
+        }, HEARTBEAT_MS);
+    }
 
-        console.log(`[AGENT] ⚙️  Executando ação: ${action}`);
-        console.log(`[AGENT] 📜 Comando: ${command}`);
+    private stopHeartbeat() {
+        if (this.heartbeatTimer) { clearInterval(this.heartbeatTimer); this.heartbeatTimer = null; }
+    }
 
-        exec(command, { timeout: 30000 }, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`[AGENT] ❌ Falha na execução: ${error.message}`);
-                sendToCloud({
-                    type: 'AGENT_RESPONSE',
-                    payload: {
-                        correlationId,
-                        serverId: SERVER_ID,
-                        status: 'ERROR',
-                        error: error.message,
-                        stderr: stderr || null,
-                        action,
-                        command,
-                        ts: Date.now(),
-                    }
-                });
+    private handleCommand(type: string, payload: any) {
+        const correlationId = payload?.correlationId;
+        const action = payload?.action || type;
+
+        if (type === 'SSH_ACTION' || type === 'RCON_ACTION') {
+            const command: string = payload?.params?.command;
+            if (!command) {
+                this.send({ type: 'AGENT_RESPONSE', payload: { correlationId, serverId: this.serverId, status: 'ERROR', error: 'Nenhum comando fornecido.', action, ts: Date.now() } });
                 return;
             }
-
-            if (stderr) {
-                console.warn(`[AGENT] ⚠️  Stderr: ${stderr.trim()}`);
+            if (!isCommandAllowed(command)) {
+                console.warn(`[${this.serverId}] 🚫 Comando bloqueado: ${command}`);
+                this.send({ type: 'AGENT_RESPONSE', payload: { correlationId, serverId: this.serverId, status: 'BLOCKED', error: `Comando não permitido: "${command.split(' ')[0]}"`, action, command, ts: Date.now() } });
+                return;
             }
-
-            const output = stdout.trim();
-            console.log(`[AGENT] ✅ Sucesso!\n${output || '(sem output)'}`);
-
-            // ✅ Resposta bidirecional: envia resultado de volta ao Orbit Cloud
-            sendToCloud({
-                type: 'AGENT_RESPONSE',
-                payload: {
-                    correlationId,
-                    serverId: SERVER_ID,
-                    status: 'SUCCESS',
-                    output,
-                    stderr: stderr?.trim() || null,
-                    action,
-                    command,
-                    ts: Date.now(),
+            exec(command, { timeout: 30000 }, (error, stdout, stderr) => {
+                if (error) {
+                    this.send({ type: 'AGENT_RESPONSE', payload: { correlationId, serverId: this.serverId, status: 'ERROR', error: error.message, stderr: stderr || null, action, command, ts: Date.now() } });
+                    return;
                 }
+                this.send({ type: 'AGENT_RESPONSE', payload: { correlationId, serverId: this.serverId, status: 'SUCCESS', output: stdout.trim(), stderr: stderr?.trim() || null, action, command, ts: Date.now() } });
             });
+        }
+    }
+
+    connect() {
+        if (this.stopped) return;
+        const url = `${WS_URL}?token=${encodeURIComponent(AGENT_TOKEN)}&serverId=${encodeURIComponent(this.serverId)}`;
+        this.ws = new WebSocket(url);
+
+        this.ws.on('open', () => {
+            console.log(`[SUPERVISOR] ✅ [${this.name}] conectado`);
+            this.startHeartbeat();
+            this.send({ type: 'AGENT_READY', payload: { serverId: this.serverId, ts: Date.now(), version: '3.0.0' } });
         });
 
-    } else {
-        console.warn(`[AGENT] ⚠️  Tipo de comando desconhecido: ${type}`);
-        sendToCloud({
-            type: 'AGENT_RESPONSE',
-            payload: {
-                correlationId,
-                serverId: SERVER_ID,
-                status: 'UNKNOWN_TYPE',
-                error: `Tipo de mensagem não suportado: ${type}`,
-                ts: Date.now(),
+        this.ws.on('message', (data) => {
+            try {
+                const { type, payload } = JSON.parse(data.toString());
+                if (!['AGENT_HEARTBEAT_ACK', 'AGENT_READY_ACK'].includes(type)) {
+                    this.handleCommand(type, payload);
+                }
+            } catch { /* ignore */ }
+        });
+
+        this.ws.on('close', () => {
+            this.stopHeartbeat();
+            this.ws = null;
+            if (!this.stopped) {
+                console.warn(`[SUPERVISOR] 🔌 [${this.name}] desconectado. Reconectando em ${RECONNECT_MS / 1000}s...`);
+                this.reconnectTimer = setTimeout(() => this.connect(), RECONNECT_MS);
             }
         });
+
+        this.ws.on('error', (err) => {
+            console.error(`[SUPERVISOR] ❌ [${this.name}] WS erro: ${err.message}`);
+        });
+    }
+
+    stop() {
+        this.stopped = true;
+        this.stopHeartbeat();
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+        this.ws?.close(1000, 'Agent stopped');
     }
 }
 
-function connect() {
-    if (isShuttingDown) return;
+// ── Supervisor — gerencia o pool de conexões ───────────────────────────────────
+const pool = new Map<string, ServerAgent>();
 
-    const url = `${API_URL}?token=${encodeURIComponent(AGENT_TOKEN)}&serverId=${encodeURIComponent(SERVER_ID)}`;
-    console.log(`[AGENT] 🔌 Conectando ao Orbit Cloud...`);
+async function syncServers() {
+    const servers = await fetchServerList();
 
-    ws = new WebSocket(url);
+    if (servers.length === 0) {
+        console.warn('[SUPERVISOR] ⚠ Nenhum servidor encontrado na API (ou API offline).');
+        return;
+    }
 
-    ws.on('open', () => {
-        console.log('[AGENT] ✅ Conectado! Aguardando ordens do Orbit Cloud.');
-        startHeartbeat();
-        // Anuncia presença
-        sendToCloud({
-            type: 'AGENT_READY',
-            payload: { serverId: SERVER_ID, ts: Date.now(), version: '2.0.0' }
-        });
-    });
-
-    ws.on('message', (data) => {
-        try {
-            const { type, payload } = JSON.parse(data.toString());
-            // Ignorar mensagens de handshake/ack silenciosamente
-            const SILENT_TYPES = ['AGENT_HEARTBEAT_ACK', 'AGENT_READY_ACK'];
-            if (!SILENT_TYPES.includes(type)) {
-                console.log(`[AGENT] 📨 Mensagem: ${type}`);
-                handleCommand(type, payload);
-            }
-        } catch (err) {
-            console.error('[AGENT] ❌ Erro ao processar mensagem recebida');
+    // Iniciar novas conexões
+    for (const { discordGuildId, name } of servers) {
+        if (!pool.has(discordGuildId)) {
+            console.log(`[SUPERVISOR] 🆕 Novo servidor detectado: ${name} (${discordGuildId})`);
+            pool.set(discordGuildId, new ServerAgent(discordGuildId, name));
         }
-    });
+    }
 
-    ws.on('close', (code, reason) => {
-        stopHeartbeat();
-        ws = null;
-        if (!isShuttingDown) {
-            console.warn(`[AGENT] 🔌 Desconectado (code: ${code}). Reconectando em ${RECONNECT_DELAY_MS / 1000}s...`);
-            setTimeout(connect, RECONNECT_DELAY_MS);
+    // Remover servidores que foram desativados
+    const activeIds = new Set(servers.map(s => s.discordGuildId));
+    for (const [id, agent] of pool) {
+        if (!activeIds.has(id)) {
+            console.log(`[SUPERVISOR] 🗑 Servidor removido: ${id}`);
+            agent.stop();
+            pool.delete(id);
         }
-    });
+    }
 
-    ws.on('error', (err) => {
-        console.error(`[AGENT] ❌ Erro WS: ${err.message}`);
-        // O 'close' event vai lidar com o reconect
-    });
+    console.log(`[SUPERVISOR] 📡 ${pool.size} agente(s) ativo(s)`);
 }
 
+// ── Início ─────────────────────────────────────────────────────────────────────
+console.log('═══════════════════════════════════════════════════════');
+console.log(' 🛰️  ORBITOS AGENT SUPERVISOR V3');
+console.log(`   API      : ${HTTP_API_URL}`);
+console.log(`   WS       : ${WS_URL}`);
+console.log(`   Poll     : ${POLL_INTERVAL / 1000}s`);
+console.log('═══════════════════════════════════════════════════════');
+
+// Primeira sincronização com delay para a API subir
+setTimeout(async () => {
+    await syncServers();
+    setInterval(syncServers, POLL_INTERVAL);
+}, 3000);
+
 // Graceful shutdown
-process.on('SIGINT', () => {
-    isShuttingDown = true;
-    console.log('\n[AGENT] 🛑 Encerrando agente graciosamente...');
-    stopHeartbeat();
-    ws?.close(1000, 'Agent shutdown');
+const shutdown = () => {
+    console.log('\n[SUPERVISOR] 🛑 Encerrando todos os agentes...');
+    for (const agent of pool.values()) agent.stop();
     process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-    isShuttingDown = true;
-    stopHeartbeat();
-    ws?.close(1000, 'Agent shutdown');
-    process.exit(0);
-});
-
-connect();
+};
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

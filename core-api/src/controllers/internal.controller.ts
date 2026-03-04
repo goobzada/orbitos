@@ -228,7 +228,16 @@ export class InternalController {
             language: server.organization?.language || 'pt-BR',
             plan: server.organization?.plan || 'FREE',
             isActive: server.organization?.isActive ?? true,
-            modules: result.filter(m => m.active) // Somente retornar os ativos para o bot
+            modules: result.filter(m => m.active)
         });
+    }
+
+    // Lista todos os servidores ativos — usado pelo Orbit Agent Supervisor
+    async listServers(req: Request, res: Response) {
+        const servers = await prisma.server.findMany({
+            where: { isActive: true },
+            select: { discordGuildId: true, name: true },
+        });
+        return res.json(servers);
     }
 }
