@@ -199,10 +199,12 @@ function connect() {
     ws.on('message', (data) => {
         try {
             const { type, payload } = JSON.parse(data.toString());
-            if (type !== 'AGENT_HEARTBEAT_ACK') { // Não logar pings
+            // Ignorar mensagens de handshake/ack silenciosamente
+            const SILENT_TYPES = ['AGENT_HEARTBEAT_ACK', 'AGENT_READY_ACK'];
+            if (!SILENT_TYPES.includes(type)) {
                 console.log(`[AGENT] 📨 Mensagem: ${type}`);
+                handleCommand(type, payload);
             }
-            handleCommand(type, payload);
         } catch (err) {
             console.error('[AGENT] ❌ Erro ao processar mensagem recebida');
         }
