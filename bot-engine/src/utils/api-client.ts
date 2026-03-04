@@ -10,7 +10,7 @@ const coreApi = axios.create({
         // Internal service key (in production, replace with a proper service account JWT)
         'x-internal-service-key': process.env.INTERNAL_SERVICE_KEY || 'saasbot-internal-secret'
     },
-    timeout: 5000,
+    timeout: 2500, // Discord tem 3s de limite — API deve responder antes
 });
 
 export default coreApi;

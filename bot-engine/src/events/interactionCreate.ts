@@ -174,34 +174,27 @@ export default {
             }
         }
 
-        // ── SELECT MENU: Open Ticket Category ─────────────────────────
-        // ── SELECT MENU: Open Ticket Category ─────────────────────────
+        // ── SELECT MENU: Open Ticket Category ───────────────────────────────
+        // CRITICO: mostrar modal IMEDIATAMENTE (sem API call — Discord tem 3s de limite)
         if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_select_category') {
-            let lang = 'pt-BR';
-            try {
-                const { data } = await coreApi.get(`/internal/guilds/${interaction.guildId}/modules`);
-                lang = data.language || 'pt-BR';
-            } catch (e) { }
-            const { tickets: ticketStrings } = getTranslation(lang);
-
             const categoryBase64 = interaction.values[0].replace('cat_', '');
             const modal = new ModalBuilder()
                 .setCustomId(`ticket_modal_${categoryBase64}`)
-                .setTitle(ticketStrings.modalTitle);
+                .setTitle('Abrir Ticket');
 
             const subjectInput = new TextInputBuilder()
                 .setCustomId('ticket_subject')
-                .setLabel(ticketStrings.subjectLabel)
+                .setLabel('Assunto')
                 .setStyle(TextInputStyle.Short)
-                .setPlaceholder(ticketStrings.subjectPlaceholder)
+                .setPlaceholder('Descreva brevemente o motivo do ticket')
                 .setRequired(true)
                 .setMaxLength(100);
 
             const descInput = new TextInputBuilder()
                 .setCustomId('ticket_description')
-                .setLabel(ticketStrings.descLabel)
+                .setLabel('Descrição')
                 .setStyle(TextInputStyle.Paragraph)
-                .setPlaceholder(ticketStrings.descPlaceholder)
+                .setPlaceholder('Explique em detalhes o que você precisa...')
                 .setRequired(true)
                 .setMaxLength(800);
 
