@@ -113,6 +113,31 @@ export class BillingController {
             return res.status(500).json({ error: 'Erro ao buscar dados de faturamento.' });
         }
     }
+
+    // Portal do cliente para gerenciar assinatura (cartão, cancelamento)
+    async createCustomerPortalSession(req: Request, res: Response) {
+        const { organizationId } = req.params;
+
+        try {
+            const org = await prisma.organization.findUnique({
+                where: { id: String(organizationId) }
+            });
+
+            if (!org || !org.stripeCustomerId) {
+                return res.status(400).json({ error: 'Nenhum cliente Stripe associado a esta organização.' });
+            }
+
+            const session = await stripe.billingPortal.sessions.create({
+                customer: org.stripeCustomerId,
+                return_url: `${process.env.FRONTEND_URL}/dashboard/billing`,
+            });
+
+            return res.json({ url: session.url });
+        } catch (error: any) {
+            console.error('[STRIPE PORTAL] Error:', error.message);
+            return res.status(500).json({ error: 'Erro ao gerar portal do Stripe.' });
+        }
+    }
 }
 
 export const billingController = new BillingController();

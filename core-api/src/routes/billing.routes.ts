@@ -12,6 +12,9 @@ router.use('/:organizationId', authMiddleware, requireOrgAccess);
 router.get('/:organizationId/status', billingController.getBillingStatus);
 
 // Criar Sessão de Checkout
-router.post('/:organizationId/upgrade', billingController.createCheckoutSession);
+router.post('/:organizationId/checkout', billingController.createCheckoutSession);
+
+// Criar Sessão do Portal do Cliente (Stripe Billing Portal)
+router.post('/:organizationId/portal', billingController.createCustomerPortalSession);
 
 export default router;

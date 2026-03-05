@@ -12,7 +12,8 @@ import {
     CreditCard, Calendar, ArrowUpRight, Download,
     AlertCircle
 } from "lucide-react";
-import { useOrganizations } from "@/lib/hooks";
+import { useOrganizations, useBillingStatus, useCheckoutSession, useCustomerPortal } from "@/lib/hooks";
+import { toast } from "sonner";
 
 const plans = [
     {
@@ -109,13 +110,60 @@ export default function BillingPage() {
     const activeOrganizationId = typeof window !== 'undefined' ? localStorage.getItem('activeOrganizationId') : null;
     const activeOrg = organizations?.find(org => org.id === activeOrganizationId) || organizations?.[0];
 
+    // Buscar status de faturamento real
+    const { data: billingStatus, isLoading: isBillingLoading } = useBillingStatus(activeOrg?.id || null);
+    const checkoutMutation = useCheckoutSession();
+    const customerPortalMutation = useCustomerPortal();
+
     // Normalize plan: handles FREE, PRO, ENTERPRISE, MAX (case-insensitive)
-    const rawPlan = (activeOrg?.plan || 'FREE').toLowerCase();
+    const rawPlan = (billingStatus?.plan || activeOrg?.plan || 'FREE').toLowerCase();
     const currentPlanId = rawPlan;
     const current = plans.find(p => p.id === currentPlanId) || plans[0];
 
-    const usageServers = (activeOrg as any)?._count?.servers || 0;
-    const usageTickets = 0; // Will be fetched from API later
+    const usageServers = billingStatus?.usage?.servers ?? (activeOrg as any)?._count?.servers ?? 0;
+    const usageTickets = billingStatus?.usage?.tickets ?? 0;
+
+    const realInvoices = billingStatus?.invoices?.length > 0 ? billingStatus.invoices : invoices;
+
+    const handleUpgrade = (planId: string) => {
+        if (!activeOrg?.id) return;
+
+        toast.loading('Redirecionando para o checkout...', { id: 'checkout' });
+
+        checkoutMutation.mutate({
+            organizationId: activeOrg.id,
+            planId: planId.toUpperCase()
+        }, {
+            onSuccess: (data) => {
+                toast.success('Redirecionando...', { id: 'checkout' });
+                if (data.url) {
+                    window.location.href = data.url;
+                }
+            },
+            onError: (err: any) => {
+                toast.error(err.response?.data?.error || 'Erro ao iniciar checkout.', { id: 'checkout' });
+            }
+        });
+    };
+
+    const handleCustomerPortal = () => {
+        if (!activeOrg?.id) return;
+        toast.loading('Abrindo portal do cliente...', { id: 'portal' });
+
+        customerPortalMutation.mutate({ organizationId: activeOrg.id }, {
+            onSuccess: (data: any) => {
+                toast.success('Redirecionando...', { id: 'portal' });
+                if (data.url) window.location.href = data.url;
+            },
+            onError: (err: any) => {
+                toast.error(err.response?.data?.error || 'Erro ao abrir o portal.', { id: 'portal' });
+            }
+        });
+    };
+
+    if (isBillingLoading) {
+        return <div className="p-8 text-center text-muted-foreground animate-pulse">Carregando informações de faturamento...</div>;
+    }
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -163,12 +211,24 @@ export default function BillingPage() {
                         </div>
                     </CardContent>
                     <CardFooter className="border-t border-border gap-3 pt-4">
-                        <Button variant="outline" size="sm" className="gap-2" onClick={() => import('sonner').then(m => m.toast.info('Em breve: Integração com Stripe Billing'))}>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={handleCustomerPortal}
+                            disabled={customerPortalMutation.isPending || current.id === 'free'}
+                        >
                             <CreditCard className="w-4 h-4" />
                             Atualizar Cartão
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10" onClick={() => import('sonner').then(m => m.toast.error('Em breve: Cancelamento de plano'))}>
-                            Cancelar Assinatura
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10"
+                            onClick={handleCustomerPortal}
+                            disabled={customerPortalMutation.isPending || current.id === 'free'}
+                        >
+                            Gerenciar Assinatura
                         </Button>
                     </CardFooter>
                 </Card>
@@ -239,16 +299,18 @@ export default function BillingPage() {
                                 </CardContent>
                                 <CardFooter className="pt-0">
                                     <Button
-                                        className={`w-full ${isCurrentPlan ? "bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 cursor-not-allowed" : plan.id === "enterprise" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30" : ""}`}
+                                        className={`w-full ${isCurrentPlan ? "bg-violet-500/20 text-violet-300 border border-violet-500/30 cursor-not-allowed" : plan.id === "enterprise" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30" : ""}`}
                                         variant={isCurrentPlan ? "ghost" : "default"}
-                                        disabled={isCurrentPlan}
-                                        onClick={() => import('sonner').then(m => m.toast.info(`Em breve: Upsell para o plano ${plan.name}`))}
+                                        disabled={isCurrentPlan || checkoutMutation.isPending}
+                                        onClick={() => handleUpgrade(plan.id)}
                                     >
                                         {isCurrentPlan ? (
                                             <span className="flex items-center gap-2">
                                                 <CheckCircle2 className="w-4 h-4" />
                                                 Plano Atual
                                             </span>
+                                        ) : checkoutMutation.isPending && checkoutMutation.variables?.planId === plan.id.toUpperCase() ? (
+                                            "Redirecionando..."
                                         ) : (
                                             <span className="flex items-center gap-2">
                                                 <ArrowUpRight className="w-4 h-4" />
@@ -280,7 +342,7 @@ export default function BillingPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {invoices.map((inv) => (
+                                {realInvoices.map((inv: any) => (
                                     <TableRow key={inv.id}>
                                         <TableCell className="font-mono text-xs font-medium">{inv.id}</TableCell>
                                         <TableCell className="text-muted-foreground">{inv.date}</TableCell>
@@ -289,16 +351,23 @@ export default function BillingPage() {
                                         </TableCell>
                                         <TableCell className="font-semibold">{inv.amount}</TableCell>
                                         <TableCell>
-                                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500">
+                                            <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${inv.status === 'Pago' ? 'text-emerald-500' : 'text-amber-500'}`}>
                                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                                 {inv.status}
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => import('sonner').then(m => m.toast.info('Em breve: Download de nota fiscal PDF'))}>
-                                                <Download className="w-3.5 h-3.5" />
-                                                PDF
-                                            </Button>
+                                            {inv.pdf ? (
+                                                <a href={inv.pdf} target="_blank" rel="noreferrer">
+                                                    <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs">
+                                                        <Download className="w-3.5 h-3.5" /> PDF
+                                                    </Button>
+                                                </a>
+                                            ) : (
+                                                <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs opacity-50" disabled>
+                                                    <Download className="w-3.5 h-3.5" /> PDF
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))}

@@ -882,3 +882,33 @@ export const useAutomationActions = () => {
         staleTime: 60_000,
     });
 };
+
+// ─── Billing ──────────────────────────────────────────────
+export const useBillingStatus = (organizationId: string | null) => {
+    return useQuery<any>({
+        queryKey: ['billing-status', organizationId],
+        queryFn: async () => {
+            const { data } = await api.get(`/billing/${organizationId}/status`);
+            return data;
+        },
+        enabled: !!organizationId,
+    });
+};
+
+export const useCheckoutSession = () => {
+    return useMutation({
+        mutationFn: async ({ organizationId, planId }: { organizationId: string; planId: string }) => {
+            const { data } = await api.post(`/billing/${organizationId}/checkout`, { planId });
+            return data;
+        },
+    });
+};
+
+export const useCustomerPortal = () => {
+    return useMutation({
+        mutationFn: async ({ organizationId }: { organizationId: string }) => {
+            const { data } = await api.post(`/billing/${organizationId}/portal`);
+            return data;
+        },
+    });
+};
