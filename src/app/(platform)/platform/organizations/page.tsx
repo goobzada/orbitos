@@ -139,6 +139,7 @@ export default function PlatformOrgs() {
                                         <SelectTrigger className={cn(
                                             "w-[140px] h-9 rounded-lg font-black text-[10px] uppercase tracking-widest border-2",
                                             org.plan === "MAX" ? "border-amber-500/30 bg-amber-500/10 text-amber-500" :
+                                                org.plan === "ENTERPRISE" ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-400" :
                                                 org.plan === "PRO" ? "border-violet-500/30 bg-violet-500/10 text-violet-500" :
                                                     "border-muted bg-muted/50 text-muted-foreground"
                                         )}>
@@ -147,6 +148,7 @@ export default function PlatformOrgs() {
                                         <SelectContent className="bg-card/95 backdrop-blur-xl border-border">
                                             <SelectItem value="FREE" className="font-bold text-[10px] uppercase tracking-widest">Base (FREE)</SelectItem>
                                             <SelectItem value="PRO" className="font-bold text-[10px] uppercase tracking-widest text-violet-500">Professional (PRO)</SelectItem>
+                                            <SelectItem value="ENTERPRISE" className="font-bold text-[10px] uppercase tracking-widest text-cyan-400">Enterprise (ENTERPRISE)</SelectItem>
                                             <SelectItem value="MAX" className="font-bold text-[10px] uppercase tracking-widest text-amber-500">Ultimate (MAX)</SelectItem>
                                         </SelectContent>
                                     </Select>
