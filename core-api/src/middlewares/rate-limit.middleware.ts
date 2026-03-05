@@ -54,6 +54,7 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         '/auth/discord/check-credentials',
         '/organizations/me',
         '/servers',
+        '/agents/servers',
         '/tickets',
         '/staff',
         '/agents/status',
