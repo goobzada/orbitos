@@ -61,6 +61,13 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         return next();
     }
 
+    // Additional read routes with dynamic IDs used heavily by dashboard polling.
+    const isAutomationsRead = req.method === 'GET' && /^\/automations\/[^/]+(?:\/[^/]+\/logs)?\/?$/.test(req.path);
+    const isOrganizationModulesRead = req.method === 'GET' && /^\/organizations\/[^/]+\/modules\/?$/.test(req.path);
+    if (isAutomationsRead || isOrganizationModulesRead) {
+        return next();
+    }
+
     // Billing flows (checkout/portal/cancel/reactivate) are user-triggered and can be
     // impacted by global limiter noise; keep them outside the global throttle.
     if (req.path.startsWith('/billing/')) {

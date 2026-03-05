@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { ModuleConfigSheet } from './ModuleConfigSheet';
 import Link from 'next/link';
+import { useActiveOrg } from '@/lib/use-org-store';
 
 const categoryIcons: Record<string, any> = {
     'Onboarding': MessageSquare,
@@ -43,7 +44,8 @@ const categoryIcons: Record<string, any> = {
 
 export default function AutomationsPage() {
     const { data: orgs } = useOrganizations();
-    const currentOrg = orgs?.[0];
+    const { activeOrgId } = useActiveOrg();
+    const currentOrg = orgs?.find(o => o.id === activeOrgId) || orgs?.[0];
     const organizationId = currentOrg?.id;
 
     const { data: modulesData, isLoading } = useModules(organizationId || '');
