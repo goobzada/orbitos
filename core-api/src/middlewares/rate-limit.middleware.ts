@@ -103,6 +103,14 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         return next();
     }
 
+    // Module management actions from dashboard (toggle/config/reset) should not
+    // fail under degraded mode due to shared in-memory limiter noise.
+    const isModuleMutation =
+        req.method === 'POST' && /^\/organizations\/[^/]+\/modules\/(toggle|config|reset-config)\/?$/.test(req.path);
+    if (isModuleMutation) {
+        return next();
+    }
+
     const usingFallback = !REDIS_ENABLED || !redisConnection || !isRedisConnected();
 
     // Log warning once when Redis is down (avoid spam)

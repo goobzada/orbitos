@@ -91,8 +91,8 @@ export default function AutomationsPage() {
         try {
             await toggleModule.mutateAsync({ moduleKey, active: !active });
             toast.success(`${!active ? 'Módulo ativado' : 'Módulo desativado'} com sucesso!`);
-        } catch (error) {
-            toast.error('Erro ao alterar status do módulo.');
+        } catch (error: any) {
+            toast.error(error?.response?.data?.error || 'Erro ao alterar status do módulo.');
         }
     };
 
