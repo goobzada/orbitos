@@ -35,8 +35,12 @@ function isCommandAllowed(command: string): boolean {
 
 // ── Busca lista de servidores na API ───────────────────────────────────────────
 async function fetchServerList(): Promise<{ discordGuildId: string; name: string }[]> {
-    return new Promise((resolve) => {
-        const url = `${HTTP_API_URL}/agents/servers`;
+    const base = HTTP_API_URL.replace(/\/+$/, '');
+    const candidates = base.includes('/api')
+        ? [`${base}/agents/servers`]
+        : [`${base}/agents/servers`, `${base}/api/agents/servers`];
+
+    const requestJson = (url: string): Promise<any> => new Promise((resolve) => {
         const isHttps = url.startsWith('https');
         const lib = isHttps ? https : http;
         const req = lib.request(url, {
@@ -46,21 +50,41 @@ async function fetchServerList(): Promise<{ discordGuildId: string; name: string
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
+                let parsed: any = null;
                 try {
-                    const parsed = JSON.parse(data);
-                    if (Array.isArray(parsed)) resolve(parsed);
-                    else resolve([]);
+                    parsed = data ? JSON.parse(data) : null;
                 } catch {
-                    resolve([]);
+                    parsed = null;
                 }
+
+                resolve({
+                    statusCode: res.statusCode || 0,
+                    payload: parsed,
+                });
             });
         });
+
         req.on('error', (err) => {
-            console.warn(`[SUPERVISOR] ⚠ Falha ao buscar servidores: ${err.message}`);
-            resolve([]);
+            resolve({ statusCode: 0, payload: { error: err.message } });
         });
+
         req.end();
     });
+
+    for (const url of candidates) {
+        const resp = await requestJson(url);
+        if (Array.isArray(resp.payload)) {
+            return resp.payload;
+        }
+
+        if (resp.statusCode === 401 || resp.statusCode === 403) {
+            console.warn(`[SUPERVISOR] ⛔ Unauthorized on ${url}. Verifique AGENT_TOKEN/BOT_INTERNAL_TOKEN.`);
+        } else if (resp.statusCode >= 400) {
+            console.warn(`[SUPERVISOR] ⚠ ${url} retornou HTTP ${resp.statusCode}.`);
+        }
+    }
+
+    return [];
 }
 
 // ── Classe de conexão por servidor ─────────────────────────────────────────────
