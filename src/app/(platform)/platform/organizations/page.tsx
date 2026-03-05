@@ -58,8 +58,10 @@ export default function PlatformOrgs() {
         try {
             await updateOrg.mutateAsync({ id: orgId, data: { plan } });
             toast.success(`Plano da organização alterado para ${plan}`);
-        } catch (error) {
-            toast.error("Erro ao alterar plano");
+        } catch (error: any) {
+            const backendError = error?.response?.data?.error;
+            const backendDetail = error?.response?.data?.detail;
+            toast.error(backendError || backendDetail || "Erro ao alterar plano");
         }
     };
 

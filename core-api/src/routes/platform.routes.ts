@@ -60,17 +60,36 @@ platformRoutes.patch('/organizations/:id', async (req: Request, res: Response) =
         const id = req.params.id as string;
         const { status, plan } = req.body;
 
+        const nextData: Record<string, string> = {};
+
+        if (typeof status === 'string') {
+            const normalizedStatus = status.trim();
+            if (!['Active', 'Suspended'].includes(normalizedStatus)) {
+                return res.status(400).json({ error: 'Status inválido. Use Active ou Suspended.' });
+            }
+            nextData.status = normalizedStatus;
+        }
+
+        if (typeof plan === 'string') {
+            const normalizedPlan = plan.trim().toUpperCase();
+            if (!['FREE', 'PRO', 'ENTERPRISE', 'MAX'].includes(normalizedPlan)) {
+                return res.status(400).json({ error: 'Plano inválido. Use FREE, PRO, ENTERPRISE ou MAX.' });
+            }
+            nextData.plan = normalizedPlan;
+        }
+
+        if (Object.keys(nextData).length === 0) {
+            return res.status(400).json({ error: 'Nada para atualizar. Envie status e/ou plan.' });
+        }
+
         const updated = await prisma.organization.update({
             where: { id },
-            data: {
-                ...(status && { status }),
-                ...(plan && { plan })
-            }
+            data: nextData
         });
 
         res.json(updated);
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao atualizar organização.' });
+    } catch (error: any) {
+        res.status(500).json({ error: 'Erro ao atualizar organização.', detail: error?.message });
     }
 });
 

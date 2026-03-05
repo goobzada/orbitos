@@ -73,6 +73,14 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         return next();
     }
 
+    // SUPER_ADMIN platform mutations (e.g., manual plan/status changes) must not
+    // be blocked by shared IP bursts.
+    const isPlatformOrganizationPatch =
+        req.method === 'PATCH' && /^\/platform\/organizations\/[^/]+$/.test(req.path);
+    if (isPlatformOrganizationPatch) {
+        return next();
+    }
+
     const usingFallback = !REDIS_ENABLED || !redisConnection || !isRedisConnected();
 
     // Log warning once when Redis is down (avoid spam)
