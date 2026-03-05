@@ -16,7 +16,7 @@ router.put('/:organizationId/settings', store_controller_1.StoreController.updat
 router.get('/:organizationId/products', store_controller_1.StoreController.listProducts);
 router.post('/:organizationId/products', (0, plan_limit_middleware_1.checkPlanLimit)('maxProducts'), store_controller_1.StoreController.createProduct);
 router.put('/:organizationId/products/:id', store_controller_1.StoreController.updateProduct);
-// router.delete('/:organizationId/products/:id', StoreController.deleteProduct);
+router.delete('/:organizationId/products/:id', store_controller_1.StoreController.deleteProduct);
 // --- ORDERS ---
 router.get('/:organizationId/orders', store_controller_1.StoreController.listOrders);
 exports.default = router;
