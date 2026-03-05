@@ -25,4 +25,28 @@ const coreApi = axios.create({
     timeout: 2500, // Discord tem 3s de limite — API deve responder antes
 });
 
+coreApi.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const status = error?.response?.status;
+        const originalConfig = error?.config as any;
+        const originalUrl = String(originalConfig?.url || '');
+        const currentBase = String(originalConfig?.baseURL || coreApi.defaults.baseURL || '').replace(/\/+$/, '');
+
+        // Safety fallback: if internal routes hit a 404 due to missing /api namespace,
+        // retry once against the namespaced base URL.
+        const isInternalRoute = originalUrl.startsWith('/internal/');
+        const canRetry = status === 404 && isInternalRoute && !originalConfig?.__retriedWithApiNamespace;
+        const baseMissingApi = /^https?:\/\//i.test(currentBase) && !/\/api$/i.test(currentBase);
+
+        if (canRetry && baseMissingApi) {
+            originalConfig.__retriedWithApiNamespace = true;
+            originalConfig.baseURL = `${currentBase}/api`;
+            return coreApi.request(originalConfig);
+        }
+
+        return Promise.reject(error);
+    }
+);
+
 export default coreApi;
