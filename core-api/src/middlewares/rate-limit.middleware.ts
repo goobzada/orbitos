@@ -119,6 +119,18 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
 
     const usingFallback = !REDIS_ENABLED || !redisConnection || !isRedisConnected();
 
+    const authHeader = req.headers.authorization;
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : '';
+    const cookies = req.cookies ?? {};
+    const cookieToken = cookies.token || cookies.orbitos_token || '';
+    const tokenIdentity = bearerToken || cookieToken;
+
+    // When Redis is unavailable, fail open for authenticated dashboard traffic
+    // to prevent widespread false 429s behind shared reverse-proxy IPs.
+    if (usingFallback && tokenIdentity) {
+        return next();
+    }
+
     // Log warning once when Redis is down (avoid spam)
     if (usingFallback && !redisDownWarningLogged) {
         console.warn('[RATE LIMIT] ⚠️ Redis unavailable - using in-memory fallback rate limiter');
@@ -139,12 +151,6 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         const xffHeader = req.headers['x-forwarded-for'];
         const xffRaw = Array.isArray(xffHeader) ? xffHeader[0] : xffHeader;
         const forwardedIp = xffRaw?.split(',')?.[0]?.trim();
-
-        const authHeader = req.headers.authorization;
-        const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : '';
-        const cookies = req.cookies ?? {};
-        const cookieToken = cookies.token || cookies.orbitos_token || '';
-        const tokenIdentity = bearerToken || cookieToken;
 
         // Keep key short while preserving enough entropy.
         const identityKey = tokenIdentity
