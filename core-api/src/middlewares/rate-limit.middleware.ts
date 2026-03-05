@@ -44,6 +44,20 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         return next();
     }
 
+    // Health/session/dashboard read endpoints should not be blocked by global limiter.
+    // Keep protection on write-heavy/mutation endpoints.
+    const noLimitReadPrefixes = [
+        '/health',
+        '/auth/me',
+        '/auth/discord/check-credentials',
+        '/organizations/me',
+        '/servers',
+        '/stats/',
+    ];
+    if (req.method === 'GET' && noLimitReadPrefixes.some((prefix) => req.path.startsWith(prefix))) {
+        return next();
+    }
+
     const usingFallback = !REDIS_ENABLED || !redisConnection || !isRedisConnected();
 
     // Log warning once when Redis is down (avoid spam)
