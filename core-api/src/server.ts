@@ -40,6 +40,9 @@ console.log('[CORE API] Community OS Engines: EventBus, AutomationEngine, Driver
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// Respect reverse proxy headers (Nginx/Cloudflare) so req.ip is the real client IP.
+app.set('trust proxy', true);
+
 // ── CORS ─────────────────────────────────────────────────────────────────────
 // IMPORTANTE: garanta que o .env tenha ALLOWED_ORIGINS com orbitup.io
 // Exemplo:
