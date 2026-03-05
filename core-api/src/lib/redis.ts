@@ -17,15 +17,11 @@ if (REDIS_ENABLED) {
     const retryStrategy = (times: number): number | null => {
         if (times > 5) {
             if (!hasLoggedError) {
-                console.warn('[REDIS] ⚠️ Redis not available. Running in degraded mode.');
+                console.warn('[REDIS] ⚠️ Redis not available. Using in-memory fallback for rate limiting & cache.');
                 hasLoggedError = true;
             }
-            if (IS_PROD) {
-                // All retry attempts exhausted in production — cannot continue safely.
-                console.error('[REDIS] ❌ FATAL: Redis is required in production. Exiting.');
-                process.exit(1);
-            }
-            return null; // Stop retrying in dev/staging
+            // Don't exit in production — fallback to in-memory rate limiter (see rate-limit.middleware.ts)
+            return null; // Stop retrying
         }
         return Math.min(times * 200, 2000); // exponential back-off up to 2 s
     };
