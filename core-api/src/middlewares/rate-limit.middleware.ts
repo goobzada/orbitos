@@ -81,6 +81,12 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         return next();
     }
 
+    // Support/admin operational flows: avoid blocking server provisioning actions.
+    const isServerProvisionAction = req.method === 'POST' && req.path === '/servers';
+    if (isServerProvisionAction) {
+        return next();
+    }
+
     const usingFallback = !REDIS_ENABLED || !redisConnection || !isRedisConnected();
 
     // Log warning once when Redis is down (avoid spam)
