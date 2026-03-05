@@ -26,8 +26,10 @@ const internalLimiter = REDIS_ENABLED && redisConnection ? new RateLimiterRedis(
 }) : null;
 
 // In-memory fallback limiters (when Redis is down)
-const fallbackGlobalLimiter = new InMemoryRateLimiter(100, 1);
-const fallbackOrgLimiter = new InMemoryRateLimiter(20, 1);
+// Degraded mode is more bursty in production dashboards; keep limits higher to
+// avoid blocking legitimate UI polling when Redis is unavailable.
+const fallbackGlobalLimiter = new InMemoryRateLimiter(500, 1);
+const fallbackOrgLimiter = new InMemoryRateLimiter(100, 1);
 const fallbackInternalLimiter = new InMemoryRateLimiter(500, 1);
 
 let redisDownWarningLogged = false;
@@ -52,8 +54,12 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         '/auth/discord/check-credentials',
         '/organizations/me',
         '/servers',
+        '/tickets',
+        '/staff',
+        '/agents/status',
         '/stats/',
         '/platform',
+        '/docs',
         '/automations/triggers',
         '/automations/actions',
     ];
@@ -64,7 +70,8 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
     // Additional read routes with dynamic IDs used heavily by dashboard polling.
     const isAutomationsRead = req.method === 'GET' && /^\/automations\/[^/]+(?:\/[^/]+\/logs)?\/?$/.test(req.path);
     const isOrganizationModulesRead = req.method === 'GET' && /^\/organizations\/[^/]+\/modules\/?$/.test(req.path);
-    if (isAutomationsRead || isOrganizationModulesRead) {
+    const isOrganizationRead = req.method === 'GET' && /^\/organizations\/[^/]+(?:\/analytics)?\/?$/.test(req.path);
+    if (isAutomationsRead || isOrganizationModulesRead || isOrganizationRead) {
         return next();
     }
 
