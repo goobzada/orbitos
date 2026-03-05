@@ -2,94 +2,114 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, DollarSign, UserMinus, ArrowUpRight, CreditCard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, DollarSign, UserMinus, ArrowUpRight, CreditCard, Receipt, Users, AlertCircle } from "lucide-react";
+import Link from "next/link";
 
-import { usePlatformOverview, usePlatformPayments } from "@/lib/hooks";
+import { usePlatformBillingOverview, usePlatformOverview } from "@/lib/hooks";
 
 export default function PlatformBilling() {
+    const { data: billingOverview, isLoading: loadingBilling } = usePlatformBillingOverview();
     const { data: overview, isLoading: loadingOverview } = usePlatformOverview();
-    const { data: payments = [], isLoading: loadingPayments } = usePlatformPayments();
 
-    if (loadingOverview || loadingPayments) {
-        return <div className="p-10 text-center animate-pulse">Carregando métricas globais...</div>;
+    if (loadingBilling || loadingOverview) {
+        return <div className="p-10 text-center animate-pulse">Carregando métricas de billing...</div>;
     }
 
-    const mrr = overview?.revenue?.totalRevenue || 0;
-    const stats = overview?.totals || {};
+    const mrr = billingOverview?.mrr || 0;
+    const arr = billingOverview?.arr || 0;
+    const activeSubscriptions = billingOverview?.activeSubscriptions || 0;
+    const trials = billingOverview?.trials || 0;
+    const pastDue = billingOverview?.pastDue || 0;
+    const canceledLast30d = billingOverview?.canceledLast30d || 0;
+    const revenueLast30d = billingOverview?.revenueLast30d || 0;
+
     const distribution = overview?.orgDistribution || {};
 
-    const planStats = [
-        { name: "FREE", count: distribution.FREE || 0, revenue: "R$ 0", color: "text-muted-foreground" },
-        { name: "PRO", count: distribution.PRO || 0, revenue: `R$ ${(distribution.PRO * 450).toLocaleString()}`, color: "text-violet-400" },
-        { name: "ENTERPRISE", count: distribution.ENTERPRISE || 0, revenue: `R$ ${(distribution.ENTERPRISE * 1200).toLocaleString()}`, color: "text-amber-400" },
-    ];
+    const formatCents = (cents: number) =>
+        (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Billing Global</h1>
-                <p className="text-muted-foreground">Receita, churn e conversão de toda a plataforma.</p>
+            <div className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Billing Global</h1>
+                    <p className="text-muted-foreground">Receita, assinaturas e faturamento da plataforma Orbitos.</p>
+                    <p className="text-xs text-muted-foreground mt-1 opacity-60">Recebimento via conta Stripe principal do SaaS (merchant único).</p>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                        <Link href="/platform/billing/subscriptions">Ver Assinaturas</Link>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                        <Link href="/platform/billing/invoices">Ver Faturas</Link>
+                    </Button>
+                </div>
             </div>
 
             {/* KPIs */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card className="bg-card/50 backdrop-blur-sm border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.05)]">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
+                        <CardTitle className="text-sm font-medium">MRR</CardTitle>
                         <DollarSign className="w-4 h-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">R$ {mrr.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground italic">Acumulado histórico</p>
+                        <div className="text-2xl font-bold">{formatCents(mrr)}</div>
+                        <p className="text-xs text-muted-foreground">ARR: {formatCents(arr)}</p>
                     </CardContent>
                 </Card>
                 <Card className="bg-card/50 backdrop-blur-sm border-blue-500/20">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Orgs Pagas</CardTitle>
-                        <TrendingUp className="w-4 h-4 text-blue-500" />
+                        <CardTitle className="text-sm font-medium">Assinaturas Ativas</CardTitle>
+                        <Users className="w-4 h-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold font-mono">{(distribution.PRO || 0) + (distribution.ENTERPRISE || 0)}</div>
-                        <p className="text-xs text-muted-foreground">De um total de {stats.totalOrganizations || 0}</p>
+                        <div className="text-2xl font-bold font-mono">{activeSubscriptions}</div>
+                        <p className="text-xs text-muted-foreground">{trials} em trial</p>
                     </CardContent>
                 </Card>
                 <Card className="bg-card/50 backdrop-blur-sm border-rose-500/20">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Ticket Volume</CardTitle>
-                        <UserMinus className="w-4 h-4 text-rose-500" />
+                        <CardTitle className="text-sm font-medium">Past Due / Inadimplentes</CardTitle>
+                        <AlertCircle className="w-4 h-4 text-rose-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold font-mono">{stats.totalTickets || 0}</div>
-                        <p className="text-xs text-muted-foreground">Suporte vitalício</p>
+                        <div className="text-2xl font-bold font-mono">{pastDue}</div>
+                        <p className="text-xs text-muted-foreground">{canceledLast30d} cancelados (30d)</p>
                     </CardContent>
                 </Card>
                 <Card className="bg-card/50 backdrop-blur-sm border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.05)]">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Pagamentos</CardTitle>
+                        <CardTitle className="text-sm font-medium">Receita (30d)</CardTitle>
                         <CreditCard className="w-4 h-4 text-amber-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold font-mono">{stats.totalPayments || 0}</div>
-                        <p className="text-xs text-muted-foreground">Transações efetuadas</p>
+                        <div className="text-2xl font-bold font-mono">{formatCents(revenueLast30d)}</div>
+                        <p className="text-xs text-muted-foreground">Líquido via Stripe</p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Revenue by Plan */}
+            {/* Revenue by Plan + Quick Links */}
             <div className="grid gap-4 md:grid-cols-2">
                 <Card className="bg-card/50 backdrop-blur-sm border-amber-500/10">
                     <CardHeader>
-                        <CardTitle>Receita por Plano (Estimada)</CardTitle>
-                        <CardDescription>Breakdown de MRR baseado em tiers de preço.</CardDescription>
+                        <CardTitle>Distribuição por Plano</CardTitle>
+                        <CardDescription>Tenants por tier de assinatura.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {planStats.map((p) => (
+                        {[
+                            { name: "FREE", count: distribution.FREE || 0, color: "text-muted-foreground" },
+                            { name: "PRO", count: distribution.PRO || 0, color: "text-violet-400" },
+                            { name: "ENTERPRISE", count: distribution.ENTERPRISE || 0, color: "text-amber-400" },
+                            { name: "MAX", count: distribution.MAX || 0, color: "text-rose-400" },
+                        ].map((p) => (
                             <div key={p.name} className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <Badge variant="outline" className={p.color}>{p.name}</Badge>
-                                    <span className="text-sm text-muted-foreground">{p.count} órgãos</span>
                                 </div>
-                                <span className="font-mono font-semibold">{p.revenue}</span>
+                                <span className="font-mono font-semibold">{p.count} orgs</span>
                             </div>
                         ))}
                     </CardContent>
@@ -97,28 +117,37 @@ export default function PlatformBilling() {
 
                 <Card className="bg-card/50 backdrop-blur-sm border-amber-500/10">
                     <CardHeader>
-                        <CardTitle>Últimas Transações</CardTitle>
-                        <CardDescription>Últimos pagamentos processados pela infra.</CardDescription>
+                        <CardTitle>Ações Rápidas</CardTitle>
+                        <CardDescription>Acesse seções de billing detalhadas.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        {payments.length === 0 ? (
-                            <div className="text-center py-6 text-muted-foreground italic text-sm">Nenhum pagamento processado.</div>
-                        ) : payments.map((p: any, i: number) => (
-                            <div key={p.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/30 transition-colors">
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-medium">{p.organization?.name || "Org Desconhecida"}</span>
-                                    <span className="text-[10px] text-muted-foreground font-mono uppercase">{p.paymentMethod} • {new Date(p.createdAt).toLocaleDateString()}</span>
+                        <Link href="/platform/billing/subscriptions">
+                            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer border border-border/50">
+                                <div className="flex items-center gap-3">
+                                    <Users className="w-4 h-4 text-violet-400" />
+                                    <span className="text-sm font-medium">Assinaturas</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="font-mono text-xs font-bold text-amber-400">R$ {p.amount.toLocaleString()}</span>
-                                    <Badge variant="secondary" className={
-                                        p.status === "paid" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border border-rose-500/20"
-                                    }>
-                                        {p.status === "paid" ? "Pago" : "Falhou"}
-                                    </Badge>
-                                </div>
+                                <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
                             </div>
-                        ))}
+                        </Link>
+                        <Link href="/platform/billing/invoices">
+                            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer border border-border/50">
+                                <div className="flex items-center gap-3">
+                                    <Receipt className="w-4 h-4 text-emerald-400" />
+                                    <span className="text-sm font-medium">Faturas</span>
+                                </div>
+                                <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                        </Link>
+                        <Link href="/platform/organizations">
+                            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer border border-border/50">
+                                <div className="flex items-center gap-3">
+                                    <TrendingUp className="w-4 h-4 text-amber-400" />
+                                    <span className="text-sm font-medium">Gerenciar Tenants</span>
+                                </div>
+                                <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                        </Link>
                     </CardContent>
                 </Card>
             </div>

@@ -35,3 +35,5 @@ login-dump.txt
 # ─── Misc ────────────────────────────────────────────────────────────────────
 tsconfig.tsbuildinfo
 .DS_Store
+# ─── Generated Prisma Client ─────────────────────────────────────────────────
+core-api/node_modules/.prisma/
