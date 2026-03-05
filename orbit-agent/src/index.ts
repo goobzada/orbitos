@@ -22,6 +22,15 @@ const AGENT_TOKEN = process.env.AGENT_TOKEN || 'dev-bot-ws-token-123';
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL_MS || '30000', 10); // 30s default
 const HEARTBEAT_MS = 30000;
 
+const isProduction = process.env.NODE_ENV === 'production';
+if (isProduction && (!process.env.AGENT_TOKEN || AGENT_TOKEN === 'dev-bot-ws-token-123')) {
+    console.error('═══════════════════════════════════════════════════════');
+    console.error(' 🔴 FATAL: AGENT_TOKEN ausente/inválido em produção.  ');
+    console.error(' Configure orbit-agent/.env com AGENT_TOKEN correto.   ');
+    console.error('═══════════════════════════════════════════════════════');
+    process.exit(1);
+}
+
 // 🔒 Allowlist de comandos permitidos
 const COMMAND_ALLOWLIST: string[] = [
     'systemctl', 'pm2', 'docker', 'ls', 'df', 'free',
@@ -36,7 +45,8 @@ function isCommandAllowed(command: string): boolean {
 // ── Busca lista de servidores na API ───────────────────────────────────────────
 async function fetchServerList(): Promise<{ discordGuildId: string; name: string }[]> {
     const base = HTTP_API_URL.replace(/\/+$/, '');
-    const candidates = base.includes('/api')
+    const isDirectLocalApi = /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(base);
+    const candidates = base.includes('/api') || isDirectLocalApi
         ? [`${base}/agents/servers`]
         : [`${base}/agents/servers`, `${base}/api/agents/servers`];
 
