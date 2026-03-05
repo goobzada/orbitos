@@ -67,17 +67,21 @@ export const logout = async (opts?: { redirect?: boolean }) => {
     try {
         clearTokenStorage();
 
-        // Call server-side logout to clear HttpOnly cookie
+        // Clear server-side session cookie in both API and Next layers.
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        await fetch(`${apiUrl}/auth/logout`, {
-            method: 'POST',
-            credentials: 'include', // send cookie
-        }).catch(() => {
-            // Ignore errors — cookie might already be gone
-        });
+        await Promise.allSettled([
+            fetch(`${apiUrl}/auth/logout`, {
+                method: 'POST',
+                credentials: 'include',
+            }),
+            fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+            }),
+        ]);
 
         if (opts?.redirect !== false && typeof window !== 'undefined') {
-            window.location.href = '/login';
+            window.location.replace('/login');
         }
     } catch (e) {
         if (opts?.redirect !== false && typeof window !== 'undefined') {

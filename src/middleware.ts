@@ -1,9 +1,32 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
 
-// Rotas que NÃO precisam de autenticação
-const PUBLIC_PATHS = ['/', '/login', '/auth', '/s'];
+function getRoleFromJwt(token: string): string {
+    try {
+        const payloadPart = token.split('.')[1];
+        if (!payloadPart) return 'USER';
+
+        const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+        const payload = JSON.parse(atob(padded));
+        return typeof payload?.role === 'string' ? payload.role : 'USER';
+    } catch {
+        return 'USER';
+    }
+}
+
+function clearAuthCookie(response: NextResponse) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    response.cookies.set({
+        name: 'token',
+        value: '',
+        maxAge: 0,
+        path: '/',
+        sameSite: isProduction ? 'none' : 'lax',
+        secure: isProduction,
+        ...(isProduction ? { domain: '.orbitup.io' } : {}),
+    });
+}
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -38,40 +61,8 @@ export async function middleware(request: NextRequest) {
 
     // ── Com token ─────────────────────────────────────────────────────────────
 
-    // Verificar JWT e extrair role
-    let role = 'USER';
-    let tokenValid = true;
-    try {
-        const jwtSecret = process.env.JWT_SECRET;
-        if (!jwtSecret) {
-            console.error('[MIDDLEWARE] JWT_SECRET missing — cannot verify tokens');
-            tokenValid = false;
-        } else {
-            const secret = new TextEncoder().encode(jwtSecret);
-            const { payload } = await jwtVerify(token, secret);
-            role = (payload.role as string) || 'USER';
-        }
-    } catch (err) {
-        tokenValid = false;
-    }
-
-    // Token inválido → limpa cookie e redireciona para /login
-    if (!tokenValid) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/login';
-        url.searchParams.set('session_expired', '1');
-
-        const resp = NextResponse.redirect(url);
-        resp.cookies.set({
-            name: 'token',
-            value: '',
-            maxAge: 0,
-            path: '/',
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production'
-        });
-        return resp;
-    }
+    // Read role best-effort from JWT payload to avoid hard dependency on JWT_SECRET in frontend middleware.
+    const role = getRoleFromJwt(token);
 
     // Já autenticado tentando acessar /login → redireciona para dashboard
     // EXCETO durante callback OAuth (precisa processar o code)

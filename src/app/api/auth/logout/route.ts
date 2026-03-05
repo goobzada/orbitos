@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 const COOKIE_NAMES = ['token', 'orbitos_token', 'orbitos_current_org', 'orbitos_active_org'];
 
 function clearCookies(response: NextResponse) {
+    const isProduction = process.env.NODE_ENV === 'production';
+
     COOKIE_NAMES.forEach(name => {
         response.cookies.delete(name);
         response.cookies.set({
@@ -11,6 +13,9 @@ function clearCookies(response: NextResponse) {
             path: '/',
             maxAge: 0,
             expires: new Date(0),
+            sameSite: isProduction ? 'none' : 'lax',
+            secure: isProduction,
+            ...(isProduction ? { domain: '.orbitup.io' } : {}),
         });
     });
 }
@@ -33,7 +38,7 @@ function getPublicOrigin(request: NextRequest): string {
 // GET /api/auth/logout — limpa cookie E redireciona para /login
 export async function GET(request: NextRequest) {
     const origin = getPublicOrigin(request);
-    const response = NextResponse.redirect(`${origin}/login?clear=1`);
+    const response = NextResponse.redirect(`${origin}/login`);
     clearCookies(response);
     return response;
 }
