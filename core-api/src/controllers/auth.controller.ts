@@ -394,6 +394,12 @@ export class AuthController {
         });
 
         console.log('[AUTH] ✅ Logout — cookie cleared');
+
+        // Browser-driven GET logout should return user to login page.
+        if (req.method === 'GET') {
+            return res.redirect(302, '/login');
+        }
+
         return res.json({ ok: true });
     }
 }
