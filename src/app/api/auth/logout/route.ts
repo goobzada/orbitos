@@ -6,17 +6,29 @@ function clearCookies(response: NextResponse) {
     const isProduction = process.env.NODE_ENV === 'production';
 
     COOKIE_NAMES.forEach(name => {
-        response.cookies.delete(name);
+        // Clear host-only cookie
         response.cookies.set({
-            name: name,
+            name,
             value: '',
             path: '/',
             maxAge: 0,
             expires: new Date(0),
-            sameSite: isProduction ? 'none' : 'lax',
-            secure: isProduction,
-            ...(isProduction ? { domain: '.orbitup.io' } : {}),
+            sameSite: 'lax',
         });
+
+        // Clear production cross-subdomain cookie
+        if (isProduction) {
+            response.cookies.set({
+                name,
+                value: '',
+                path: '/',
+                maxAge: 0,
+                expires: new Date(0),
+                sameSite: 'none',
+                secure: true,
+                domain: '.orbitup.io',
+            });
+        }
     });
 }
 

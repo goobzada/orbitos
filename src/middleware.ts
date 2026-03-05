@@ -1,17 +1,21 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-function getRoleFromJwt(token: string): string {
+type JwtPayloadLite = {
+    role?: string;
+    exp?: number;
+};
+
+function parseJwtPayload(token: string): JwtPayloadLite | null {
     try {
         const payloadPart = token.split('.')[1];
-        if (!payloadPart) return 'USER';
+        if (!payloadPart) return null;
 
         const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
         const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
-        const payload = JSON.parse(atob(padded));
-        return typeof payload?.role === 'string' ? payload.role : 'USER';
+        return JSON.parse(atob(padded));
     } catch {
-        return 'USER';
+        return null;
     }
 }
 
@@ -61,8 +65,21 @@ export async function middleware(request: NextRequest) {
 
     // ── Com token ─────────────────────────────────────────────────────────────
 
-    // Read role best-effort from JWT payload to avoid hard dependency on JWT_SECRET in frontend middleware.
-    const role = getRoleFromJwt(token);
+    // Read JWT payload without secret to avoid frontend runtime dependency on JWT_SECRET.
+    const payload = parseJwtPayload(token);
+    const role = typeof payload?.role === 'string' ? payload.role : 'USER';
+    const nowSec = Math.floor(Date.now() / 1000);
+    const isExpired = typeof payload?.exp === 'number' && payload.exp <= nowSec;
+    const isMalformed = payload === null;
+
+    // Expired/malformed cookie should be cleared to stop redirect loops.
+    if (isExpired || isMalformed) {
+        const resp = isProtected
+            ? NextResponse.redirect(new URL('/login?session_expired=1', request.url))
+            : NextResponse.next();
+        clearAuthCookie(resp);
+        return resp;
+    }
 
     // Já autenticado tentando acessar /login → redireciona para dashboard
     // EXCETO durante callback OAuth (precisa processar o code)
