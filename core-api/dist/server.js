@@ -79,7 +79,9 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ||
 app.use((0, cors_1.default)({
     origin: (origin, callback) => {
         // Permite requisições locais ou explícitas e sem origin
-        const isLocalhost = origin?.startsWith('http://localhost') || origin?.startsWith('http://127.0.0.1');
+        /* FIX C4: lista explícita de portas dev — não aceitar localhost:qualquer-porta */
+        const DEV_LOCALHOST_PORTS = [3000, 3001, 4000];
+        const isLocalhost = DEV_LOCALHOST_PORTS.some(p => origin === `http://localhost:${p}` || origin === `http://127.0.0.1:${p}`);
         if (!origin || ALLOWED_ORIGINS.includes(origin) || isLocalhost) {
             callback(null, true);
         }
@@ -94,6 +96,9 @@ app.use((0, cors_1.default)({
 }));
 // Cookies (para ler orbitos_token vindo do navegador)
 app.use((0, cookie_parser_1.default)());
+// Health check endpoint (before rate limiting)
+const health_controller_1 = require("./controllers/health.controller");
+app.get('/health', health_controller_1.HealthController.check);
 // 🛡️ Rate Limiting Global
 const rate_limit_middleware_1 = require("./middlewares/rate-limit.middleware");
 app.use(rate_limit_middleware_1.rateLimitMiddleware);
@@ -212,6 +217,14 @@ app.use((err, req, res, next) => {
 // ── HTTP + WebSocket Server ──────────────────────────────
 const server = http_1.default.createServer(app);
 ws_server_1.communityWSServer.init(server);
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`[CORE API] ❌ Porta ${PORT} já está em uso. Finalize o processo antigo ou altere PORT.`);
+        process.exit(1);
+    }
+    console.error('[CORE API] ❌ Erro ao iniciar servidor HTTP:', err.message);
+    process.exit(1);
+});
 server.listen(PORT, () => {
     console.log(`[CORE API] 🚀 Servidor rodando na porta ${PORT}`);
 });

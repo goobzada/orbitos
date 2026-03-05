@@ -1,21 +1,31 @@
 'use client';
 
-import { useEffect, Suspense, useState } from 'react';
+import { useEffect, Suspense, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { Loader2, AlertCircle } from 'lucide-react';
+
+/* FIX: In dev StrictMode, component can unmount/remount and re-run callback.
+ * Keep processed OAuth codes at module scope to avoid reusing single-use codes. */
+const processedOAuthCodes = new Set<string>();
 
 function CallbackContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const code = searchParams.get('code');
     const errorParam = searchParams.get('error');
+    const hasProcessedRef = useRef(false);
 
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     useEffect(() => {
+        /* FIX: In React StrictMode (dev), useEffect can run twice.
+         * OAuth code is single-use, so we must prevent duplicate callback POSTs. */
+        if (hasProcessedRef.current) return;
+
         // Discord retornou erro direto na URL
         if (errorParam) {
+            hasProcessedRef.current = true;
             console.error('[CALLBACK] Discord retornou erro:', errorParam);
             setErrorMsg(`Discord recusou o acesso: ${errorParam}`);
             setTimeout(() => router.push('/login?error=discord_denied'), 3000);
@@ -23,9 +33,19 @@ function CallbackContent() {
         }
 
         if (!code) {
+            hasProcessedRef.current = true;
             router.push('/login');
             return;
         }
+
+        /* FIX: Deduplicate code exchange across remounts in Next dev mode. */
+        if (processedOAuthCodes.has(code)) {
+            console.warn('[CALLBACK] Código OAuth já processado nesta sessão. Ignorando duplicata.');
+            return;
+        }
+
+        hasProcessedRef.current = true;
+        processedOAuthCodes.add(code);
 
         const handleCallback = async () => {
             try {
@@ -57,6 +77,7 @@ function CallbackContent() {
                 const detail = discordError || apiError || error?.message || 'Erro desconhecido';
 
                 console.error('[CALLBACK] ❌ Falha na troca do code:', { status, detail, discordError, apiError });
+                console.error('[CALLBACK] ❌ Erro bruto:', error);
 
                 // Mensagem amigável para erros conhecidos do Discord
                 let friendlyMsg = `Falha na autenticação (${status || 'rede'}): ${detail}`;

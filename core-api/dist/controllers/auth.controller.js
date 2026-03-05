@@ -7,20 +7,41 @@ exports.AuthController = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const axios_1 = __importDefault(require("axios"));
-const JWT_SECRET = process.env.JWT_SECRET;
-// 🔒 Validação na inicialização
-if (!JWT_SECRET || JWT_SECRET.trim() === '') {
-    const isProduction = process.env.NODE_ENV === 'production';
-    if (isProduction) {
-        console.error('🔴 FATAL: JWT_SECRET não definida. Abortando em produção.');
-        process.exit(1);
-    }
-    else {
-        console.warn('⚠️ AVISO: JWT_SECRET não definida. Usando chave padrão DEV.');
-    }
+/* FIX C1: lança erro se JWT_SECRET ausente — sem fallback em nenhum ambiente */
+if (!process.env.JWT_SECRET) {
+    throw new Error('[CONFIG] JWT_SECRET é obrigatório em todos os ambientes.');
 }
-const RESOLVED_SECRET = JWT_SECRET || 'dev-jwt-secret-do-not-use-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+/* FIX B: Consistent cookie config for login/logout */
+function getCookieConfig() {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN || '';
+    return {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        path: '/',
+        ...(cookieDomain ? { domain: cookieDomain } : {}),
+    };
+}
 class AuthController {
+    // Inicia OAuth Discord no backend para garantir client_id/redirect_uri consistentes
+    async discordLogin(req, res) {
+        const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '';
+        const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || '';
+        if (!DISCORD_CLIENT_ID || !DISCORD_REDIRECT_URI) {
+            return res.status(500).json({ error: 'DISCORD_CLIENT_ID ou DISCORD_REDIRECT_URI não configurados.' });
+        }
+        /* FIX: Build authorize URL server-side so callback exchange uses the exact same OAuth app/config. */
+        const params = new URLSearchParams({
+            client_id: DISCORD_CLIENT_ID,
+            redirect_uri: DISCORD_REDIRECT_URI,
+            response_type: 'code',
+            scope: 'identify email',
+            prompt: 'consent',
+        });
+        return res.redirect(`https://discord.com/api/oauth2/authorize?${params.toString()}`);
+    }
     // Rota de Simulação (Mock) para não dependermos de registrar App no Discord agora
     async mockDiscordLogin(req, res) {
         const { discordId, username, avatar } = req.body;
@@ -67,7 +88,12 @@ class AuthController {
             });
         }
         // Assina e devolve o Token
-        const token = jsonwebtoken_1.default.sign({ id: user.id, discordId: user.discordId, role: user.role, username: user.username, avatar: user.avatar }, RESOLVED_SECRET, { expiresIn: '7d' });
+        const token = jsonwebtoken_1.default.sign({ id: user.id, discordId: user.discordId, role: user.role, username: user.username, avatar: user.avatar }, JWT_SECRET, { expiresIn: '7d' });
+        /* FIX: mock login must also set HttpOnly cookie to avoid auth flicker/redirect loops. */
+        res.cookie('token', token, {
+            ...getCookieConfig(),
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
         return res.json({ token, user, organization: org });
     }
     // ─── NOVO: Rota Multi-Provider OAuth ─────────────────────
@@ -155,7 +181,12 @@ class AuthController {
                 });
             }
             // 5. Gerar JWT
-            const token = jsonwebtoken_1.default.sign({ id: user.id, role: user.role, username: user.username, avatar: user.avatar }, RESOLVED_SECRET, { expiresIn: '7d' });
+            const token = jsonwebtoken_1.default.sign({ id: user.id, role: user.role, username: user.username, avatar: user.avatar }, JWT_SECRET, { expiresIn: '7d' });
+            /* FIX: oauth-login must set the same HttpOnly cookie as discord callback. */
+            res.cookie('token', token, {
+                ...getCookieConfig(),
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
             return res.json({ token, user, organization: org });
         }
         catch (error) {
@@ -251,17 +282,10 @@ class AuthController {
                 role: user.role,
                 username: user.username,
                 avatar: user.avatar,
-            }, RESOLVED_SECRET, { expiresIn: '7d' });
-            const isProduction = process.env.NODE_ENV === 'production';
-            // 5️⃣ Seta cookie HTTP-Only com o nome 'token' (alinhado com o frontend)
-            // Em produção: sameSite: 'none' + secure: true obrigatório para cross-subdomain
-            // (orbitup.io → api.orbitup.io)
+            }, JWT_SECRET, { expiresIn: '7d' });
+            /* FIX B: Use consistent cookie config helper */
             res.cookie('token', token, {
-                httpOnly: true,
-                secure: isProduction,
-                sameSite: isProduction ? 'none' : 'lax',
-                ...(isProduction ? { domain: '.orbitup.io' } : {}),
-                path: '/',
+                ...getCookieConfig(),
                 maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
             });
             console.log(`[AUTH] ✅ Discord callback OK — user: ${user.username} (${user.id})`);
@@ -289,6 +313,17 @@ class AuthController {
             return res.status(404).json({ error: 'Usuário não encontrado' });
         }
         return res.json(user);
+    }
+    // Logout: limpa o cookie de sessão server-side
+    async logout(req, res) {
+        /* FIX B: Clear cookie using SAME attributes as login to ensure removal */
+        res.cookie('token', '', {
+            ...getCookieConfig(),
+            maxAge: 0,
+            expires: new Date(0),
+        });
+        console.log('[AUTH] ✅ Logout — cookie cleared');
+        return res.json({ ok: true });
     }
 }
 exports.AuthController = AuthController;

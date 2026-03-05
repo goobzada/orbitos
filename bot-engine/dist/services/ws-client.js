@@ -50,7 +50,8 @@ class CommunityWSClient {
             setTimeout(() => this.connect(), delay);
         });
         this.ws.on('error', (err) => {
-            // Silenciar para evitar crash
+            logger_1.log.error(`[WS CLIENT] ❌ WebSocket error: ${err.message}`);
+            // Error will trigger close event, which handles reconnection
         });
     }
     async handleMessage(type, payload) {

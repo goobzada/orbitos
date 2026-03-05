@@ -3,6 +3,9 @@
     "version": "1.0.0",
     "description": "Discord Bot Engine running as a microservice for SaaSBot",
     "main": "src/index.ts",
+    "engines": {
+        "node": ">=18.18.0"
+    },
     "scripts": {
         "dev": "tsx watch src/index.ts",
         "build": "tsc",

@@ -222,7 +222,9 @@ export default function BillingPage() {
             },
             onError: (err: any) => {
                 toast.error(err.response?.data?.error || t.common.error, { id: 'portal' });
-      
+            }
+        });
+    };
 
     const handleCancelSubscription = () => {
         if (!activeOrg?.id) return;
@@ -261,8 +263,6 @@ export default function BillingPage() {
             onError: (err: any) => {
                 toast.error(err.response?.data?.error || 'Erro ao reativar assinatura', { id: 'reactivate' });
             }
-        });
-    };      }
         });
     };
 

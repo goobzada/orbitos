@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { RateLimiterRedis } from 'rate-limiter-flexible';
 import { redisConnection, REDIS_ENABLED, isRedisConnected } from '../lib/redis';
+import { InMemoryRateLimiter } from '../lib/in-memory-rate-limiter';
 
-// Limite Global: 100 requisições por segundo por IP
+// Redis-based limiters (primary)
 const globalLimiter = REDIS_ENABLED && redisConnection ? new RateLimiterRedis({
     storeClient: redisConnection,
     keyPrefix: 'rl_global',
@@ -10,7 +11,6 @@ const globalLimiter = REDIS_ENABLED && redisConnection ? new RateLimiterRedis({
     duration: 1,
 }) : null;
 
-// Limite por Organização: 20 requisições por segundo (específico para rotas de Org)
 const orgLimiter = REDIS_ENABLED && redisConnection ? new RateLimiterRedis({
     storeClient: redisConnection,
     keyPrefix: 'rl_org',
@@ -18,7 +18,6 @@ const orgLimiter = REDIS_ENABLED && redisConnection ? new RateLimiterRedis({
     duration: 1,
 }) : null;
 
-// Limite Interno (Bot): 500 requisições por segundo (para o Bot não travar)
 const internalLimiter = REDIS_ENABLED && redisConnection ? new RateLimiterRedis({
     storeClient: redisConnection,
     keyPrefix: 'rl_internal',
@@ -26,28 +25,62 @@ const internalLimiter = REDIS_ENABLED && redisConnection ? new RateLimiterRedis(
     duration: 1,
 }) : null;
 
+// In-memory fallback limiters (when Redis is down)
+const fallbackGlobalLimiter = new InMemoryRateLimiter(100, 1);
+const fallbackOrgLimiter = new InMemoryRateLimiter(20, 1);
+const fallbackInternalLimiter = new InMemoryRateLimiter(500, 1);
+
+let redisDownWarningLogged = false;
+
+
 export const rateLimitMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-    // Skip rate limiting when Redis is disabled or not yet connected (avoids 429 on Redis downtime)
-    if (!REDIS_ENABLED || !redisConnection || !isRedisConnected()) {
+    // Skip rate limiting in development mode
+    if (process.env.NODE_ENV !== 'production') {
         return next();
+    }
+
+    const usingFallback = !REDIS_ENABLED || !redisConnection || !isRedisConnected();
+
+    // Log warning once when Redis is down (avoid spam)
+    if (usingFallback && !redisDownWarningLogged) {
+        console.warn('[RATE LIMIT] ⚠️ Redis unavailable - using in-memory fallback rate limiter');
+        redisDownWarningLogged = true;
+    }
+
+    // Reset warning flag when Redis reconnects
+    if (!usingFallback && redisDownWarningLogged) {
+        console.log('[RATE LIMIT] ✅ Redis reconnected - using Redis-based rate limiter');
+        redisDownWarningLogged = false;
     }
 
     try {
         const ip = req.ip || 'unknown';
 
-        // 1. Sempre aplica o limite global por IP
-        if (globalLimiter) await globalLimiter.consume(ip);
+        // 1. Apply global rate limit per IP
+        if (usingFallback) {
+            await fallbackGlobalLimiter.consume(ip);
+        } else if (globalLimiter) {
+            await globalLimiter.consume(ip);
+        }
 
-        // 2. Se for rota interna, aplica limite de serviço
+        // 2. Internal routes - apply service rate limit
         if (req.path.startsWith('/internal')) {
-            if (internalLimiter) await internalLimiter.consume('bot-engine');
+            if (usingFallback) {
+                await fallbackInternalLimiter.consume('bot-engine');
+            } else if (internalLimiter) {
+                await internalLimiter.consume('bot-engine');
+            }
             return next();
         }
 
-        // 3. Se houver organizationId na request, aplica limite por Org
+        // 3. Organization-specific rate limit
         const orgId = req.params.orgId || req.body.organizationId || req.query.orgId;
-        if (orgId && orgLimiter) {
-            await orgLimiter.consume(String(orgId));
+        if (orgId) {
+            if (usingFallback) {
+                await fallbackOrgLimiter.consume(String(orgId));
+            } else if (orgLimiter) {
+                await orgLimiter.consume(String(orgId));
+            }
         }
 
         next();

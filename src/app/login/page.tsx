@@ -118,13 +118,10 @@ function LoginPageContent() {
                             size="lg"
                             className="w-full h-12 bg-[#5865F2] hover:bg-[#4752C4] text-white text-base font-semibold flex items-center gap-3 transition-all hover:-translate-y-0.5 shadow-lg shadow-[#5865F2]/30"
                             onClick={() => {
-                                const discordUrl = process.env.NEXT_PUBLIC_DISCORD_LOGIN_URL;
-                                if (!discordUrl) {
-                                    toast.error('URL do Discord não configurada.', {
-                                        description: 'Defina NEXT_PUBLIC_DISCORD_LOGIN_URL no .env.local',
-                                    });
-                                    return;
-                                }
+                                /* FIX: Start OAuth via backend route to guarantee same client_id/redirect_uri
+                                 * used later in /auth/discord/callback token exchange. */
+                                const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+                                const discordUrl = `${apiBase}/auth/discord`;
                                 setLoading('discord');
                                 // Reseta o estado caso a navegação falhe (ex: popup bloqueado)
                                 setTimeout(() => setLoading(null), 8000);

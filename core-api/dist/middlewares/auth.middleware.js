@@ -38,10 +38,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requireOrgAccess = exports.authMiddleware = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const JWT_SECRET = process.env.JWT_SECRET ||
-    (process.env.NODE_ENV === 'production'
-        ? ''
-        : 'dev-jwt-secret-do-not-use-in-production');
+/* FIX C1: Sem fallback — obrigatório em todos os ambientes */
+if (!process.env.JWT_SECRET) {
+    throw new Error('[CONFIG] JWT_SECRET é obrigatório em todos os ambientes.');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 // ─── Auth Middleware ──────────────────────────────────────────────────────────
 const authMiddleware = (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -53,12 +54,13 @@ const authMiddleware = (req, res, next) => {
             token = extracted;
     }
     // 2. Fallback: cookie "token" (salvo pelo frontend após Discord OAuth)
-    const cookies = req.cookies;
-    if (!token && cookies?.token) {
+    /* FIX C12: usar tipo correto em vez de (req as any).cookies */
+    const cookies = req.cookies ?? {};
+    if (!token && cookies.token) {
         token = cookies.token;
     }
     // 3. Fallback extra: cookie "orbitos_token" (padrão legado)
-    if (!token && cookies?.orbitos_token) {
+    if (!token && cookies.orbitos_token) {
         token = cookies.orbitos_token;
     }
     // 4. Nenhum token encontrado → 401
@@ -77,6 +79,7 @@ const authMiddleware = (req, res, next) => {
     // 5. Verifica e decodifica o JWT
     try {
         const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
+        /* FIX C10: remocao de (req as any) apos extensao de tipo em express.d.ts */
         req.user = decoded;
         return next();
     }

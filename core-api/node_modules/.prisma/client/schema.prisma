@@ -405,6 +405,7 @@ model Payment {
   status         String       @default("pending")
   provider       String       @default("stripe")
   providerId     String?      @unique
+  stripeEventId  String?      @unique // Webhook idempotency key
   metadata       String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt

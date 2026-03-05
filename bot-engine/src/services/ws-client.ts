@@ -55,7 +55,8 @@ export class CommunityWSClient {
         });
 
         this.ws.on('error', (err) => {
-            // Silenciar para evitar crash
+            log.error(`[WS CLIENT] ❌ WebSocket error: ${err.message}`);
+            // Error will trigger close event, which handles reconnection
         });
     }
 

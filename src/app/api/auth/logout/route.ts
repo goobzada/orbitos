@@ -2,33 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const COOKIE_NAMES = ['token', 'orbitos_token', 'orbitos_current_org', 'orbitos_active_org'];
 
+/* FIX B: Clear cookies using same attributes as when they were set */
 function clearCookies(response: NextResponse) {
     const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN || '';
 
     COOKIE_NAMES.forEach(name => {
-        // Clear host-only cookie
+        /* FIX B: Single cookie clear with exact attributes from login */
         response.cookies.set({
             name,
             value: '',
             path: '/',
             maxAge: 0,
             expires: new Date(0),
-            sameSite: 'lax',
+            httpOnly: name === 'token', // Only 'token' is httpOnly
+            sameSite: isProduction ? 'none' : 'lax',
+            secure: isProduction,
+            ...(cookieDomain ? { domain: cookieDomain } : {}),
         });
-
-        // Clear production cross-subdomain cookie
-        if (isProduction) {
-            response.cookies.set({
-                name,
-                value: '',
-                path: '/',
-                maxAge: 0,
-                expires: new Date(0),
-                sameSite: 'none',
-                secure: true,
-                domain: '.orbitup.io',
-            });
-        }
     });
 }
 

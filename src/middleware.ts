@@ -1,40 +1,13 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-type JwtPayloadLite = {
-    role?: string;
-    exp?: number;
-};
-
-function parseJwtPayload(token: string): JwtPayloadLite | null {
-    try {
-        const payloadPart = token.split('.')[1];
-        if (!payloadPart) return null;
-
-        const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
-        const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
-        return JSON.parse(atob(padded));
-    } catch {
-        return null;
-    }
-}
-
-function clearAuthCookie(response: NextResponse) {
-    const isProduction = process.env.NODE_ENV === 'production';
-    response.cookies.set({
-        name: 'token',
-        value: '',
-        maxAge: 0,
-        path: '/',
-        sameSite: isProduction ? 'none' : 'lax',
-        secure: isProduction,
-        ...(isProduction ? { domain: '.orbitup.io' } : {}),
-    });
-}
+/* FIX A: Middleware should ONLY check cookie presence, not decode/verify JWT.
+ * Backend is source of truth. Avoids flicker when JWT_SECRET missing on frontend. */
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
-    const token = request.cookies.get('token')?.value;
+    /* FIX: Support legacy cookie name to avoid false unauth redirects during transition. */
+    const token = request.cookies.get('token')?.value || request.cookies.get('orbitos_token')?.value;
 
     const isDashboard = pathname.startsWith('/dashboard');
     const isPlatform = pathname.startsWith('/platform');
@@ -53,7 +26,7 @@ export async function middleware(request: NextRequest) {
         if (isProtected) {
             const url = request.nextUrl.clone();
             url.pathname = '/login';
-            // Only set 'from' if not already on a callback or error state
+            /* FIX A: Loop-safe redirect - don't set 'from' on callbacks */
             if (!pathname.includes('/callback')) {
                 url.searchParams.set('from', pathname);
             }
@@ -64,43 +37,24 @@ export async function middleware(request: NextRequest) {
     }
 
     // ── Com token ─────────────────────────────────────────────────────────────
-
-    // Read JWT payload without secret to avoid frontend runtime dependency on JWT_SECRET.
-    const payload = parseJwtPayload(token);
-    const role = typeof payload?.role === 'string' ? payload.role : 'USER';
-    const nowSec = Math.floor(Date.now() / 1000);
-    const isExpired = typeof payload?.exp === 'number' && payload.exp <= nowSec;
-    const isMalformed = payload === null;
-
-    // Expired/malformed cookie should be cleared to stop redirect loops.
-    if (isExpired || isMalformed) {
-        const resp = isProtected
-            ? NextResponse.redirect(new URL('/login?session_expired=1', request.url))
-            : NextResponse.next();
-        clearAuthCookie(resp);
-        return resp;
-    }
+    /* FIX A: No JWT decode here. Backend validates token on API calls.
+     * Middleware just checks presence to avoid redirect loops. */
 
     // Já autenticado tentando acessar /login → redireciona para dashboard
-    // EXCETO durante callback OAuth (precisa processar o code)
+    /* FIX A: Can't check role here (no JWT decode), so redirect to /dashboard.
+     * Backend /auth/me will return proper user data including role. */
     const isCallback = pathname.startsWith('/login/callback');
     if (isLogin && !isCallback) {
-        const dest = role === 'SUPER_ADMIN' ? '/platform' : '/dashboard';
-        return NextResponse.redirect(new URL(dest, request.url));
-    }
-
-    // USER tentando acessar /platform → bloqueia
-    if (isPlatform && role !== 'SUPER_ADMIN') {
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
+
+    /* FIX A: Platform role check removed - backend enforces via requireRole middleware. */
 
     return NextResponse.next();
 }
 
-
 export const config = {
-    // Run only on protected routes + login flow
-    // Exclude static assets, _next, public portals
+    /* FIX A: Exclude static assets to avoid unnecessary middleware runs */
     matcher: [
         '/dashboard/:path*',
         '/platform/:path*',

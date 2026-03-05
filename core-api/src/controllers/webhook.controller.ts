@@ -27,19 +27,30 @@ export class WebhookController {
             return res.status(400).send(`Webhook Error: ${err.message}`);
         }
 
+        // Idempotency check: prevent duplicate processing
+        const eventId = event.id;
+        const existingEvent = await prisma.payment.findUnique({
+            where: { stripeEventId: eventId }
+        });
+
+        if (existingEvent) {
+            console.log(`[STRIPE WEBHOOK] ⚠️ Evento duplicado ignorado: ${eventId}`);
+            return res.json({ received: true, duplicate: true });
+        }
+
         console.log(`[STRIPE WEBHOOK] 🔔 Evento recebido: ${event.type}`);
 
         switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object as Stripe.Checkout.Session;
-                await this.processSuccessfulCheckout(session);
+                await this.processSuccessfulCheckout(session, event.id);
                 break;
             }
             case 'invoice.paid': {
                 const invoice = event.data.object as Stripe.Invoice;
                 /* FIX C3: guarda de tipo segura em vez de (invoice as any).subscription */
                 if ('subscription' in invoice && typeof invoice.subscription === 'string') {
-                    await this.processSuccessfulSubscriptionPayment(invoice);
+                    await this.processSuccessfulSubscriptionPayment(invoice, event.id);
                 }
                 break;
             }
@@ -58,12 +69,12 @@ export class WebhookController {
         res.json({ received: true });
     }
 
-    private static async processSuccessfulCheckout(session: Stripe.Checkout.Session) {
+    private static async processSuccessfulCheckout(session: Stripe.Checkout.Session, stripeEventId: string) {
         const type = session.metadata?.type;
         const organizationId = session.metadata?.organizationId;
 
         if (type === 'SAAS_UPGRADE' && organizationId) {
-            return this.handleSaaSUpgrade(session);
+            return this.handleSaaSUpgrade(session, stripeEventId);
         }
 
         const orderId = session.metadata?.orderId;
@@ -109,7 +120,7 @@ export class WebhookController {
         await DeliveryService.deliverOrder(orderId);
     }
 
-    private static async handleSaaSUpgrade(session: Stripe.Checkout.Session) {
+    private static async handleSaaSUpgrade(session: Stripe.Checkout.Session, stripeEventId: string) {
         const organizationId = session.metadata?.organizationId!;
         const targetPlan = session.metadata?.targetPlan!;
 
@@ -125,6 +136,20 @@ export class WebhookController {
             }
         });
 
+        // Log payment record with idempotency key
+        await prisma.payment.create({
+            data: {
+                organizationId,
+                amount: (session.amount_total || 0) / 100,
+                currency: (session.currency || 'brl').toUpperCase(),
+                status: 'paid',
+                provider: 'stripe',
+                providerId: session.id,
+                stripeEventId,
+                metadata: JSON.stringify({ targetPlan, subscriptionId: session.subscription })
+            }
+        });
+
         eventBus.emit('org.plan.upgraded', {
             organizationId,
             plan: targetPlan,
@@ -133,18 +158,38 @@ export class WebhookController {
         });
     }
 
-    private static async processSuccessfulSubscriptionPayment(invoice: Stripe.Invoice) {
+    private static async processSuccessfulSubscriptionPayment(invoice: Stripe.Invoice, stripeEventId: string) {
         /* FIX C3: acessa .subscription via guarda de tipo */
         const subscriptionId = 'subscription' in invoice && typeof invoice.subscription === 'string'
             ? invoice.subscription : undefined;
-        console.log(`[STRIPE WEBHOOK] \uD83D\uDD04 Assinatura renovada: ${subscriptionId}`);
+        console.log(`[STRIPE WEBHOOK] 🔄 Assinatura renovada: ${subscriptionId}`);
 
         // Se quisermos estender a validade ou logar o pagamento recorrente
         if (typeof subscriptionId === 'string') {
-            await prisma.organization.updateMany({
-                where: { stripeSubscriptionId: subscriptionId },
-                data: { isActive: true }
+            const org = await prisma.organization.findFirst({
+                where: { stripeSubscriptionId: subscriptionId }
             });
+
+            if (org) {
+                await prisma.organization.update({
+                    where: { id: org.id },
+                    data: { isActive: true }
+                });
+
+                // Log payment record with idempotency key
+                await prisma.payment.create({
+                    data: {
+                        organizationId: org.id,
+                        amount: (invoice.amount_paid || 0) / 100,
+                        currency: (invoice.currency || 'brl').toUpperCase(),
+                        status: 'paid',
+                        provider: 'stripe',
+                        providerId: invoice.id,
+                        stripeEventId,
+                        metadata: JSON.stringify({ subscriptionId, invoiceNumber: invoice.number })
+                    }
+                });
+            }
         }
     }
 

@@ -30,7 +30,7 @@ export async function loadCommands(client: Client) {
         try {
             // eslint-disable-next-line @typescript-eslint/no-var-requires
             const command: BotCommand = require(path.join(commandsPath, file)).default;
-            if (command?.data && command?.execute) {
+            if (command?.data && typeof command?.execute === 'function') {
                 client.commands.set(command.data.name, command);
                 count++;
             }

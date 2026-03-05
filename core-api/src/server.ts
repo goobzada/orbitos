@@ -74,6 +74,10 @@ app.use(cors({
 // Cookies (para ler orbitos_token vindo do navegador)
 app.use(cookieParser());
 
+// Health check endpoint (before rate limiting)
+import { HealthController } from './controllers/health.controller';
+app.get('/health', HealthController.check);
+
 // 🛡️ Rate Limiting Global
 import { rateLimitMiddleware } from './middlewares/rate-limit.middleware';
 app.use(rateLimitMiddleware);

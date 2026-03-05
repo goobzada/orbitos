@@ -9,7 +9,41 @@ if (!process.env.JWT_SECRET) {
 }
 const JWT_SECRET = process.env.JWT_SECRET;
 
+/* FIX B: Consistent cookie config for login/logout */
+function getCookieConfig() {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN || '';
+    return {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' as const : 'lax' as const,
+        path: '/',
+        ...(cookieDomain ? { domain: cookieDomain } : {}),
+    };
+}
+
 export class AuthController {
+
+    // Inicia OAuth Discord no backend para garantir client_id/redirect_uri consistentes
+    async discordLogin(req: Request, res: Response) {
+        const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '';
+        const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || '';
+
+        if (!DISCORD_CLIENT_ID || !DISCORD_REDIRECT_URI) {
+            return res.status(500).json({ error: 'DISCORD_CLIENT_ID ou DISCORD_REDIRECT_URI não configurados.' });
+        }
+
+        /* FIX: Build authorize URL server-side so callback exchange uses the exact same OAuth app/config. */
+        const params = new URLSearchParams({
+            client_id: DISCORD_CLIENT_ID,
+            redirect_uri: DISCORD_REDIRECT_URI,
+            response_type: 'code',
+            scope: 'identify email',
+            prompt: 'consent',
+        });
+
+        return res.redirect(`https://discord.com/api/oauth2/authorize?${params.toString()}`);
+    }
 
     // Rota de Simulação (Mock) para não dependermos de registrar App no Discord agora
     async mockDiscordLogin(req: Request, res: Response) {
@@ -68,6 +102,12 @@ export class AuthController {
             JWT_SECRET,
             { expiresIn: '7d' }
         );
+
+        /* FIX: mock login must also set HttpOnly cookie to avoid auth flicker/redirect loops. */
+        res.cookie('token', token, {
+            ...getCookieConfig(),
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
 
         return res.json({ token, user, organization: org });
     }
@@ -175,6 +215,12 @@ export class AuthController {
                 JWT_SECRET,
                 { expiresIn: '7d' }
             );
+
+            /* FIX: oauth-login must set the same HttpOnly cookie as discord callback. */
+            res.cookie('token', token, {
+                ...getCookieConfig(),
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
 
             return res.json({ token, user, organization: org });
 
@@ -301,17 +347,9 @@ export class AuthController {
                 { expiresIn: '7d' }
             );
 
-            const isProduction = process.env.NODE_ENV === 'production';
-
-            // 5️⃣ Seta cookie HTTP-Only com o nome 'token' (alinhado com o frontend)
-            // Em produção: sameSite: 'none' + secure: true obrigatório para cross-subdomain
-            // (orbitup.io → api.orbitup.io)
+            /* FIX B: Use consistent cookie config helper */
             res.cookie('token', token, {
-                httpOnly: true,
-                secure: isProduction,
-                sameSite: isProduction ? 'none' : 'lax',
-                ...(isProduction ? { domain: '.orbitup.io' } : {}),
-                path: '/',
+                ...getCookieConfig(),
                 maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
             });
 
@@ -348,27 +386,12 @@ export class AuthController {
 
     // Logout: limpa o cookie de sessão server-side
     async logout(req: Request, res: Response) {
-        const isProduction = process.env.NODE_ENV === 'production';
-
-        // Clear host-only cookie variant
+        /* FIX B: Clear cookie using SAME attributes as login to ensure removal */
         res.cookie('token', '', {
-            httpOnly: true,
-            path: '/',
+            ...getCookieConfig(),
             maxAge: 0,
-            sameSite: 'lax',
+            expires: new Date(0),
         });
-
-        // Clear cross-subdomain production variant
-        if (isProduction) {
-            res.cookie('token', '', {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'none',
-                domain: '.orbitup.io',
-                path: '/',
-                maxAge: 0,
-            });
-        }
 
         console.log('[AUTH] ✅ Logout — cookie cleared');
         return res.json({ ok: true });

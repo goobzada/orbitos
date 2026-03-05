@@ -99,11 +99,13 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        // ── 5. Sessão inválida: 401 ou usuário deletado (404 em /auth/me) ─────
+        // ── 5. Sessão inválida: apenas quando /auth/me falha ─────────────────
+        /* FIX: Avoid auth flicker by not forcing global logout on unrelated 401s.
+         * Backend source of truth is /auth/me for current session validity. */
         const isAuthMe404 = status === 404 && url.includes('/auth/me');
-        const isUnauthorized = status === 401;
+        const isAuthMe401 = status === 401 && url.includes('/auth/me');
 
-        if ((isUnauthorized || isAuthMe404) && !isHandlingAuthError) {
+        if ((isAuthMe401 || isAuthMe404) && !isHandlingAuthError) {
             isHandlingAuthError = true;
 
             console.warn('[API] Sessão inválida ou expirada. Forçando logout.', { status, url });

@@ -12,15 +12,22 @@ const logger_1 = require("./utils/logger");
 const api_client_1 = __importDefault(require("./utils/api-client"));
 const ws_client_1 = require("./services/ws-client");
 const ModuleLoader_1 = require("./modules/ModuleLoader");
-const path_1 = __importDefault(require("path"));
-const fs_1 = __importDefault(require("fs"));
 dotenv_1.default.config();
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 if (!DISCORD_TOKEN || DISCORD_TOKEN === 'sua_chave_secreta_do_bot_aqui') {
     logger_1.log.error('═══════════════════════════════════════════════════════');
     logger_1.log.error(' TOKEN DO DISCORD NÃO CONFIGURADO!                     ');
     logger_1.log.error(' Acesse: https://discord.com/developers/applications    ');
     logger_1.log.error(' Copie o Bot Token e cole em bot-engine/.env            ');
+    logger_1.log.error('═══════════════════════════════════════════════════════');
+    process.exit(1);
+}
+if (!DISCORD_CLIENT_ID || DISCORD_CLIENT_ID === 'seu_client_id_aqui') {
+    logger_1.log.error('═══════════════════════════════════════════════════════');
+    logger_1.log.error(' DISCORD_CLIENT_ID NÃO CONFIGURADO!                   ');
+    logger_1.log.error(' Acesse: https://discord.com/developers/applications    ');
+    logger_1.log.error(' Copie o Client ID e cole em bot-engine/.env            ');
     logger_1.log.error('═══════════════════════════════════════════════════════');
     process.exit(1);
 }
@@ -37,72 +44,38 @@ exports.client = new discord_js_1.Client({
 });
 // Inicializa o ModuleLoader para gerenciar ações dinâmicas
 exports.moduleLoader = new ModuleLoader_1.ModuleLoader(exports.client);
-exports.moduleLoader.loadModules();
-// Carrega os comandos no client.commands Collection
-(0, command_handler_1.loadCommands)(exports.client);
-// Carrega os eventos dinamicamente da pasta /events
-(0, event_handler_1.loadEvents)(exports.client);
-// ── AUTO-DEPLOY de Slash Commands ────────────────────────────────────────────
-const autoDeployCommands = async () => {
-    const clientId = process.env.DISCORD_CLIENT_ID;
-    const token = process.env.DISCORD_TOKEN;
-    if (!clientId || !token) {
-        logger_1.log.warn('[COMMANDS] DISCORD_CLIENT_ID não definido — skip auto-deploy.');
-        return;
-    }
+async function sendHeartbeat() {
     try {
-        const commandsPath = path_1.default.join(__dirname, 'commands');
-        const commandFiles = fs_1.default.readdirSync(commandsPath)
-            .filter(f => f.endsWith('.js') || f.endsWith('.ts'));
-        const body = [];
-        for (const file of commandFiles) {
-            try {
-                const mod = require(path_1.default.join(commandsPath, file));
-                const cmd = mod.default ?? mod;
-                if (cmd?.data)
-                    body.push(cmd.data.toJSON());
-            }
-            catch { /* ignora arquivo inválido */ }
-        }
-        if (body.length === 0)
-            return;
-        const rest = new discord_js_1.REST({ version: '10' }).setToken(token);
-        await rest.put(discord_js_1.Routes.applicationCommands(clientId), { body });
-        logger_1.log.info(`[COMMANDS] ✅ ${body.length} slash command(s) registrados globalmente.`);
+        const guildIds = exports.client.guilds.cache.map((g) => g.id);
+        const uptime = exports.client.uptime ?? 0;
+        const ping = Math.round(exports.client.ws.ping || 0);
+        await api_client_1.default.post('/internal/heartbeat', {
+            guildIds,
+            uptime,
+            ping,
+        });
     }
     catch (err) {
-        logger_1.log.warn(`[COMMANDS] Auto-deploy falhou (não crítico): ${err?.message}`);
+        logger_1.log.warn(`[HEARTBEAT] Falha ao enviar heartbeat: ${err?.message || 'erro desconhecido'}`);
     }
-};
-// ── HEARTBEAT — Sincroniza status do bot com a API ─────────────────────
-const sendHeartbeat = async () => {
-    if (!exports.client.isReady())
-        return;
-    try {
-        await api_client_1.default.post('/internal/heartbeat', {
-            guildIds: Array.from(exports.client.guilds.cache.keys()),
-            uptime: exports.client.uptime,
-            ping: exports.client.ws.ping,
-        });
-        logger_1.log.info(`💓 Heartbeat: ${exports.client.guilds.cache.size} guilds | WS: ${exports.client.ws.ping}ms`);
-    }
-    catch {
-        logger_1.log.warn('Heartbeat falhou — Core API offline.');
-    }
-};
-logger_1.log.info('Conectando ao Discord...');
-exports.client.on('clientReady', () => {
-    sendHeartbeat();
-    autoDeployCommands(); // registra comandos automaticamente a cada startup
-});
-exports.client.login(DISCORD_TOKEN).then(() => {
-    // Inicializar cliente WebSocket Community OS e Heartbeat APÓS o login
-    ws_client_1.communityWSClient.init(exports.client, exports.moduleLoader);
-    setInterval(sendHeartbeat, 60 * 1000); // 1 minuto
-}).catch(err => {
-    logger_1.log.error('═══════════════════════════════════════════════════════');
-    logger_1.log.error(' FALHA AO CONECTAR AO DISCORD!                          ');
-    logger_1.log.error(` Erro: ${err.message}`);
-    logger_1.log.error('═══════════════════════════════════════════════════════');
-    process.exit(1);
-});
+}
+async function start() {
+    exports.moduleLoader.loadModules();
+    // Carrega os comandos no client.commands Collection
+    await (0, command_handler_1.loadCommands)(exports.client);
+    // Carrega os eventos dinamicamente da pasta /events
+    await (0, event_handler_1.loadEvents)(exports.client);
+    logger_1.log.info('Conectando ao Discord...');
+    exports.client.login(DISCORD_TOKEN).then(() => {
+        // Inicializar cliente WebSocket Community OS e Heartbeat APÓS o login
+        ws_client_1.communityWSClient.init(exports.client, exports.moduleLoader);
+        setInterval(sendHeartbeat, 60 * 1000); // 1 minuto
+    }).catch(err => {
+        logger_1.log.error('═══════════════════════════════════════════════════════');
+        logger_1.log.error(' FALHA AO CONECTAR AO DISCORD!                          ');
+        logger_1.log.error(` Erro: ${err.message}`);
+        logger_1.log.error('═══════════════════════════════════════════════════════');
+        process.exit(1);
+    });
+}
+start();
