@@ -166,6 +166,11 @@ export class CommunityWSServer extends EventEmitter {
             case 'AGENT_READY':
                 // Atualiza metadata do cliente
                 client.version = payload?.version;
+                // Some agent builds connect without serverId in WS query string.
+                // Bind it on READY payload so status/discovery works correctly.
+                if (!client.serverId && payload?.serverId) {
+                    client.serverId = String(payload.serverId);
+                }
                 console.log(`[WS SERVER] 🛰️  Agent ${payload?.serverId || client.serverId} online (v${payload?.version || '?'}).`);
                 // Confirma para o agent
                 if (client.ws.readyState === WebSocket.OPEN) {
