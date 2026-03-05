@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -6,7 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TicketController = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const client_1 = require("@prisma/client");
-const discord_driver_1 = require("../services/drivers/discord.driver");
+const ticket_service_1 = require("../services/domain/ticket.service");
 class TicketController {
     // Lista todos os tickets das organizações do usuário logado
     async listMyTickets(req, res) {
@@ -83,55 +116,37 @@ class TicketController {
             return res.status(400).json({ error: 'Conteúdo da mensagem é obrigatório.' });
         }
         try {
-            const result = await prisma_1.default.$transaction(async (tx) => {
-                const ticket = await tx.ticket.findFirst({
-                    where: {
-                        id: id,
-                        organization: {
-                            OR: [
-                                { ownerId: userId },
-                                { members: { some: { userId } } }
-                            ]
-                        }
-                    },
-                    include: { server: true }
-                });
-                if (!ticket) {
-                    throw new Error('NOT_FOUND');
-                }
-                const message = await tx.ticketMessage.create({
-                    data: {
-                        ticketId: ticket.id,
-                        authorId: userId,
-                        authorName: req.user?.username || 'Staff',
-                        authorAvatar: req.user?.avatar,
-                        content,
-                        isStaff: true,
-                        authorType: 'STAFF'
+            const ticket = await prisma_1.default.ticket.findFirst({
+                where: {
+                    id: id,
+                    organization: {
+                        OR: [
+                            { ownerId: userId },
+                            { members: { some: { userId } } }
+                        ]
                     }
-                });
-                await tx.ticket.update({
-                    where: { id: ticket.id },
-                    data: { updatedAt: new Date() }
-                });
-                return { message, ticket };
+                },
+                include: { server: true }
             });
-            const { message, ticket } = result;
-            discord_driver_1.discordDriver.execute({
-                serverId: ticket.server.discordGuildId,
-                userId: 'SYSTEM',
-                action: 'send_message',
-                params: {
-                    channelId: ticket.channelId,
-                    content: `**[Staff] ${message.authorName}:**\n${content}`
-                }
+            if (!ticket) {
+                return res.status(404).json({ error: 'Ticket não encontrado ou sem permissão.' });
+            }
+            const message = await ticket_service_1.ticketService.addMessage({
+                ticketId: ticket.id,
+                organizationId: ticket.organizationId,
+                discordGuildId: ticket.server.discordGuildId,
+                discordChannelId: ticket.channelId,
+                authorId: userId,
+                authorName: req.user?.username || 'Staff',
+                authorAvatar: req.user?.avatar,
+                content,
+                isStaff: true,
+                authorType: 'STAFF'
             });
             return res.status(201).json(message);
         }
         catch (error) {
-            if (error.message === 'NOT_FOUND') {
-                return res.status(404).json({ error: 'Ticket não encontrado ou sem permissão.' });
-            }
+            console.error('[TicketController.sendTicketMessage] Error:', error.message);
             return res.status(500).json({ error: 'Erro ao enviar mensagem.' });
         }
     }
@@ -148,34 +163,20 @@ class TicketController {
                             { members: { some: { userId } } }
                         ]
                     }
-                },
-                include: { server: true }
+                }
             });
             if (!ticket) {
                 return res.status(404).json({ error: 'Ticket não encontrado ou sem permissão.' });
             }
-            await prisma_1.default.ticket.update({
-                where: { id: ticket.id },
-                data: {
-                    status: client_1.TicketStatus.CLOSED,
-                    closedAt: new Date(),
-                    updatedAt: new Date()
-                }
-            });
-            if (ticket.channelId) {
-                discord_driver_1.discordDriver.execute({
-                    serverId: ticket.server.discordGuildId,
-                    userId: 'SYSTEM',
-                    action: 'ticket.close_ticket_flow',
-                    params: {
-                        channelId: ticket.channelId,
-                        staffName: req.user?.username || 'Staff'
-                    }
-                });
-            }
-            return res.json({ message: 'Ticket fechado com sucesso.' });
+            const staffName = req.user?.username || 'Staff';
+            const updated = await ticket_service_1.ticketService.closeTicket(ticket.id, staffName);
+            // 🔔 Avisar Dashboard em tempo real (Mantém WS broadcast aqui ou move pro Service futuramente)
+            const { communityWSServer } = await Promise.resolve().then(() => __importStar(require('../services/ws-server')));
+            communityWSServer.broadcastToDashboard(ticket.organizationId, 'TICKET_UPDATED', updated);
+            return res.json({ message: 'Ticket fechado com sucesso.', ticket: updated });
         }
         catch (error) {
+            console.error('[TicketController.closeTicket] Error:', error.message);
             return res.status(500).json({ error: 'Erro ao fechar o ticket.' });
         }
     }
@@ -196,37 +197,16 @@ class TicketController {
                             { members: { some: { userId } } }
                         ]
                     }
-                },
-                include: { server: true }
+                }
             });
             if (!ticket) {
                 return res.status(404).json({ error: 'Ticket não encontrado ou sem permissão.' });
             }
-            const updatedTicket = await prisma_1.default.ticket.update({
-                where: { id: ticket.id },
-                data: {
-                    status: status,
-                    updatedAt: new Date()
-                }
-            });
-            if (ticket.channelId) {
-                const statusLabels = {
-                    OPEN: 'Aberto',
-                    IN_PROGRESS: 'Em Progresso',
-                    PENDING: 'Aguardando',
-                    CLOSED: 'Fechado',
-                    RESOLVED: 'Resolvido'
-                };
-                discord_driver_1.discordDriver.execute({
-                    serverId: ticket.server.discordGuildId,
-                    userId: 'SYSTEM',
-                    action: 'send_message',
-                    params: {
-                        channelId: ticket.channelId,
-                        content: `**[Sistema]** O status deste ticket foi alterado para: **${statusLabels[status] || status}**.`
-                    }
-                });
-            }
+            const staffName = req.user?.username || 'Staff';
+            const updatedTicket = await ticket_service_1.ticketService.updateStatus(ticket.id, status, staffName);
+            // 🔔 Avisar Dashboard em tempo real
+            const { communityWSServer } = await Promise.resolve().then(() => __importStar(require('../services/ws-server')));
+            communityWSServer.broadcastToDashboard(ticket.organizationId, 'TICKET_UPDATED', updatedTicket);
             return res.json(updatedTicket);
         }
         catch (error) {

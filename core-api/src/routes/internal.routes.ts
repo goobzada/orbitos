@@ -5,6 +5,8 @@ import { InternalGiveawayController } from '../controllers/internal-giveaway.con
 import { InternalApplicationController } from '../controllers/internal-application.controller';
 import { internalMiddleware } from '../middlewares/internal.middleware';
 
+import { checkPlanLimit } from '../middlewares/plan-limit.middleware';
+
 const internalRoutes = Router();
 const ctrl = new InternalController();
 const allowlistCtrl = new InternalAllowlistController();
@@ -20,7 +22,7 @@ internalRoutes.get('/guilds/:guildId/modules', ctrl.getGuildModules.bind(ctrl));
 internalRoutes.patch('/guilds/:guildId/disconnect', ctrl.disconnectGuild);
 
 // Tickets
-internalRoutes.post('/tickets', ctrl.createTicket);
+internalRoutes.post('/tickets', checkPlanLimit('maxTickets'), ctrl.createTicket);
 internalRoutes.post('/tickets/messages', ctrl.receiveTicketMessage);
 internalRoutes.patch('/tickets/:id/close', ctrl.closeTicket);
 
@@ -35,7 +37,7 @@ internalRoutes.post('/members/join', ctrl.memberJoin);
 
 // Sorteios (Giveaways)
 internalRoutes.get('/giveaways/active', giveawayCtrl.listActiveGiveaways);
-internalRoutes.post('/giveaways', giveawayCtrl.createGiveaway);
+internalRoutes.post('/giveaways', checkPlanLimit('maxGiveaways'), giveawayCtrl.createGiveaway);
 internalRoutes.post('/giveaways/join', giveawayCtrl.joinGiveaway);
 internalRoutes.patch('/giveaways/:id/end', giveawayCtrl.endGiveaway);
 

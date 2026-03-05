@@ -45,31 +45,38 @@ const JWT_SECRET = process.env.JWT_SECRET ||
 // ─── Auth Middleware ──────────────────────────────────────────────────────────
 const authMiddleware = (req, res, next) => {
     const authHeader = req.headers.authorization;
-    // 1. Sem header Authorization
-    if (!authHeader) {
-        console.warn('[AUTH] Requisição sem Authorization header', {
-            method: req.method,
-            path: req.path,
-            ip: req.ip,
-        });
+    let token;
+    // 1. Tenta Authorization: Bearer <token>
+    if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+        const extracted = authHeader.substring(7).trim();
+        if (extracted)
+            token = extracted;
+    }
+    // 2. Fallback: cookie "token" (salvo pelo frontend após Discord OAuth)
+    const cookies = req.cookies;
+    if (!token && cookies?.token) {
+        token = cookies.token;
+    }
+    // 3. Fallback extra: cookie "orbitos_token" (padrão legado)
+    if (!token && cookies?.orbitos_token) {
+        token = cookies.orbitos_token;
+    }
+    // 4. Nenhum token encontrado → 401
+    if (!token) {
+        // Silencia em produção para não poluir logs
+        if (process.env.NODE_ENV !== 'production') {
+            console.warn('[AUTH] Requisição sem token (header nem cookie)', {
+                method: req.method,
+                path: req.path,
+                ip: req.ip,
+            });
+        }
         res.status(401).json({ error: 'Token não fornecido' });
         return;
     }
-    // 2. Extrai o token do formato "Bearer <token>"
-    const [scheme, token] = authHeader.split(' ');
-    if (scheme !== 'Bearer' || !token) {
-        console.warn('[AUTH] Authorization header mal-formado', {
-            method: req.method,
-            path: req.path,
-            authHeader: authHeader.substring(0, 30) + '...',
-        });
-        res.status(401).json({ error: 'Formato de token inválido. Use: Bearer <token>' });
-        return;
-    }
-    // 3. Verifica e decodifica o JWT
+    // 5. Verifica e decodifica o JWT
     try {
         const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
-        // Anexa as informações do JWT para as rotas usarem via req.user
         req.user = decoded;
         return next();
     }
@@ -91,7 +98,9 @@ const requireOrgAccess = async (req, res, next) => {
         req.body.organizationId ||
         req.query.organizationId;
     if (!userId || !organizationId) {
-        return res.status(401).json({ error: 'Falta identificação de usuário ou organização.' });
+        return res
+            .status(401)
+            .json({ error: 'Falta identificação de usuário ou organização.' });
     }
     // SUPER_ADMIN tem acesso global (Bypass tenant isolation)
     if (req.user?.role === 'SUPER_ADMIN') {
@@ -115,7 +124,9 @@ const requireOrgAccess = async (req, res, next) => {
     }
     catch (error) {
         console.error('[AUTH] Erro ao validar acesso à organização:', error);
-        return res.status(500).json({ error: 'Erro ao validar acesso à organização.' });
+        return res
+            .status(500)
+            .json({ error: 'Erro ao validar acesso à organização.' });
     }
 };
 exports.requireOrgAccess = requireOrgAccess;

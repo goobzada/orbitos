@@ -24,14 +24,18 @@ import publicStoreRoutes from './routes/public-store.routes';
 import publicPortalRoutes from './routes/public-portal.routes';
 import supportRoutes from './routes/support.routes';
 import moduleRoutes from './routes/module.routes';
+import billingRoutes from './routes/billing.routes';
+import automationRoutes from './routes/automation.routes';
+import docsRoutes from './routes/docs.routes';
 
 // 🚀 Community OS: Inicialização de Motores de Eventos e Drivers
 import { automationEngine } from './services/automation-engine';
 import { discordDriver } from './services/drivers/discord.driver';
 import { communityWSServer } from './services/ws-server';
 import { WebhookController } from './controllers/webhook.controller';
+import { discordWorker } from './workers/discord.worker'; // ⬅️ Inicializa o Worker
 
-console.log('[CORE API] Community OS Engines: EventBus, AutomationEngine e Driver Layer inicializados.');
+console.log('[CORE API] Community OS Engines: EventBus, AutomationEngine, Driver Layer e Workers inicializados.');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -66,6 +70,10 @@ app.use(cors({
 // Cookies (para ler orbitos_token vindo do navegador)
 app.use(cookieParser());
 
+// 🛡️ Rate Limiting Global
+import { rateLimitMiddleware } from './middlewares/rate-limit.middleware';
+app.use(rateLimitMiddleware);
+
 // Stripe precisa do body "raw" ANTES do express.json()
 app.use('/webhook/stripe', express.raw({ type: 'application/json' }), WebhookController.handleStripe);
 
@@ -90,6 +98,11 @@ app.use('/store', storeRoutes);
 app.use('/public/store', publicStoreRoutes);
 app.use('/public/portal', publicPortalRoutes);
 app.use('/support', supportRoutes);
+app.use('/billing', billingRoutes);
+app.use('/automations', automationRoutes);
+
+// ── API Documentation (Swagger UI) ──────────────────────
+app.use('/docs', docsRoutes);
 
 // Main Healthcheck
 app.get('/', (req, res) => {

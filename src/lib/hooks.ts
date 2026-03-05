@@ -772,3 +772,113 @@ export const useResetModuleConfig = (organizationId: string) => {
         },
     });
 };
+
+// ─── Automation Engine V2 ────────────────────────────────
+
+export const useAutomations = (organizationId: string) => {
+    return useQuery<any[]>({
+        queryKey: ['automations', organizationId],
+        queryFn: async () => {
+            const { data } = await api.get(`/automations/${organizationId}`);
+            return data;
+        },
+        enabled: !!organizationId,
+    });
+};
+
+export const useAutomation = (organizationId: string, id: string) => {
+    return useQuery<any>({
+        queryKey: ['automation', organizationId, id],
+        queryFn: async () => {
+            const { data } = await api.get(`/automations/${organizationId}/${id}`);
+            return data;
+        },
+        enabled: !!organizationId && !!id,
+    });
+};
+
+export const useAutomationLogs = (organizationId: string, id: string) => {
+    return useQuery<any[]>({
+        queryKey: ['automation-logs', organizationId, id],
+        queryFn: async () => {
+            const { data } = await api.get(`/automations/${organizationId}/${id}/logs`);
+            return data;
+        },
+        enabled: !!organizationId && !!id,
+        refetchInterval: 10000,
+    });
+};
+
+export const useCreateAutomation = (organizationId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: any) => {
+            const { data } = await api.post(`/automations/${organizationId}`, payload);
+            return data;
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['automations', organizationId] }),
+    });
+};
+
+export const useUpdateAutomation = (organizationId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, ...payload }: any) => {
+            const { data } = await api.put(`/automations/${organizationId}/${id}`, payload);
+            return data;
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['automations', organizationId] }),
+    });
+};
+
+export const useDeleteAutomation = (organizationId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            await api.delete(`/automations/${organizationId}/${id}`);
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['automations', organizationId] }),
+    });
+};
+
+export const useToggleAutomation = (organizationId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { data } = await api.patch(`/automations/${organizationId}/${id}/toggle`);
+            return data;
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['automations', organizationId] }),
+    });
+};
+
+export const useTestAutomation = (organizationId: string) => {
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { data } = await api.post(`/automations/${organizationId}/${id}/test`);
+            return data;
+        },
+    });
+};
+
+export const useAutomationTriggers = () => {
+    return useQuery<any[]>({
+        queryKey: ['automation-triggers'],
+        queryFn: async () => {
+            const { data } = await api.get('/automations/triggers');
+            return data;
+        },
+        staleTime: 60_000,
+    });
+};
+
+export const useAutomationActions = () => {
+    return useQuery<any[]>({
+        queryKey: ['automation-actions'],
+        queryFn: async () => {
+            const { data } = await api.get('/automations/actions');
+            return data;
+        },
+        staleTime: 60_000,
+    });
+};

@@ -24,7 +24,9 @@ import {
     Bot,
     CreditCard,
     Command,
-    UserCircle
+    UserCircle,
+    Cpu,
+    BookOpen,
 } from "lucide-react";
 import { logout, exitImpersonation } from "@/lib/auth";
 import { useMe } from "@/lib/hooks";
@@ -48,6 +50,7 @@ export function AppSidebar() {
         { title: t.dashboard.sidebar.analytics, url: "/dashboard", icon: LayoutDashboard },
         { title: t.dashboard.sidebar.servers, url: "/dashboard/servers", icon: Server },
         { title: t.dashboard.sidebar.automations, url: "/dashboard/automations", icon: Command },
+        { title: '⚡ Automation Builder', url: "/dashboard/automations/builder", icon: Cpu },
         { title: t.dashboard.sidebar.tickets, url: "/dashboard/tickets", icon: Ticket },
         { title: "Staff", url: "/dashboard/staff", icon: Users },
         { title: "Loja VIP", url: "/dashboard/store", icon: CreditCard },
@@ -56,6 +59,7 @@ export function AppSidebar() {
 
     const secondaryItems = [
         { title: t.dashboard.sidebar.billing, url: "/dashboard/billing", icon: CreditCard },
+        { title: 'API Docs', url: "/dashboard/docs", icon: BookOpen },
         { title: t.dashboard.sidebar.settings, url: "/dashboard/settings", icon: Settings },
     ];
 

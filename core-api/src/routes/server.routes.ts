@@ -4,6 +4,8 @@ import { authMiddleware } from '../middlewares/auth.middleware';
 import { requireOrgAccess } from '../middlewares/org-access.middleware';
 import { resolveOrgFromServer } from '../middlewares/org-resolvers';
 
+import { checkPlanLimit } from '../middlewares/plan-limit.middleware';
+
 const serverRoutes = Router();
 const serverController = new ServerController();
 
@@ -11,7 +13,7 @@ const serverController = new ServerController();
 serverRoutes.use(authMiddleware);
 
 serverRoutes.get('/', serverController.getServers);
-serverRoutes.post('/', requireOrgAccess, serverController.createServer);
+serverRoutes.post('/', requireOrgAccess, checkPlanLimit('maxServers'), serverController.createServer);
 serverRoutes.delete('/:id', resolveOrgFromServer, requireOrgAccess, serverController.deleteServer);
 serverRoutes.patch('/:id/config', resolveOrgFromServer, requireOrgAccess, serverController.updateConfig);
 

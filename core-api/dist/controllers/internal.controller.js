@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -59,6 +92,9 @@ class InternalController {
                 status: client_1.TicketStatus.OPEN,
             }
         });
+        // 🔔 Avisar Dashboard em tempo real
+        const { communityWSServer } = await Promise.resolve().then(() => __importStar(require('../services/ws-server')));
+        communityWSServer.broadcastToDashboard(server.organizationId, 'TICKET_CREATED', ticket);
         return res.status(201).json(ticket);
     }
     // Bot notifica quando o ticket é fechado no Discord
@@ -67,8 +103,12 @@ class InternalController {
         try {
             const ticket = await prisma_1.default.ticket.update({
                 where: { id },
-                data: { status: client_1.TicketStatus.CLOSED, closedAt: new Date() }
+                data: { status: client_1.TicketStatus.CLOSED, closedAt: new Date() },
+                include: { server: true }
             });
+            // 🔔 Avisar Dashboard em tempo real
+            const { communityWSServer } = await Promise.resolve().then(() => __importStar(require('../services/ws-server')));
+            communityWSServer.broadcastToDashboard(ticket.organizationId, 'TICKET_UPDATED', ticket);
             return res.json({ message: 'Ticket fechado!', ticket });
         }
         catch (error) {
@@ -191,7 +231,38 @@ class InternalController {
             language: server.organization?.language || 'pt-BR',
             plan: server.organization?.plan || 'FREE',
             isActive: server.organization?.isActive ?? true,
-            modules: result.filter(m => m.active) // Somente retornar os ativos para o bot
+            modules: result.filter(m => m.active)
+        });
+    }
+    // Lista todos os servidores ativos — usado pelo Orbit Agent Supervisor
+    async listServers(req, res) {
+        const servers = await prisma_1.default.server.findMany({
+            where: { isActive: true },
+            select: { discordGuildId: true, name: true },
+        });
+        return res.json(servers);
+    }
+    // Bot busca produtos da loja para exibir no Discord
+    async getStoreProducts(req, res) {
+        const guildId = req.params.guildId;
+        const server = await prisma_1.default.server.findUnique({
+            where: { discordGuildId: guildId },
+            include: { organization: true }
+        });
+        if (!server) {
+            return res.status(404).json({ error: 'Servidor não encontrado.' });
+        }
+        const products = await prisma_1.default.storeProduct.findMany({
+            where: {
+                organizationId: server.organizationId,
+                status: 'ACTIVE'
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 25
+        });
+        return res.json({
+            organization: server.organization?.name || server.name,
+            products
         });
     }
 }

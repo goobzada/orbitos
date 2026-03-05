@@ -52,8 +52,12 @@ class WebhookController {
         res.json({ received: true });
     }
     static async processSuccessfulCheckout(session) {
-        const orderId = session.metadata?.orderId;
+        const type = session.metadata?.type;
         const organizationId = session.metadata?.organizationId;
+        if (type === 'SAAS_UPGRADE' && organizationId) {
+            return this.handleSaaSUpgrade(session);
+        }
+        const orderId = session.metadata?.orderId;
         if (!orderId)
             return;
         console.log(`[STRIPE WEBHOOK] ✅ Pagamento aprovado para Order: ${orderId}`);
@@ -91,11 +95,47 @@ class WebhookController {
         // 4. CHAMA O SERVIÇO DE ENTREGA AUTOMÁTICA
         await delivery_service_1.DeliveryService.deliverOrder(orderId);
     }
+    static async handleSaaSUpgrade(session) {
+        const organizationId = session.metadata?.organizationId;
+        const targetPlan = session.metadata?.targetPlan;
+        console.log(`[STRIPE WEBHOOK] 🚀 Upgrade de plano detectado: ${targetPlan} para Org: ${organizationId}`);
+        await prisma_1.default.organization.update({
+            where: { id: organizationId },
+            data: {
+                plan: targetPlan,
+                stripeCustomerId: session.customer,
+                stripeSubscriptionId: session.subscription,
+                isActive: true
+            }
+        });
+        event_bus_1.eventBus.emit('org.plan.upgraded', {
+            organizationId,
+            plan: targetPlan,
+            customerId: session.customer,
+            subscriptionId: session.subscription
+        });
+    }
     static async processSuccessfulSubscriptionPayment(invoice) {
-        console.log(`[STRIPE WEBHOOK] 🔄 Assinatura renovada: ${invoice.subscription}`);
+        const subscriptionId = invoice.subscription;
+        console.log(`[STRIPE WEBHOOK] 🔄 Assinatura renovada: ${subscriptionId}`);
+        // Se quisermos estender a validade ou logar o pagamento recorrente
+        if (typeof subscriptionId === 'string') {
+            await prisma_1.default.organization.updateMany({
+                where: { stripeSubscriptionId: subscriptionId },
+                data: { isActive: true }
+            });
+        }
     }
     static async handleSubscriptionDeleted(subscription) {
         console.log(`[STRIPE WEBHOOK] ❌ Assinatura cancelada: ${subscription.id}`);
+        // Downgrade automático para FREE
+        await prisma_1.default.organization.updateMany({
+            where: { stripeSubscriptionId: subscription.id },
+            data: {
+                plan: 'FREE',
+                isActive: true // Continua ativo mas no free
+            }
+        });
     }
 }
 exports.WebhookController = WebhookController;

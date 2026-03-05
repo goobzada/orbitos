@@ -3,9 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TicketService = void 0;
+exports.ticketService = exports.TicketService = void 0;
 const prisma_1 = __importDefault(require("../../lib/prisma"));
-const event_bus_1 = require("../event-bus");
+const queue_1 = require("../../lib/queue");
+const client_1 = require("@prisma/client");
 class TicketService {
     async listTickets(organizationId) {
         const tickets = await prisma_1.default.ticket.findMany({
@@ -66,17 +67,97 @@ class TicketService {
                 authorType: params.authorType
             }
         });
-        // Emitir evento para o Bot enviar ao Discord, se for via painel (staff)
-        if (params.isStaff) {
-            event_bus_1.eventBus.emitEvent('ticket.message_created', {
-                ticketId: params.ticketId,
-                discordGuildId: params.discordGuildId,
-                discordChannelId: params.discordChannelId,
-                content: params.content,
-                authorName: params.authorName
+        // 🚀 Enviar para a fila se for via painel (staff) para o Bot processar em background
+        if (params.isStaff && params.discordChannelId) {
+            await (0, queue_1.addDiscordJob)('send_message', {
+                serverId: params.discordGuildId,
+                userId: params.authorId,
+                action: 'send_message',
+                params: {
+                    channelId: params.discordChannelId,
+                    content: `**[Staff] ${params.authorName}:**\n${params.content}`
+                }
             });
         }
         return message;
     }
+    async closeTicket(ticketId, staffName) {
+        const ticket = await prisma_1.default.ticket.findUnique({
+            where: { id: ticketId },
+            include: { server: true }
+        });
+        if (!ticket)
+            throw new Error('Ticket não encontrado.');
+        const updated = await prisma_1.default.ticket.update({
+            where: { id: ticketId },
+            data: {
+                status: client_1.TicketStatus.CLOSED,
+                closedAt: new Date(),
+                updatedAt: new Date()
+            }
+        });
+        // 🚀 Adicionar na fila de processamento do Discord
+        if (ticket.channelId) {
+            await (0, queue_1.addDiscordJob)('ticket.close_ticket_flow', {
+                serverId: ticket.server.discordGuildId,
+                userId: 'SYSTEM',
+                action: 'ticket.close_ticket_flow',
+                params: {
+                    channelId: ticket.channelId,
+                    staffName: staffName
+                }
+            });
+        }
+        return updated;
+    }
+    async updateStatus(ticketId, status, staffName) {
+        const ticket = await prisma_1.default.ticket.findUnique({
+            where: { id: ticketId },
+            include: { server: true }
+        });
+        if (!ticket)
+            throw new Error('Ticket não encontrado.');
+        const updated = await prisma_1.default.ticket.update({
+            where: { id: ticketId },
+            data: {
+                status,
+                updatedAt: new Date(),
+                ...(status === client_1.TicketStatus.CLOSED ? { closedAt: new Date() } : {})
+            }
+        });
+        if (ticket.channelId) {
+            const statusLabels = {
+                OPEN: 'Aberto',
+                IN_PROGRESS: 'Em Progresso',
+                PENDING: 'Aguardando',
+                CLOSED: 'Fechado',
+                RESOLVED: 'Resolvido'
+            };
+            if (status === client_1.TicketStatus.CLOSED) {
+                await (0, queue_1.addDiscordJob)('ticket.close_ticket_flow', {
+                    serverId: ticket.server.discordGuildId,
+                    userId: 'SYSTEM',
+                    action: 'ticket.close_ticket_flow',
+                    params: {
+                        channelId: ticket.channelId,
+                        staffName
+                    }
+                });
+            }
+            else {
+                await (0, queue_1.addDiscordJob)('send_message', {
+                    serverId: ticket.server.discordGuildId,
+                    userId: 'SYSTEM',
+                    action: 'send_message',
+                    params: {
+                        channelId: ticket.channelId,
+                        content: `**[Sistema]** O status deste ticket foi alterado para: **${statusLabels[status] || status}**.`
+                    }
+                });
+            }
+        }
+        return updated;
+    }
 }
 exports.TicketService = TicketService;
+exports.ticketService = new TicketService();

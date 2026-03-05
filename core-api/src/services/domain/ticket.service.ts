@@ -1,5 +1,7 @@
 import prisma from '../../lib/prisma';
 import { eventBus } from '../event-bus';
+import { addDiscordJob } from '../../lib/queue';
+import { TicketStatus } from '@prisma/client';
 
 interface CreateTicketMessageParams {
     ticketId: string;
@@ -78,17 +80,106 @@ export class TicketService {
             }
         });
 
-        // Emitir evento para o Bot enviar ao Discord, se for via painel (staff)
-        if (params.isStaff) {
-            eventBus.emitEvent('ticket.message_created', {
-                ticketId: params.ticketId,
-                discordGuildId: params.discordGuildId,
-                discordChannelId: params.discordChannelId,
-                content: params.content,
-                authorName: params.authorName
+        // 🚀 Enviar para a fila se for via painel (staff) para o Bot processar em background
+        if (params.isStaff && params.discordChannelId) {
+            await addDiscordJob('send_message', {
+                serverId: params.discordGuildId,
+                userId: params.authorId,
+                action: 'send_message',
+                params: {
+                    channelId: params.discordChannelId,
+                    content: `**[Staff] ${params.authorName}:**\n${params.content}`
+                }
             });
         }
 
         return message;
     }
+
+    async closeTicket(ticketId: string, staffName: string) {
+        const ticket = await prisma.ticket.findUnique({
+            where: { id: ticketId },
+            include: { server: true }
+        });
+
+        if (!ticket) throw new Error('Ticket não encontrado.');
+
+        const updated = await prisma.ticket.update({
+            where: { id: ticketId },
+            data: {
+                status: TicketStatus.CLOSED,
+                closedAt: new Date(),
+                updatedAt: new Date()
+            }
+        });
+
+        // 🚀 Adicionar na fila de processamento do Discord
+        if (ticket.channelId) {
+            await addDiscordJob('ticket.close_ticket_flow', {
+                serverId: ticket.server.discordGuildId,
+                userId: 'SYSTEM',
+                action: 'ticket.close_ticket_flow',
+                params: {
+                    channelId: ticket.channelId,
+                    staffName: staffName
+                }
+            });
+        }
+
+        return updated;
+    }
+
+    async updateStatus(ticketId: string, status: TicketStatus, staffName: string) {
+        const ticket = await prisma.ticket.findUnique({
+            where: { id: ticketId },
+            include: { server: true }
+        });
+
+        if (!ticket) throw new Error('Ticket não encontrado.');
+
+        const updated = await prisma.ticket.update({
+            where: { id: ticketId },
+            data: {
+                status,
+                updatedAt: new Date(),
+                ...(status === TicketStatus.CLOSED ? { closedAt: new Date() } : {})
+            }
+        });
+
+        if (ticket.channelId) {
+            const statusLabels: Record<string, string> = {
+                OPEN: 'Aberto',
+                IN_PROGRESS: 'Em Progresso',
+                PENDING: 'Aguardando',
+                CLOSED: 'Fechado',
+                RESOLVED: 'Resolvido'
+            };
+
+            if (status === TicketStatus.CLOSED) {
+                await addDiscordJob('ticket.close_ticket_flow', {
+                    serverId: ticket.server.discordGuildId,
+                    userId: 'SYSTEM',
+                    action: 'ticket.close_ticket_flow',
+                    params: {
+                        channelId: ticket.channelId,
+                        staffName
+                    }
+                });
+            } else {
+                await addDiscordJob('send_message', {
+                    serverId: ticket.server.discordGuildId,
+                    userId: 'SYSTEM',
+                    action: 'send_message',
+                    params: {
+                        channelId: ticket.channelId,
+                        content: `**[Sistema]** O status deste ticket foi alterado para: **${statusLabels[status] || status}**.`
+                    }
+                });
+            }
+        }
+
+        return updated;
+    }
 }
+
+export const ticketService = new TicketService();

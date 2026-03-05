@@ -1,10 +1,15 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.communityWSServer = exports.CommunityWSServer = void 0;
 const ws_1 = require("ws");
 const url_1 = require("url");
 const events_1 = require("events");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const BOT_WS_TOKEN = process.env.BOT_INTERNAL_TOKEN;
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-do-not-use-in-production';
 // 🔒 Validação na inicialização
 if (!BOT_WS_TOKEN || BOT_WS_TOKEN.trim() === '') {
     const isProduction = process.env.NODE_ENV === 'production';
@@ -33,11 +38,33 @@ class CommunityWSServer extends events_1.EventEmitter {
             const url = new url_1.URL(request.url || '', `http://${request.headers.host}`);
             const pathname = url.pathname;
             const token = url.searchParams.get('token');
-            const type = pathname === '/ws/bot' ? 'BOT' : (pathname === '/ws/agent' ? 'AGENT' : null);
+            const type = pathname === '/ws/bot' ? 'BOT' : (pathname === '/ws/agent' ? 'AGENT' : (pathname === '/ws/dashboard' ? 'DASHBOARD' : null));
             if (!type) {
                 console.warn(`[WS SERVER] 🚫 Rota inválida: ${pathname}`);
                 socket.destroy();
                 return;
+            }
+            // Validação diferenciada por tipo
+            if (type === 'DASHBOARD') {
+                if (!token) {
+                    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+                    socket.destroy();
+                    return;
+                }
+                try {
+                    const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
+                    const orgId = url.searchParams.get('orgId') || undefined;
+                    this.wss.handleUpgrade(request, socket, head, (ws) => {
+                        this.wss.emit('connection', ws, request, 'DASHBOARD', undefined, orgId, decoded.id);
+                    });
+                    return;
+                }
+                catch (err) {
+                    console.warn(`[WS SERVER] ⛔ Dashboard JWT inválido.`);
+                    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+                    socket.destroy();
+                    return;
+                }
             }
             if (!RESOLVED_TOKEN || token !== RESOLVED_TOKEN) {
                 console.warn(`[WS SERVER] ⛔ Conexão ${type} rejeitada - token inválido.`);
@@ -50,10 +77,13 @@ class CommunityWSServer extends events_1.EventEmitter {
                 this.wss.emit('connection', ws, request, type, serverId);
             });
         });
-        this.wss.on('connection', (ws, request, type, serverId) => {
-            const client = { ws, type, serverId, connectedAt: Date.now() };
+        this.wss.on('connection', (ws, request, type, serverId, orgId, userId) => {
+            const client = { ws, type, serverId, orgId, userId, connectedAt: Date.now(), isAlive: true };
             this.clients.add(client);
             console.log(`[WS SERVER] ✅ ${type} conectado! ${serverId ? `(Server: ${serverId})` : ''} — Total: ${this.clients.size}`);
+            ws.on('pong', () => {
+                client.isAlive = true;
+            });
             ws.on('close', () => {
                 console.log(`[WS SERVER] 🔌 ${type} desconectado.${serverId ? ` (Server: ${serverId})` : ''}`);
                 this.clients.delete(client);
@@ -76,6 +106,21 @@ class CommunityWSServer extends events_1.EventEmitter {
                 }
             });
         });
+        // Loop de Keep-Alive (mata conexões fantasmas via Ping/Pong)
+        setInterval(() => {
+            this.clients.forEach((client) => {
+                if (client.isAlive === false) {
+                    console.warn(`[WS SERVER] 👻 Conexão Zumbi detectada (${client.type} ${client.serverId || ''}). Terminando WS...`);
+                    client.ws.terminate();
+                    this.clients.delete(client);
+                    return;
+                }
+                client.isAlive = false;
+                if (client.ws.readyState === ws_1.WebSocket.OPEN) {
+                    client.ws.ping();
+                }
+            });
+        }, 30000);
         console.log('[WS SERVER] ✅ WebSocket Server inicializado (Bot & Agent SDK).');
     }
     handleAgentMessage(client, message) {
@@ -175,6 +220,15 @@ class CommunityWSServer extends events_1.EventEmitter {
                 agents.push(c.serverId);
         });
         return agents;
+    }
+    /** Broadcast para usuários do Dashboard vinculados a uma organização específica */
+    broadcastToDashboard(orgId, type, payload) {
+        const message = JSON.stringify({ type, payload });
+        this.clients.forEach((client) => {
+            if (client.type === 'DASHBOARD' && client.orgId === orgId && client.ws.readyState === ws_1.WebSocket.OPEN) {
+                client.ws.send(message);
+            }
+        });
     }
 }
 exports.CommunityWSServer = CommunityWSServer;

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { StoreController } from '../controllers/store.controller';
 import { authMiddleware, requireOrgAccess } from '../middlewares/auth.middleware';
+import { checkPlanLimit } from '../middlewares/plan-limit.middleware';
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router.put('/:organizationId/settings', StoreController.updateSettings);
 
 // --- PRODUCTS ---
 router.get('/:organizationId/products', StoreController.listProducts);
-router.post('/:organizationId/products', StoreController.createProduct);
+router.post('/:organizationId/products', checkPlanLimit('maxProducts'), StoreController.createProduct);
 router.put('/:organizationId/products/:id', StoreController.updateProduct);
 // router.delete('/:organizationId/products/:id', StoreController.deleteProduct);
 
