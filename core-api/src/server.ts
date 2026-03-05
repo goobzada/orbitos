@@ -54,7 +54,11 @@ const ALLOWED_ORIGINS = (
 app.use(cors({
   origin: (origin, callback) => {
     // Permite requisições locais ou explícitas e sem origin
-    const isLocalhost = origin?.startsWith('http://localhost') || origin?.startsWith('http://127.0.0.1');
+    /* FIX C4: lista explícita de portas dev — não aceitar localhost:qualquer-porta */
+    const DEV_LOCALHOST_PORTS = [3000, 3001, 4000];
+    const isLocalhost = DEV_LOCALHOST_PORTS.some(
+      p => origin === `http://localhost:${p}` || origin === `http://127.0.0.1:${p}`
+    );
     if (!origin || ALLOWED_ORIGINS.includes(origin) || isLocalhost) {
       callback(null, true);
     } else {

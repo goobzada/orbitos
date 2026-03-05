@@ -2,11 +2,11 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET =
-  process.env.JWT_SECRET ||
-  (process.env.NODE_ENV === 'production'
-    ? ''
-    : 'dev-jwt-secret-do-not-use-in-production');
+/* FIX C1: Sem fallback — obrigatório em todos os ambientes */
+if (!process.env.JWT_SECRET) {
+  throw new Error('[CONFIG] JWT_SECRET é obrigatório em todos os ambientes.');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // ─── Auth Middleware ──────────────────────────────────────────────────────────
 
@@ -21,13 +21,14 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
   }
 
   // 2. Fallback: cookie "token" (salvo pelo frontend após Discord OAuth)
-  const cookies = (req as any).cookies;
-  if (!token && cookies?.token) {
+  /* FIX C12: usar tipo correto em vez de (req as any).cookies */
+  const cookies: Record<string, string | undefined> = req.cookies ?? {};
+  if (!token && cookies.token) {
     token = cookies.token;
   }
 
   // 3. Fallback extra: cookie "orbitos_token" (padrão legado)
-  if (!token && cookies?.orbitos_token) {
+  if (!token && cookies.orbitos_token) {
     token = cookies.orbitos_token;
   }
 
@@ -57,7 +58,8 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
       supportSessionId?: string;
     };
 
-    (req as any).user = decoded;
+    /* FIX C10: remocao de (req as any) apos extensao de tipo em express.d.ts */
+    req.user = decoded;
     return next();
   } catch (err) {
     console.warn('[AUTH] Token inválido ou expirado', {
@@ -77,7 +79,7 @@ export const requireOrgAccess = async (
   res: Response,
   next: NextFunction
 ) => {
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   const organizationId =
     (req.params as any).organizationId ||
     (req.body as any).organizationId ||
@@ -90,7 +92,7 @@ export const requireOrgAccess = async (
   }
 
   // SUPER_ADMIN tem acesso global (Bypass tenant isolation)
-  if ((req as any).user?.role === 'SUPER_ADMIN') {
+  if (req.user?.role === 'SUPER_ADMIN') {
     return next();
   }
 

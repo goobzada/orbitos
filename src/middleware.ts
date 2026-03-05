@@ -48,7 +48,12 @@ export async function middleware(request: NextRequest) {
     let role = 'USER';
     let tokenValid = true;
     try {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-jwt-secret-do-not-use-in-production');
+        /* FIX C1: sem fallback — lança erro se JWT_SECRET ausente */
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            throw new Error('[CONFIG] JWT_SECRET é obrigatório em todos os ambientes.');
+        }
+        const secret = new TextEncoder().encode(jwtSecret);
         const { payload } = await jwtVerify(token, secret);
         role = (payload.role as string) || 'USER';
     } catch (err) {

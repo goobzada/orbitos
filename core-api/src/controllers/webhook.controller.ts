@@ -17,11 +17,11 @@ export class WebhookController {
                 apiVersion: '2025-01-27.acacia' as any,
             });
 
-            if (endpointSecret && sig) {
-                event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
-            } else {
-                event = typeof payload === 'string' ? JSON.parse(payload) : payload;
+            /* FIX C2: sem assinatura, rejeita imediatamente */
+            if (!endpointSecret || !sig) {
+                return res.status(400).json({ error: 'Webhook n\u00e3o assinado.' });
             }
+            event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
         } catch (err: any) {
             console.error(`[STRIPE WEBHOOK] ❌ Erro de assinatura:`, err.message);
             return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -37,7 +37,8 @@ export class WebhookController {
             }
             case 'invoice.paid': {
                 const invoice = event.data.object as Stripe.Invoice;
-                if ((invoice as any).subscription) {
+                /* FIX C3: guarda de tipo segura em vez de (invoice as any).subscription */
+                if ('subscription' in invoice && typeof invoice.subscription === 'string') {
                     await this.processSuccessfulSubscriptionPayment(invoice);
                 }
                 break;
@@ -128,8 +129,10 @@ export class WebhookController {
     }
 
     private static async processSuccessfulSubscriptionPayment(invoice: Stripe.Invoice) {
-        const subscriptionId = (invoice as any).subscription;
-        console.log(`[STRIPE WEBHOOK] 🔄 Assinatura renovada: ${subscriptionId}`);
+        /* FIX C3: acessa .subscription via guarda de tipo */
+        const subscriptionId = 'subscription' in invoice && typeof invoice.subscription === 'string'
+            ? invoice.subscription : undefined;
+        console.log(`[STRIPE WEBHOOK] \uD83D\uDD04 Assinatura renovada: ${subscriptionId}`);
 
         // Se quisermos estender a validade ou logar o pagamento recorrente
         if (typeof subscriptionId === 'string') {

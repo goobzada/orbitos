@@ -3,20 +3,11 @@ import prisma from '../lib/prisma';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-// 🔒 Validação na inicialização
-if (!JWT_SECRET || JWT_SECRET.trim() === '') {
-    const isProduction = process.env.NODE_ENV === 'production';
-    if (isProduction) {
-        console.error('🔴 FATAL: JWT_SECRET não definida. Abortando em produção.');
-        process.exit(1);
-    } else {
-        console.warn('⚠️ AVISO: JWT_SECRET não definida. Usando chave padrão DEV.');
-    }
+/* FIX C1: lança erro se JWT_SECRET ausente — sem fallback em nenhum ambiente */
+if (!process.env.JWT_SECRET) {
+    throw new Error('[CONFIG] JWT_SECRET é obrigatório em todos os ambientes.');
 }
-
-const RESOLVED_SECRET = JWT_SECRET || 'dev-jwt-secret-do-not-use-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export class AuthController {
 
@@ -74,7 +65,7 @@ export class AuthController {
         // Assina e devolve o Token
         const token = jwt.sign(
             { id: user.id, discordId: user.discordId, role: user.role, username: user.username, avatar: user.avatar },
-            RESOLVED_SECRET,
+            JWT_SECRET,
             { expiresIn: '7d' }
         );
 
@@ -181,7 +172,7 @@ export class AuthController {
             // 5. Gerar JWT
             const token = jwt.sign(
                 { id: user.id, role: user.role, username: user.username, avatar: user.avatar },
-                RESOLVED_SECRET,
+                JWT_SECRET,
                 { expiresIn: '7d' }
             );
 
@@ -306,7 +297,7 @@ export class AuthController {
                     username: user.username,
                     avatar: user.avatar,
                 },
-                RESOLVED_SECRET,
+                JWT_SECRET,
                 { expiresIn: '7d' }
             );
 
