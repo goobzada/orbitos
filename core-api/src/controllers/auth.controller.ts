@@ -345,4 +345,22 @@ export class AuthController {
 
         return res.json(user);
     }
+
+    // Logout: limpa o cookie de sessão server-side
+    async logout(req: Request, res: Response) {
+        const isProduction = process.env.NODE_ENV === 'production';
+
+        // Limpa cookie usando Set-Cookie com Max-Age=0
+        res.cookie('token', '', {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? 'none' : 'lax',
+            ...(isProduction ? { domain: '.orbitup.io' } : {}),
+            path: '/',
+            maxAge: 0,
+        });
+
+        console.log('[AUTH] ✅ Logout — cookie cleared');
+        return res.json({ ok: true });
+    }
 }

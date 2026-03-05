@@ -208,6 +208,16 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 const server = http.createServer(app);
 communityWSServer.init(server);
 
+server.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[CORE API] ❌ Porta ${PORT} já está em uso. Finalize o processo antigo ou altere PORT.`);
+    process.exit(1);
+  }
+
+  console.error('[CORE API] ❌ Erro ao iniciar servidor HTTP:', err.message);
+  process.exit(1);
+});
+
 server.listen(PORT, () => {
   console.log(`[CORE API] 🚀 Servidor rodando na porta ${PORT}`);
 });

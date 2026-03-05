@@ -31,10 +31,7 @@ function LoginPageContent() {
 
             const { data } = await api.post('/auth/oauth-login', payload);
 
-            localStorage.setItem('token', data.token);
-            // Cookie para o Next.js Middleware reconhecer a sessão no servidor
-            document.cookie = `token=${data.token}; path=/; max-age=604800; SameSite=Lax`; // 7 dias
-
+            // Server sets HttpOnly cookie automatically via Set-Cookie header
             toast.success(`${t.auth.authenticating}`);
             window.location.replace('/dashboard');
         } catch (error: any) {

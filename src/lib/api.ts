@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000',
     timeout: 10_000,
-    withCredentials: true,   // envia cookies (token) cross-site automaticamente
+    withCredentials: true,   // Send HttpOnly cookies automatically
     headers: {
         'Content-Type': 'application/json',
     },
@@ -30,26 +30,9 @@ function isSafePollRoute(url: string): boolean {
     return SAFE_POLL_ROUTES.some((safe) => url.includes(safe));
 }
 
-// ─── Request Interceptor ─────────────────────────────────────────────────────
-
-api.interceptors.request.use((config) => {
-    if (typeof window !== 'undefined') {
-        // Tenta localStorage primeiro
-        let token = localStorage.getItem('token');
-
-        // Fallback: cookie (útil logo após reload com SSR)
-        if (!token) {
-            const match = document.cookie.match(/(?:^|;)\s*token=([^;]*)/);
-            if (match && match[1]) token = decodeURIComponent(match[1]);
-        }
-
-        if (token) {
-            config.headers = config.headers || {};
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-    }
-    return config;
-});
+// ─── Request Interceptor (no-op — auth is cookie-based) ──────────────────────
+// Cookies are sent automatically via withCredentials: true.
+// No need to manually inject Authorization headers.
 
 // ─── Response Interceptor ────────────────────────────────────────────────────
 

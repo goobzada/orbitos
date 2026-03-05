@@ -47,6 +47,22 @@ export const client = new Client({
 // Inicializa o ModuleLoader para gerenciar ações dinâmicas
 export const moduleLoader = new ModuleLoader(client);
 
+async function sendHeartbeat() {
+    try {
+        const guildIds = client.guilds.cache.map((g) => g.id);
+        const uptime = client.uptime ?? 0;
+        const ping = Math.round(client.ws.ping || 0);
+
+        await coreApi.post('/internal/heartbeat', {
+            guildIds,
+            uptime,
+            ping,
+        });
+    } catch (err: any) {
+        log.warn(`[HEARTBEAT] Falha ao enviar heartbeat: ${err?.message || 'erro desconhecido'}`);
+    }
+}
+
 async function start() {
     moduleLoader.loadModules();
 

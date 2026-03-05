@@ -3,7 +3,6 @@
 import { useEffect, Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
-import { setToken } from '@/lib/auth';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 function CallbackContent() {
@@ -40,23 +39,12 @@ function CallbackContent() {
                     username: data.user?.username,
                 });
 
-                if (data.token) {
-                    // 1. Salva em localStorage
-                    localStorage.setItem('token', data.token);
-
-                    // 2. Seta cookie com 7 dias (mesmo TTL do JWT) — obrigatório para o middleware Next.js ler no SSR
-                    const maxAge = 7 * 24 * 60 * 60; // 7 dias em segundos
-                    document.cookie = `token=${encodeURIComponent(data.token)}; path=/; max-age=${maxAge}; SameSite=Lax`;
-
-                    // 3. Verifica que o cookie foi salvo antes de redirecionar
-                    const cookieCheck = document.cookie.includes('token=');
-                    const localCheck = !!localStorage.getItem('token');
-                    console.log('[CALLBACK] ✅ Token salvo:', { cookieOk: cookieCheck, localStorageOk: localCheck });
-
-                    // 4. Pequeno delay para garantir que o browser commitou o cookie antes da navegação
-                    setTimeout(() => {
-                        window.location.replace('/dashboard');
-                    }, 100);
+                if (data.token && data.user) {
+                    console.log('[CALLBACK] ✅ Authenticated. Cookie set server-side.');
+                    
+                    // Server already set HttpOnly cookie via Set-Cookie header.
+                    // Redirect immediately — middleware will pick up the cookie.
+                    window.location.replace('/dashboard');
                 } else {
                     console.error('[CALLBACK] ❌ API respondeu sem token:', data);
                     setErrorMsg('Servidor não retornou o token de autenticação.');

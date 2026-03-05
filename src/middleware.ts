@@ -15,18 +15,9 @@ export async function middleware(request: NextRequest) {
     const isLogin = pathname === '/login' || pathname.startsWith('/login/');
     const isProtected = isDashboard || isPlatform;
 
-    // Redireciona /plataforma -> /platform (Suporte PT-BR)
+    // Redireciona /plataforma → /platform (Suporte PT-BR)
     if (isPlataforma) {
         return NextResponse.redirect(new URL('/platform', request.url));
-    }
-
-    // ── Força limpeza de cookie pedida pelo client (Break Loop) ───────────────
-    if (request.nextUrl.searchParams.get('clear') === '1') {
-        const url = request.nextUrl.clone();
-        url.searchParams.delete('clear');
-        const resp = NextResponse.redirect(url);
-        resp.cookies.set({ name: 'token', value: '', maxAge: 0, path: '/', sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
-        return resp;
     }
 
     // ── Sem token ─────────────────────────────────────────────────────────────
@@ -35,7 +26,10 @@ export async function middleware(request: NextRequest) {
         if (isProtected) {
             const url = request.nextUrl.clone();
             url.pathname = '/login';
-            url.searchParams.set('from', pathname);
+            // Only set 'from' if not already on a callback or error state
+            if (!pathname.includes('/callback')) {
+                url.searchParams.set('from', pathname);
+            }
             return NextResponse.redirect(url);
         }
         // Qualquer rota pública → deixa passar
@@ -44,35 +38,43 @@ export async function middleware(request: NextRequest) {
 
     // ── Com token ─────────────────────────────────────────────────────────────
 
-    // Tenta extrair o role do JWT com verificação de assinatura no Edge via jose
+    // Verificar JWT e extrair role
     let role = 'USER';
     let tokenValid = true;
     try {
-        /* FIX C1: sem fallback — lança erro se JWT_SECRET ausente */
         const jwtSecret = process.env.JWT_SECRET;
         if (!jwtSecret) {
-            throw new Error('[CONFIG] JWT_SECRET é obrigatório em todos os ambientes.');
+            console.error('[MIDDLEWARE] JWT_SECRET missing — cannot verify tokens');
+            tokenValid = false;
+        } else {
+            const secret = new TextEncoder().encode(jwtSecret);
+            const { payload } = await jwtVerify(token, secret);
+            role = (payload.role as string) || 'USER';
         }
-        const secret = new TextEncoder().encode(jwtSecret);
-        const { payload } = await jwtVerify(token, secret);
-        role = (payload.role as string) || 'USER';
     } catch (err) {
         tokenValid = false;
     }
 
-    // Token malformado ou expirado → limpa cookie e redireciona pro /login
+    // Token inválido → limpa cookie e redireciona para /login
     if (!tokenValid) {
         const url = request.nextUrl.clone();
         url.pathname = '/login';
-        if (isProtected) url.searchParams.set('from', pathname);
+        url.searchParams.set('session_expired', '1');
 
         const resp = NextResponse.redirect(url);
-        resp.cookies.set({ name: 'token', value: '', maxAge: 0, path: '/', sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
+        resp.cookies.set({
+            name: 'token',
+            value: '',
+            maxAge: 0,
+            path: '/',
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production'
+        });
         return resp;
     }
 
-    // Já logado e tentando acessar /login → redireciona para dashboard correto
-    // MAS não redireciona durante o callback OAuth (o callback precisa processar o code)
+    // Já autenticado tentando acessar /login → redireciona para dashboard
+    // EXCETO durante callback OAuth (precisa processar o code)
     const isCallback = pathname.startsWith('/login/callback');
     if (isLogin && !isCallback) {
         const dest = role === 'SUPER_ADMIN' ? '/platform' : '/dashboard';
@@ -89,8 +91,8 @@ export async function middleware(request: NextRequest) {
 
 
 export const config = {
-    // Roda apenas nas rotas privadas, login e callbacks OAuth.
-    // Exclui assets estáticos, _next, portais públicos e favicon.
+    // Run only on protected routes + login flow
+    // Exclude static assets, _next, public portals
     matcher: [
         '/dashboard/:path*',
         '/platform/:path*',
