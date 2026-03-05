@@ -59,6 +59,12 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         return next();
     }
 
+    // Billing flows (checkout/portal/cancel/reactivate) are user-triggered and can be
+    // impacted by global limiter noise; keep them outside the global throttle.
+    if (req.path.startsWith('/billing/')) {
+        return next();
+    }
+
     const usingFallback = !REDIS_ENABLED || !redisConnection || !isRedisConnected();
 
     // Log warning once when Redis is down (avoid spam)
