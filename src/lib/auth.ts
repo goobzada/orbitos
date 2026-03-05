@@ -67,21 +67,10 @@ export const logout = async (opts?: { redirect?: boolean }) => {
     try {
         clearTokenStorage();
 
-        // Clear server-side session cookie in both API and Next layers.
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        await Promise.allSettled([
-            fetch(`${apiUrl}/auth/logout`, {
-                method: 'POST',
-                credentials: 'include',
-            }),
-            fetch('/api/auth/logout', {
-                method: 'POST',
-                credentials: 'include',
-            }),
-        ]);
-
+        // Use GET redirect to logout endpoint which clears cookies AND redirects
+        // This avoids race condition between Set-Cookie and JavaScript redirect
         if (opts?.redirect !== false && typeof window !== 'undefined') {
-            window.location.replace('/login');
+            window.location.href = '/api/auth/logout';
         }
     } catch (e) {
         if (opts?.redirect !== false && typeof window !== 'undefined') {
