@@ -2,9 +2,16 @@ import { Request, Response } from 'express';
 import Stripe from 'stripe';
 import prisma from '../lib/prisma';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-    apiVersion: '2025-01-27.acacia' as any
-});
+function getStripeClient() {
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+        throw new Error('Configuração de pagamento incompleta (STRIPE_SECRET_KEY ausente).');
+    }
+
+    return new Stripe(stripeKey, {
+        apiVersion: '2025-01-27.acacia' as any
+    });
+}
 
 export class BillingController {
     // Cria uma sessão de checkout do Stripe para upgrade de plano
@@ -33,7 +40,25 @@ export class BillingController {
         const plan = planPrices[planId.toUpperCase()];
         if (!plan) return res.status(400).json({ error: 'Plano inválido.' });
 
+        const frontendUrl = process.env.FRONTEND_URL || 'https://orbitup.io';
+
+        if (!process.env.STRIPE_SECRET_KEY) {
+            console.error('[STRIPE CHECKOUT] Missing STRIPE_SECRET_KEY in environment');
+            return res.status(500).json({
+                error: 'Configuração de pagamento incompleta (STRIPE_SECRET_KEY ausente).'
+            });
+        }
+
+        if (!frontendUrl.startsWith('http://') && !frontendUrl.startsWith('https://')) {
+            console.error('[STRIPE CHECKOUT] Invalid FRONTEND_URL:', frontendUrl);
+            return res.status(500).json({
+                error: 'Configuração inválida de FRONTEND_URL no servidor.'
+            });
+        }
+
         try {
+            const stripe = getStripeClient();
+
             const [org, user] = await Promise.all([
                 prisma.organization.findUnique({ where: { id: String(organizationId) } }),
                 prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
@@ -44,8 +69,8 @@ export class BillingController {
             const sessionParams: Stripe.Checkout.SessionCreateParams = {
                 payment_method_types: ['card'],
                 mode: 'subscription',
-                success_url: `${process.env.FRONTEND_URL}/dashboard/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${process.env.FRONTEND_URL}/dashboard/billing?canceled=true`,
+                success_url: `${frontendUrl}/dashboard/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${frontendUrl}/dashboard/billing?canceled=true`,
                 customer_email: user?.email || undefined,
                 metadata: {
                     type: 'SAAS_UPGRADE',
@@ -82,7 +107,9 @@ export class BillingController {
 
         } catch (error: any) {
             console.error('[STRIPE CHECKOUT] Error:', error.message);
-            return res.status(500).json({ error: 'Erro ao gerar checkout do Stripe.' });
+            return res.status(500).json({
+                error: error?.message ? `Erro ao gerar checkout do Stripe: ${error.message}` : 'Erro ao gerar checkout do Stripe.'
+            });
         }
     }
 
@@ -91,6 +118,8 @@ export class BillingController {
         const { organizationId } = req.params;
 
         try {
+            const stripe = getStripeClient();
+
             const org = await prisma.organization.findUnique({
                 where: { id: String(organizationId) },
                 include: {
@@ -155,6 +184,8 @@ export class BillingController {
         const { organizationId } = req.params;
 
         try {
+            const stripe = getStripeClient();
+
             const org = await prisma.organization.findUnique({
                 where: { id: String(organizationId) }
             });
@@ -183,6 +214,8 @@ export class BillingController {
         if (!userId) return res.status(401).json({ error: 'Não autorizado.' });
 
         try {
+            const stripe = getStripeClient();
+
             const org = await prisma.organization.findUnique({
                 where: { id: String(organizationId) }
             });
@@ -217,6 +250,8 @@ export class BillingController {
         if (!userId) return res.status(401).json({ error: 'Não autorizado.' });
 
         try {
+            const stripe = getStripeClient();
+
             const org = await prisma.organization.findUnique({
                 where: { id: String(organizationId) }
             });

@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { useTranslation } from "@/components/providers/language-provider";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { useActiveOrg } from "@/lib/use-org-store";
 
 const plans = [
     {
@@ -119,8 +120,8 @@ export default function BillingPage() {
     const { t } = useTranslation();
     const { data: organizations } = useOrganizations();
     const searchParams = useSearchParams();
-    const activeOrganizationId = typeof window !== 'undefined' ? localStorage.getItem('activeOrganizationId') : null;
-    const activeOrg = organizations?.find(org => org.id === activeOrganizationId) || organizations?.[0];
+    const { activeOrgId } = useActiveOrg();
+    const activeOrg = organizations?.find(org => org.id === activeOrgId) || organizations?.[0];
 
     useEffect(() => {
         const success = searchParams.get('success');
