@@ -84,7 +84,7 @@ export default function SettingsPage() {
             });
             toast.success(t.settings.success || "Configurações atualizadas com sucesso!");
         } catch (error: any) {
-            toast.error(error?.response?.data?.error || "Erro ao salvar configurações.");
+            toast.error(error?.response?.data?.error || t.common.error);
         } finally {
             setSavingGeneral(false);
         }
@@ -94,7 +94,7 @@ export default function SettingsPage() {
         setSavingSecurity(true);
         await new Promise(r => setTimeout(r, 800)); // TODO: call PATCH /auth/security
         setSavingSecurity(false);
-        toast.success("Segurança atualizada!");
+        toast.success(t.settings.success);
     };
 
     return (
@@ -102,8 +102,8 @@ export default function SettingsPage() {
             <UpgradePlanModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
 
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">{t.dashboard.sidebar.settings}</h1>
-                <p className="text-muted-foreground">Gerencie as preferências da sua conta e do sistema.</p>
+                <h1 className="text-3xl font-bold tracking-tight">{t.settings.title || t.dashboard.sidebar.settings}</h1>
+                <p className="text-muted-foreground">{t.settings.subtitle || "Gerencie as preferências da sua conta e do sistema."}</p>
             </div>
 
             <Tabs defaultValue="general" className="w-full">
@@ -114,15 +114,15 @@ export default function SettingsPage() {
                     </TabsTrigger>
                     <TabsTrigger value="security" className="gap-2">
                         <Shield className="w-4 h-4" />
-                        Segurança
+                        {t.settings.security || "Segurança"}
                     </TabsTrigger>
                     <TabsTrigger value="notifications" className="gap-2">
                         <Bell className="w-4 h-4" />
-                        Notificações
+                        {t.settings.notifications || "Notificações"}
                     </TabsTrigger>
                     <TabsTrigger value="appearance" className="gap-2">
                         <Palette className="w-4 h-4" />
-                        Aparência
+                        {t.settings.appearance || "Aparência"}
                     </TabsTrigger>
                 </TabsList>
 
@@ -131,33 +131,33 @@ export default function SettingsPage() {
                         <CardHeader className="pb-3">
                             <CardTitle className="flex items-center gap-2">
                                 <Sparkles className="w-5 h-5 text-primary" />
-                                Plano Atual
+                                {t.billing.current_plan}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="flex items-center justify-between">
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <p className="font-bold text-xl">Plano {activeOrg?.plan || 'Básico'}</p>
-                                    <Badge className="bg-primary/20 text-primary border-primary/30">Ativo</Badge>
+                                    <p className="font-bold text-xl">Plano {activeOrg?.plan || 'Free'}</p>
+                                    <Badge className="bg-primary/20 text-primary border-primary/30">{t.billing.active_plan}</Badge>
                                 </div>
-                                <p className="text-sm text-muted-foreground mt-1">Sua assinatura atual do OrbitOS.</p>
+                                <p className="text-sm text-muted-foreground mt-1">{t.billing.pro_plan_desc}</p>
                             </div>
                             <Button className="gap-2" onClick={() => setUpgradeOpen(true)}>
                                 <Zap className="w-4 h-4" />
-                                Upgrade de Plano
+                                {t.billing.upgrade_cta}
                             </Button>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Informações do Sistema</CardTitle>
-                            <CardDescription>Configure o nome, a URL base e o idioma da sua plataforma.</CardDescription>
+                            <CardTitle>{t.settings.system_info || "Informações do Sistema"}</CardTitle>
+                            <CardDescription>{t.settings.system_info_desc || "Configure o nome, a URL base e o idioma da sua plataforma."}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="name">Nome da Organização</Label>
+                                    <Label htmlFor="name">{t.settings.org_name || "Nome da Organização"}</Label>
                                     <Input id="name" value={orgName} onChange={e => setOrgName(e.target.value)} placeholder="Minha Comunidade" />
                                 </div>
                                 <div className="grid gap-2">
@@ -166,7 +166,7 @@ export default function SettingsPage() {
                                         <SelectTrigger id="language" className="w-full">
                                             <div className="flex items-center gap-2">
                                                 <Languages className="w-4 h-4 text-muted-foreground" />
-                                                <SelectValue placeholder="Selecione um idioma" />
+                                                <SelectValue placeholder={t.settings.select_language || "Selecione um idioma"} />
                                             </div>
                                         </SelectTrigger>
                                         <SelectContent>
@@ -175,37 +175,37 @@ export default function SettingsPage() {
                                             <SelectItem value="es-ES">Español (España)</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    <p className="text-[10px] text-muted-foreground">Isso afetará as mensagens do bot no Discord e as interfaces públicas.</p>
+                                    <p className="text-[10px] text-muted-foreground">{t.settings.language_help || "Isso afetará as mensagens do bot no Discord e as interfaces públicas."}</p>
                                 </div>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="slug">Slug Exclusivo (URL)</Label>
+                                <Label htmlFor="slug">{t.settings.slug || "Slug Exclusivo (URL)"}</Label>
                                 <Input id="slug" value={orgSlug} onChange={e => setOrgSlug(e.target.value)} placeholder="minha-comunidade" />
-                                <span className="text-xs text-muted-foreground">O identificador único da sua comunidade dentro da plataforma.</span>
+                                <span className="text-xs text-muted-foreground">{t.settings.slug_help || "O identificador único da sua comunidade dentro da plataforma."}</span>
                             </div>
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="subdomain">Subdomínio OrbitOS</Label>
+                                    <Label htmlFor="subdomain">{t.settings.subdomain || "Subdomínio OrbitOS"}</Label>
                                     <div className="flex items-center shadow-sm rounded-md">
                                         <Input id="subdomain" value={orgSubdomain} onChange={e => setOrgSubdomain(e.target.value)} placeholder="loja" className="rounded-r-none border-r-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
                                         <div className="bg-muted px-3 border border-l-0 border-input rounded-r-md h-[40px] flex items-center text-sm text-muted-foreground whitespace-nowrap">.orbitos.com</div>
                                     </div>
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="customDomain">Domínio Próprio</Label>
+                                    <Label htmlFor="customDomain">{t.settings.custom_domain || "Domínio Próprio"}</Label>
                                     <Input id="customDomain" value={orgCustomDomain} onChange={e => setOrgCustomDomain(e.target.value)} placeholder="loja.minhacomunidade.com" />
                                 </div>
                             </div>
                             <div className="flex items-center justify-between space-x-2 pt-4">
                                 <div className="flex flex-col space-y-1">
-                                    <span className="font-medium text-sm">Manutenção Global</span>
-                                    <span className="text-xs text-muted-foreground pt-1">Ative para desabilitar o acesso de todos os clientes temporariamente.</span>
+                                    <span className="font-medium text-sm">{t.settings.maintenance || "Manutenção Global"}</span>
+                                    <span className="text-xs text-muted-foreground pt-1">{t.settings.maintenance_desc || "Ative para desabilitar o acesso de todos os clientes temporariamente."}</span>
                                 </div>
                                 <Switch
                                     checked={maintenance}
                                     onCheckedChange={(v) => {
                                         setMaintenance(v);
-                                        toast.info(v ? "Modo manutenção ativado" : "Modo manutenção desativado");
+                                        toast.info(v ? (t.settings.maintenance_on || "Maintenance mode enabled") : (t.settings.maintenance_off || "Maintenance mode disabled"));
                                     }}
                                 />
                             </div>
@@ -213,7 +213,7 @@ export default function SettingsPage() {
                         <CardFooter className="border-t px-6 py-4">
                             <Button onClick={handleSaveGeneral} disabled={savingGeneral}>
                                 {savingGeneral && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                {savingGeneral ? "Salvando..." : t.settings.save}
+                                {savingGeneral ? t.settings.saving : t.settings.save}
                             </Button>
                         </CardFooter>
                     </Card>
@@ -223,38 +223,38 @@ export default function SettingsPage() {
                 <TabsContent value="security">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Segurança e Autenticação</CardTitle>
-                            <CardDescription>Gerencie chaves de API e métodos de login.</CardDescription>
+                            <CardTitle>{t.settings.security_title || "Segurança e Autenticação"}</CardTitle>
+                            <CardDescription>{t.settings.security_desc || "Gerencie chaves de API e métodos de login."}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="api_key">Chave de API do Core</Label>
+                                <Label htmlFor="api_key">{t.settings.api_key || "Chave de API do Core"}</Label>
                                 <div className="flex gap-2">
-                                    <Input id="api_key" type={revealKey ? "text" : "password"} value="sk_test_51MzZk1L8wO8B..." readOnly className="flex-1" />
-                                    <Button variant="outline" size="sm" onClick={() => setRevealKey(v => !v)}>{revealKey ? "Ocultar" : "Revelar"}</Button>
+                                    <Input id="api_key" type={revealKey ? "text" : "password"} value="sk_test_..." readOnly className="flex-1" />
+                                    <Button variant="outline" size="sm" onClick={() => setRevealKey(v => !v)}>{revealKey ? t.common.hide || "Ocultar" : t.common.show || "Revelar"}</Button>
                                 </div>
                             </div>
                             <div className="pt-4 space-y-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex flex-col space-y-1">
-                                        <span className="font-medium text-sm">Autenticação de Dois Fatores</span>
-                                        <span className="text-xs text-muted-foreground">Adicione uma camada extra de segurança.</span>
+                                        <span className="font-medium text-sm">{t.settings.two_factor || "Autenticação de Dois Fatores"}</span>
+                                        <span className="text-xs text-muted-foreground">{t.settings.two_factor_desc || "Adicione uma camada extra de segurança."}</span>
                                     </div>
                                     <Switch
                                         checked={twoFactor}
                                         onCheckedChange={(v) => {
                                             setTwoFactor(v);
-                                            toast.info(v ? "2FA ativado" : "2FA desativado");
+                                            toast.info(v ? t.settings.two_factor_on : t.settings.two_factor_off);
                                         }}
                                     />
                                 </div>
                             </div>
                         </CardContent>
                         <CardFooter className="border-t px-6 py-4 flex justify-between">
-                            <Button variant="outline" onClick={() => toast.info("Em breve: Reset de chaves de API")}>Resetar Chaves</Button>
+                            <Button variant="outline" onClick={() => toast.info(t.common.coming_soon || "Em breve")}>{t.settings.reset_keys || "Resetar Chaves"}</Button>
                             <Button onClick={handleSaveSecurity} disabled={savingSecurity}>
                                 {savingSecurity && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                {savingSecurity ? "Salvando..." : "Atualizar Segurança"}
+                                {savingSecurity ? t.common.saving || "Salvando..." : t.settings.update_security || "Atualizar Segurança"}
                             </Button>
                         </CardFooter>
                     </Card>
@@ -267,21 +267,21 @@ export default function SettingsPage() {
                 <TabsContent value="notifications">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Notificações</CardTitle>
-                            <CardDescription>Escolha como você quer ser alertado sobre eventos importantes.</CardDescription>
+                            <CardTitle>{t.settings.notifications || "Notificações"}</CardTitle>
+                            <CardDescription>{t.settings.notifications_desc || "Escolha como você quer ser alertado sobre eventos importantes."}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="email_notif" className="flex flex-col gap-1">
-                                    <span>Notificações por E-mail</span>
-                                    <span className="font-normal text-xs text-muted-foreground">Receba resumos semanais de analytics.</span>
+                                    <span>{t.settings.email_notif || "Notificações por E-mail"}</span>
+                                    <span className="font-normal text-xs text-muted-foreground">{t.settings.email_notif_desc || "Receba resumos semanais de analytics."}</span>
                                 </Label>
                                 <Switch id="email_notif" defaultChecked />
                             </div>
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="discord_notif" className="flex flex-col gap-1">
-                                    <span>Webhooks do Discord</span>
-                                    <span className="font-normal text-xs text-muted-foreground">Alertas de tickets críticos diretamente no seu canal.</span>
+                                    <span>{t.settings.discord_notif || "Webhooks do Discord"}</span>
+                                    <span className="font-normal text-xs text-muted-foreground">{t.settings.discord_notif_desc || "Alertas de tickets críticos diretamente no seu canal."}</span>
                                 </Label>
                                 <Switch id="discord_notif" defaultChecked />
                             </div>
@@ -294,20 +294,20 @@ export default function SettingsPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Palette className="w-5 h-5 text-amber-500" />
-                                Customização do Portal (White-Label)
+                                {t.settings.appearance_white_label || "Customização do Portal (White-Label)"}
                             </CardTitle>
                             <CardDescription>
-                                Configure temas, presets de layout, logos e CSS customizado para seu portal público e dashboard.
+                                {t.settings.appearance_desc || "Configure temas, presets de layout, logos e CSS customizado para seu portal público e dashboard."}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center justify-between p-4 rounded-xl bg-background/50 border border-amber-500/10 mb-4">
                                 <div className="space-y-1">
-                                    <p className="font-bold text-sm">Editor de Identidade Visual</p>
-                                    <p className="text-xs text-muted-foreground">Acesso a templates premium, aurora backgrounds e tipografia avançada.</p>
+                                    <p className="font-bold text-sm">{t.settings.visual_identity || "Editor de Identidade Visual"}</p>
+                                    <p className="text-xs text-muted-foreground">{t.settings.visual_identity_desc || "Acesso a templates premium, aurora backgrounds e tipografia avançada."}</p>
                                 </div>
                                 <Button className="bg-amber-500 hover:bg-amber-600 font-bold" onClick={() => router.push('/dashboard/settings/identity')}>
-                                    Abrir Editor <ArrowRight className="w-4 h-4 ml-2" />
+                                    {t.settings.open_editor || "Abrir Editor"} <ArrowRight className="w-4 h-4 ml-2" />
                                 </Button>
                             </div>
                         </CardContent>
@@ -315,12 +315,12 @@ export default function SettingsPage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Preferências do Painel</CardTitle>
-                            <CardDescription>Configurações rápidas de visualização local.</CardDescription>
+                            <CardTitle>{t.settings.panel_preferences || "Preferências do Painel"}</CardTitle>
+                            <CardDescription>{t.settings.panel_preferences_desc || "Configurações rápidas de visualização local."}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid gap-2">
-                                <Label>Cor Primária</Label>
+                                <Label>{t.settings.primary_color || "Cor Primária"}</Label>
                                 <div className="flex gap-2">
                                     {['bg-[#3b82f6]', 'bg-[#10b981]', 'bg-[#f59e0b]', 'bg-[#ef4444]', 'bg-[#8b5cf6]'].map((color) => (
                                         <div key={color} className={`w-8 h-8 rounded-full cursor-pointer border-2 border-transparent hover:border-white transition-all ${color}`} />
@@ -329,8 +329,8 @@ export default function SettingsPage() {
                             </div>
                             <div className="flex items-center justify-between pt-4 border-t">
                                 <div className="flex flex-col space-y-1">
-                                    <span className="font-medium text-sm">Modo de Alto Contraste</span>
-                                    <span className="text-xs text-muted-foreground">Melhora a legibilidade em ambientes claros.</span>
+                                    <span className="font-medium text-sm">{t.settings.high_contrast || "Modo de Alto Contraste"}</span>
+                                    <span className="text-xs text-muted-foreground">{t.settings.high_contrast_desc || "Melhora a legibilidade em ambientes claros."}</span>
                                 </div>
                                 <Switch />
                             </div>

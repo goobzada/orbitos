@@ -66,10 +66,23 @@ api.interceptors.response.use(
         if (isNetworkError || isServerDown) {
             console.warn('[API] Core API offline ou inacessível.', { url, status });
             error.isApiOffline = true;
+
             // Toast apenas uma vez (throttled pelo id único)
             if (typeof window !== 'undefined') {
-                toast.error('Servidor indisponível', {
-                    description: 'A API do OrbitUp.io está offline ou sua conexão falhou.',
+                // Detectar idioma para o toast fora do contexto do React
+                const langMatch = document.cookie.match(/(?:^|;)\s*app_lang=([^;]*)/);
+                const lang = (langMatch ? decodeURIComponent(langMatch[1]) : 'pt-BR') as 'pt-BR' | 'en-US' | 'es-ES';
+
+                const messages = {
+                    'pt-BR': { title: 'Servidor indisponível', desc: 'A API do OrbitUp.io está offline ou sua conexão falhou.' },
+                    'en-US': { title: 'Server unavailable', desc: 'The OrbitUp.io API is offline or your connection failed.' },
+                    'es-ES': { title: 'Servidor no disponible', desc: 'La API de OrbitUp.io está desconectada o tu conexión falló.' }
+                };
+
+                const msg = messages[lang] || messages['pt-BR'];
+
+                toast.error(msg.title, {
+                    description: msg.desc,
                     id: 'global-api-offline',
                 });
             }

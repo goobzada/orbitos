@@ -18,8 +18,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (orgs && orgs.length > 0) {
-            const activeOrg = orgs[0]; // Simplificação: pega a primeira por enquanto
-            if (activeOrg.language) {
+            const activeOrgId = typeof window !== 'undefined' ? localStorage.getItem('activeOrganizationId') : null;
+            const activeOrg = orgs.find(o => o.id === activeOrgId) || orgs[0];
+
+            if (activeOrg && activeOrg.language) {
                 setLang(activeOrg.language as Language);
             }
         }

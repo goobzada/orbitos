@@ -67,7 +67,7 @@ export default function DashboardOverview() {
                 >
                     <div className="space-y-1">
                         <h1 className="text-4xl font-black tracking-tightest bg-gradient-to-r from-foreground to-foreground/50 bg-clip-text text-transparent uppercase font-mono">
-                            OVERVIEW_INFRA
+                            {t.analytics.overview_title}
                         </h1>
                         <div className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
@@ -113,7 +113,7 @@ export default function DashboardOverview() {
                                         <CardDescription className="text-xs font-medium">{t.analytics.revenue_desc}</CardDescription>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="text-[10px] font-black border-primary/20 text-primary">REVENUE_DATA</Badge>
+                                        <Badge variant="outline" className="text-[10px] font-black border-primary/20 text-primary">{t.analytics.revenue_data}</Badge>
                                     </div>
                                 </div>
                             </CardHeader>
@@ -165,7 +165,7 @@ export default function DashboardOverview() {
                     className="grid gap-4 md:grid-cols-3"
                 >
                     <div
-                        onClick={() => toast.info("Segurança & Compliance", { description: "Sua instância OrbitOS está em conformidade com as políticas SOC2." })}
+                        onClick={() => toast.info(t.dashboard.infra?.security_compliance || "Security & Compliance", { description: t.dashboard.infra?.soc2_compliance || "Your OrbitOS instance complies with SOC2 policies." })}
                         className="p-6 rounded-3xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/10 flex items-center justify-between group cursor-help hover:scale-[1.02] transition-transform"
                     >
                         <div>
@@ -175,7 +175,7 @@ export default function DashboardOverview() {
                         <ShieldCheck className="w-8 h-8 text-primary/40 group-hover:scale-110 transition-transform" />
                     </div>
                     <div
-                        onClick={() => toast.info("Garantia de Uptime", { description: "Monitoramento global de latência e disponibilidade." })}
+                        onClick={() => toast.info(t.dashboard.infra?.uptime_guarantee || "Uptime Guarantee", { description: t.dashboard.infra?.uptime_desc || "Global latency and availability monitoring." })}
                         className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/10 flex items-center justify-between group cursor-help hover:scale-[1.02] transition-transform"
                     >
                         <div>
@@ -185,7 +185,7 @@ export default function DashboardOverview() {
                         <BadgeCheck className="w-8 h-8 text-emerald-500/40 group-hover:scale-110 transition-transform" />
                     </div>
                     <div
-                        onClick={() => toast.info("Isolamento de Dados", { description: "Protocolo Tenant-Strict isolando 100% dos dados por organização." })}
+                        onClick={() => toast.info(t.analytics.data_isolation, { description: t.dashboard.infra?.data_isolation_desc || "Tenant-Strict protocol isolating 100% of data by organization." })}
                         className="p-6 rounded-3xl bg-gradient-to-br from-violet-500/10 to-transparent border border-violet-500/10 flex items-center justify-between group cursor-help hover:scale-[1.02] transition-transform"
                     >
                         <div>

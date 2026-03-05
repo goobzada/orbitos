@@ -21,27 +21,27 @@ export default function Home() {
   const { t, lang, setLang } = useTranslation();
 
   const features = [
-    { icon: Server, title: "Multi-Servidores", desc: "Gerencie todos os seus servidores Discord em um painel centralizado e isolado." },
-    { icon: Ticket, title: "Sistema de Tickets", desc: "Suporte profissional com prioridades, categorias, SLAs e histórico em nuvem." },
-    { icon: Users, title: "Role-Based Access", desc: "Controle de permissões granular para toda a sua equipe via RBAC global." },
-    { icon: BarChart3, title: "Analytics Avançado", desc: "Métricas operacionais em tempo real sobre crescimento e faturamento." },
-    { icon: Zap, title: "Alta Performance", desc: "Arquitetura Edge escalável pronta para picos de milhares de requisições." },
-    { icon: Shield, title: "Segurança Enterpise", desc: "JWT rotativo, OAuth2 estrito e proteção multi-tenant em nível de API." },
+    { icon: Server, title: t.landing.nav.ecosystem, desc: t.landing.ecosystem.discord_desc },
+    { icon: Ticket, title: t.landing.nav.infra, desc: t.landing.infra.desc },
+    { icon: Users, title: t.landing.audience.owners_title, desc: t.landing.audience.owners_desc },
+    { icon: BarChart3, title: t.analytics.monthly_growth, desc: t.analytics.revenue_desc },
+    { icon: Zap, title: t.landing.ecosystem.badge, desc: t.landing.ecosystem.desc },
+    { icon: Shield, title: t.landing.infra.badge, desc: t.landing.infra.desc },
   ];
 
   const infraFeatures = [
-    { icon: Database, title: "PostgreSQL Multi-Tenant", text: "Isolamento de dados por organização." },
-    { icon: Lock, title: "WebSocket Autenticado", text: "Heartbeats e eventos securizados." },
-    { icon: Shield, title: "Stripe Webhooks V2", text: "Assinaturas criptografadas check-out." },
-    { icon: Fingerprint, title: "Audit & Moderation Logs", text: "Rastreabilidade de 100% das ações." }
+    { icon: Database, title: t.landing.infra.multi_tenant_title, text: t.landing.infra.multi_tenant_desc },
+    { icon: Lock, title: t.landing.infra.websocket_title, text: t.landing.infra.websocket_desc },
+    { icon: Shield, title: t.landing.infra.stripe_title, text: t.landing.infra.stripe_desc },
+    { icon: Fingerprint, title: t.landing.infra.audit_title, text: t.landing.infra.audit_desc }
   ];
 
   const templates = [
-    { name: "Neon Grid", type: "Gamers", color: "from-fuchsia-500 to-cyan-500" },
-    { name: "Minimal Glass", type: "Corporations", color: "from-slate-400 to-slate-200" },
-    { name: "Terminal", type: "Developers", color: "from-emerald-500 to-emerald-700" },
-    { name: "Aurora", type: "Marketing", color: "from-violet-500 via-fuchsia-500 to-orange-500" },
-    { name: "Blocks", type: "Productivity", color: "from-blue-500 to-indigo-500" }
+    { name: "Neon Grid", type: t.landing.audience.creators_title, color: "from-fuchsia-500 to-cyan-500" },
+    { name: "Minimal Glass", type: t.landing.audience.enterprise_title, color: "from-slate-400 to-slate-200" },
+    { name: "Terminal", type: t.landing.audience.devs_title, color: "from-emerald-500 to-emerald-700" },
+    { name: "Aurora", type: t.landing.audience.creators_title, color: "from-violet-500 via-fuchsia-500 to-orange-500" },
+    { name: "Blocks", type: t.landing.audience.owners_title, color: "from-blue-500 to-indigo-500" }
   ];
 
   return (
@@ -130,9 +130,9 @@ export default function Home() {
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-6 text-xs text-slate-500 font-medium">
-            <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500/70" /> Sem cartão de crédito</div>
-            <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500/70" /> Setup em 2 minutos</div>
-            <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500/70" /> Cancelamento a qualquer momento</div>
+            <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500/70" /> {t.landing.hero.no_card}</div>
+            <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500/70" /> {t.landing.hero.setup_time}</div>
+            <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500/70" /> {t.landing.hero.cancel_anytime}</div>
           </div>
         </div>
 
@@ -188,21 +188,21 @@ export default function Home() {
       <section id="ecossistema" className="relative z-20 py-24 px-6 lg:px-12 bg-black/40 border-t border-b border-white/5">
         <div className="max-w-[1400px] mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-sm font-bold text-violet-400 tracking-wider uppercase mb-3">Expansibilidade Infinita</h2>
-            <h3 className="text-3xl lg:text-5xl font-bold text-white mb-4">Um núcleo. Múltiplos ambientes.</h3>
-            <p className="text-slate-400 max-w-2xl mx-auto text-lg">O Discord é apenas o primeiro módulo. Projetamos o OrbitUp.io para ser o hub central de toda a sua operação digital.</p>
+            <h2 className="text-sm font-bold text-violet-400 tracking-wider uppercase mb-3">{t.landing.ecosystem.badge}</h2>
+            <h3 className="text-3xl lg:text-5xl font-bold text-white mb-4">{t.landing.ecosystem.title}</h3>
+            <p className="text-slate-400 max-w-2xl mx-auto text-lg">{t.landing.ecosystem.desc}</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: Server, title: "Discord", desc: "Gestão completa de servidores, cargos, tickets e automações.", active: true },
-              { icon: Gamepad2, title: "Games", desc: "Integração nativa com servidores FiveM, Minecraft e Rust.", active: false },
-              { icon: ShoppingCart, title: "Commerce", desc: "Lojas vitrines próprias com checkout de alta conversão.", active: false },
-              { icon: Code2, title: "API Integrada", desc: "Controle sua operação via Webhooks customizados.", active: false },
+              { icon: Server, title: t.landing.ecosystem.discord_title, desc: t.landing.ecosystem.discord_desc, active: true },
+              { icon: Gamepad2, title: t.landing.ecosystem.games_title, desc: t.landing.ecosystem.games_desc, active: false },
+              { icon: ShoppingCart, title: t.landing.ecosystem.commerce_title, desc: t.landing.ecosystem.commerce_desc, active: false },
+              { icon: Code2, title: t.landing.ecosystem.api_title, desc: t.landing.ecosystem.api_desc, active: false },
             ].map((block, i) => (
               <div key={i} className="group relative rounded-2xl border border-white/5 bg-[#080C17] p-8 hover:-translate-y-2 transition-all duration-300 overflow-hidden">
                 {!block.active && (
-                  <div className="absolute top-4 right-4 px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-white/5 text-slate-500 border border-white/10">Em Breve</div>
+                  <div className="absolute top-4 right-4 px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-white/5 text-slate-500 border border-white/10">{t.landing.ecosystem.soon}</div>
                 )}
                 <div className={`absolute inset-0 bg-gradient-to-br ${block.active ? 'from-violet-500/10' : 'from-slate-500/5'} via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
                 <div className="relative z-10 flex flex-col items-center text-center">
@@ -223,11 +223,11 @@ export default function Home() {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-blue-500/10 text-blue-400 text-xs font-bold uppercase tracking-wider mb-6 border border-blue-500/20">
-              <Terminal className="w-3.5 h-3.5" /> Arquitetura de Alto Nível
+              <Terminal className="w-3.5 h-3.5" /> {t.landing.infra.badge}
             </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">Arquitetura construída para <span className="text-blue-400">escalar.</span></h2>
+            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">{t.landing.infra.title1} <span className="text-blue-400">{t.landing.infra.title2}</span></h2>
             <p className="text-slate-400 text-lg mb-10 leading-relaxed">
-              O OrbitUp.io roda silenciosamente sobre uma pilha robusta de nível corporativo. Seu core isola operações, roteia tráfego seguro e audita cada passo dos seus usuários.
+              {t.landing.infra.desc}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -275,11 +275,11 @@ export default function Home() {
 
         <div className="max-w-[1400px] mx-auto text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-fuchsia-500/10 text-fuchsia-400 text-xs font-bold uppercase tracking-wider mb-6 border border-fuchsia-500/20">
-            <Palette className="w-3.5 h-3.5" /> Orbit Brand Engine
+            <Palette className="w-3.5 h-3.5" /> {t.landing.brand.badge}
           </div>
-          <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">Sua comunidade. <span className="text-fuchsia-400">Sua marca.</span></h2>
+          <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">{t.landing.brand.title1} <span className="text-fuchsia-400">{t.landing.brand.title2}</span></h2>
           <p className="text-slate-400 max-w-2xl mx-auto text-lg mb-16">
-            O OrbitUp.io possui um White-Label nativo. Com o <strong>Brand Engine integrado</strong>, você implementa identidades visuais impressionantes e tokens de cor isolados em menos de um clique.
+            {t.landing.brand.desc}
           </p>
 
           {/* Cards dos Templates Modernos */}
@@ -307,14 +307,14 @@ export default function Home() {
 
       {/* SEÇÃO AUDIÊNCIA (4 Colunas) */}
       <section className="relative z-20 py-24 px-6 lg:px-12 max-w-[1400px] mx-auto text-center">
-        <h2 className="text-3xl lg:text-4xl font-bold text-white mb-16">Construído para líderes digitais.</h2>
+        <h2 className="text-3xl lg:text-4xl font-bold text-white mb-16">{t.landing.audience.title}</h2>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
-            { title: "Criadores", desc: "Monetize sua audiência com planos recorrentes e conteúdo VIP gateado." },
-            { title: "Donos de Servidores", desc: "Automatize a moderação e suporte para focar no engajamento da comunidade." },
-            { title: "Empresas", desc: "Forneça suporte B2B white-label com histórico de SLA garantido e tickets." },
-            { title: "Desenvolvedores", desc: "Uma fundação robusta para você parar de re-escrever sistemas de autenticação." },
+            { title: t.landing.audience.creators_title, desc: t.landing.audience.creators_desc },
+            { title: t.landing.audience.owners_title, desc: t.landing.audience.owners_desc },
+            { title: t.landing.audience.enterprise_title, desc: t.landing.audience.enterprise_desc },
+            { title: t.landing.audience.devs_title, desc: t.landing.audience.devs_desc },
           ].map((aud, i) => (
             <div key={i} className="flex flex-col items-center text-center p-6 border-t border-white/5 pt-8 hover:-translate-y-1 transition-transform">
               <h4 className="text-lg font-bold text-white mb-3">{aud.title}</h4>
@@ -327,9 +327,9 @@ export default function Home() {
       {/* SEÇÃO COMPARAÇÃO */}
       <section className="relative z-20 py-24 px-6 lg:px-12 bg-black/40 border-t border-b border-white/5">
         <div className="max-w-[1000px] mx-auto text-center">
-          <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">Por que não usar bots comuns?</h2>
+          <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">{t.landing.comparison.title}</h2>
           <p className="text-slate-400 text-lg mb-16 max-w-2xl mx-auto">
-            A diferença entre administrar um hobby e escalar um negócio no Discord.
+            {t.landing.comparison.desc}
           </p>
 
           <div className="grid md:grid-cols-2 bg-[#060913] rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
@@ -337,14 +337,14 @@ export default function Home() {
             <div className="p-8 lg:p-12 border-b md:border-b-0 md:border-r border-white/5 flex flex-col gap-6 relative">
               <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-3xl opacity-50" />
               <h3 className="text-xl font-bold text-slate-400 flex items-center justify-center gap-2 mb-4">
-                Bots Comuns
+                {t.landing.comparison.bad_title}
               </h3>
               {[
-                { label: "Single Server architecture", val: false },
-                { label: "Design engessado pro plano FREE", val: false },
-                { label: "Sem registros de auditoria (Logs)", val: false },
-                { label: "Zero controle de Stripe / Monetização", val: false },
-                { label: "Permissões limitadas (Todos são Admin)", val: false },
+                { label: t.landing.comparison.row1, val: false },
+                { label: t.landing.comparison.row2, val: false },
+                { label: t.landing.comparison.row3, val: false },
+                { label: t.landing.comparison.row4, val: false },
+                { label: t.landing.comparison.row5, val: false },
               ].map((item, i) => (
                 <div key={i} className="flex justify-between items-center text-sm font-medium text-slate-500 border-b border-white/5 pb-4 last:border-0">
                   <span className="text-left">{item.label}</span>
@@ -361,14 +361,14 @@ export default function Home() {
               <div className="absolute -top-[1px] -left-px -right-px h-[2px] bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
 
               <h3 className="text-xl font-bold text-white flex items-center justify-center gap-2 mb-4">
-                OrbitUp.io
+                {t.landing.comparison.good_title}
               </h3>
               {[
-                { label: "Multi-tenant isolado por organização", val: true },
-                { label: "Template Engine White Label", val: true },
-                { label: "Audit Logs completos e rastreáveis", val: true },
-                { label: "Stripe Webhooks & Gating 100% nativo", val: true },
-                { label: "Role-Based Access Control (RBAC)", val: true },
+                { label: t.landing.comparison.row1_good, val: true },
+                { label: t.landing.comparison.row2_good, val: true },
+                { label: t.landing.comparison.row3_good, val: true },
+                { label: t.landing.comparison.row4_good, val: true },
+                { label: t.landing.comparison.row5_good, val: true },
               ].map((item, i) => (
                 <div key={i} className="flex justify-between items-center text-sm font-bold text-slate-300 border-b border-white/5 pb-4 last:border-0">
                   <span className="text-left">{item.label}</span>
@@ -388,13 +388,13 @@ export default function Home() {
 
         <div className="relative z-10 max-w-3xl mx-auto p-1px bg-gradient-to-b from-white/10 to-transparent rounded-3xl">
           <div className="bg-[#050812]/90 backdrop-blur-xl border border-white/5 rounded-3xl p-12 lg:p-16 flex flex-col items-center">
-            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">Pronto para assumir o controle do seu ecossistema digital?</h2>
+            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">{t.landing.cta_final.title}</h2>
             <p className="text-slate-400 text-lg mb-10 max-w-xl">
-              Crie sua infraestrutura global hoje e pare de administrar sua comunidade como um hobby de fim de semana.
+              {t.landing.cta_final.desc}
             </p>
             <Link href="/login">
               <Button size="lg" className="h-16 px-10 bg-white text-slate-900 hover:bg-slate-200 hover:scale-105 font-bold rounded-2xl text-lg shadow-[0_0_40px_rgba(255,255,255,0.2)] transition-all">
-                Criar Conta Gratuitamente
+                {t.landing.cta_final.button}
               </Button>
             </Link>
             <p className="mt-6 text-sm text-slate-500 font-medium flex items-center gap-2">
@@ -412,11 +412,11 @@ export default function Home() {
             <span className="font-bold tracking-tight">OrbitUp.io</span>
           </div>
           <p className="text-sm text-slate-600">
-            © 2026 OrbitUp.io. Operating System for Digital Communities.
+            © 2026 OrbitUp.io. {t.landing.footer.copyright}
           </p>
           <div className="flex gap-6 text-sm text-slate-500 font-medium">
-            <Link href="#" className="hover:text-white transition-colors">{lang === 'pt-BR' ? 'Termos' : 'Terms'}</Link>
-            <Link href="#" className="hover:text-white transition-colors">{lang === 'pt-BR' ? 'Privacidade' : 'Privacy'}</Link>
+            <Link href="#" className="hover:text-white transition-colors">{t.landing.footer.terms}</Link>
+            <Link href="#" className="hover:text-white transition-colors">{t.landing.footer.privacy}</Link>
           </div>
         </div>
       </footer>

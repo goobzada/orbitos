@@ -25,6 +25,7 @@ import { useOrganizations } from "@/lib/hooks";
 import { Organization } from "@/types";
 import { useActiveOrg } from "@/lib/use-org-store";
 import { CreateOrgModal } from "../modals/create-org-modal";
+import { useTranslation } from "@/components/providers/language-provider";
 
 const planColors: Record<string, string> = {
     MAX: "bg-amber-500/10 text-amber-400 border-amber-500/20",
@@ -34,6 +35,7 @@ const planColors: Record<string, string> = {
 };
 
 export function OrgSwitcher() {
+    const { t } = useTranslation();
     const { data: orgs = [], isLoading } = useOrganizations();
     const { activeOrgId, setActiveOrgId } = useActiveOrg();
 
@@ -65,7 +67,7 @@ export function OrgSwitcher() {
                         {isLoading ? (
                             <div className="flex items-center gap-2">
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                <span className="text-xs text-muted-foreground">Sincronizando...</span>
+                                <span className="text-xs text-muted-foreground">{t.dashboard.header.syncing}</span>
                             </div>
                         ) : selected ? (
                             <span className="flex items-center gap-2 truncate">
@@ -75,17 +77,17 @@ export function OrgSwitcher() {
                                 <span className="truncate">{selected.name}</span>
                             </span>
                         ) : (
-                            <span className="text-muted-foreground text-xs">Sem Workspaces</span>
+                            <span className="text-muted-foreground text-xs">{t.dashboard.header.no_workspaces}</span>
                         )}
                         <ChevronsUpDown className="ml-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[220px] p-0" align="start">
                     <Command className="bg-card">
-                        <CommandInput placeholder="Buscar organização..." className="h-9" />
+                        <CommandInput placeholder={t.dashboard.header.search_org} className="h-9" />
                         <CommandList>
-                            <CommandEmpty>Nenhuma organização encontrada.</CommandEmpty>
-                            <CommandGroup heading="Suas organizações">
+                            <CommandEmpty>{t.dashboard.header.no_org_found}</CommandEmpty>
+                            <CommandGroup heading={t.dashboard.header.your_orgs}>
                                 {orgs.map((org) => (
                                     <CommandItem
                                         key={org.id}
@@ -122,7 +124,7 @@ export function OrgSwitcher() {
                                     }}
                                 >
                                     <Plus className="h-4 w-4" />
-                                    Nova Organização
+                                    {t.dashboard.header.new_org}
                                 </CommandItem>
                             </CommandGroup>
                         </CommandList>

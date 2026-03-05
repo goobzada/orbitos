@@ -9,30 +9,32 @@ import { usePathname } from "next/navigation";
 import { OrgSwitcher } from "@/components/layout/org-switcher";
 import { useMe } from "@/lib/hooks";
 import { ApiHealthIndicator } from "@/components/dashboard/ApiHealthIndicator";
-
-const breadcrumbMap: Record<string, string> = {
-    "/dashboard": "Overview",
-    "/dashboard/servers": "Servidores",
-    "/dashboard/tickets": "Tickets",
-    "/dashboard/staff": "Staff",
-    "/dashboard/analytics": "Analytics",
-    "/dashboard/billing": "Billing",
-    "/dashboard/settings": "Configurações",
-    "/platform": "Platform Overview",
-    "/platform/organizations": "Organizações",
-    "/platform/billing": "Platform Billing",
-    "/platform/settings": "Platform Settings",
-};
+import { useTranslation } from "@/components/providers/language-provider";
 
 export function DashboardHeader() {
+    const { t } = useTranslation();
     const pathname = usePathname();
     const { data: user } = useMe();
+
+    const breadcrumbMap: Record<string, string> = {
+        "/dashboard": t.dashboard.bread.overview,
+        "/dashboard/servers": t.dashboard.bread.servers,
+        "/dashboard/tickets": t.dashboard.bread.tickets,
+        "/dashboard/staff": t.dashboard.bread.staff,
+        "/dashboard/analytics": t.dashboard.bread.analytics,
+        "/dashboard/billing": t.dashboard.bread.billing,
+        "/dashboard/settings": t.dashboard.bread.settings,
+        "/platform": t.dashboard.bread.platform,
+        "/platform/organizations": t.dashboard.bread.organizations,
+        "/platform/billing": t.dashboard.bread.billing,
+        "/platform/settings": t.dashboard.bread.settings,
+    };
 
     // Support dynamic routes like /dashboard/tickets/[id]
     const currentPage =
         breadcrumbMap[pathname] ??
         breadcrumbMap[pathname.split("/").slice(0, 3).join("/")] ??
-        "Dashboard";
+        t.dashboard.sidebar.menu;
 
     const breadcrumbSuffix = !breadcrumbMap[pathname] && pathname.split("/").length > 3
         ? pathname.split("/").pop()
@@ -64,7 +66,7 @@ export function DashboardHeader() {
             <div className="flex items-center gap-3">
                 <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/30 border border-border/10">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                    <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">+12 SERVIDORES ESSA SEMANA</span>
+                    <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">{t.dashboard.header.servers_growth}</span>
                 </div>
 
                 <ApiHealthIndicator />
@@ -82,8 +84,8 @@ export function DashboardHeader() {
                         <AvatarFallback>{user?.username?.[0]?.toUpperCase() || "A"}</AvatarFallback>
                     </Avatar>
                     <div className="hidden md:flex flex-col leading-none">
-                        <span className="text-sm font-medium group-hover:text-primary transition-colors">{user?.username || "Carregando..."}</span>
-                        <span className="text-[11px] text-muted-foreground capitalize">{user?.role?.toLowerCase().replace('_', ' ') || "Carregando..."}</span>
+                        <span className="text-sm font-medium group-hover:text-primary transition-colors">{user?.username || t.dashboard.header.loading}</span>
+                        <span className="text-[11px] text-muted-foreground capitalize">{user?.role?.toLowerCase().replace('_', ' ') || t.dashboard.header.loading}</span>
                     </div>
                 </div>
             </div>

@@ -12,9 +12,16 @@ import {
     CreditCard, Calendar, ArrowUpRight, Download,
     AlertCircle
 } from "lucide-react";
-import { useOrganizations, useBillingStatus, useCheckoutSession, useCustomerPortal } from "@/lib/hooks";
+import {
+    useOrganizations,
+    useBillingStatus,
+    useCheckoutSession,
+    useCustomerPortal
+} from "@/lib/hooks";
 import { toast } from "sonner";
 import { useTranslation } from "@/components/providers/language-provider";
+import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 const plans = [
     {
@@ -109,8 +116,27 @@ const invoices = [
 export default function BillingPage() {
     const { t } = useTranslation();
     const { data: organizations } = useOrganizations();
+    const searchParams = useSearchParams();
     const activeOrganizationId = typeof window !== 'undefined' ? localStorage.getItem('activeOrganizationId') : null;
     const activeOrg = organizations?.find(org => org.id === activeOrganizationId) || organizations?.[0];
+
+    useEffect(() => {
+        const success = searchParams.get('success');
+        const canceled = searchParams.get('canceled');
+
+        if (success === 'true') {
+            toast.success(t.billing.success_msg, {
+                description: t.billing.success_desc,
+                duration: 5000
+            });
+        }
+
+        if (canceled === 'true') {
+            toast.error(t.billing.cancel_msg, {
+                description: t.billing.cancel_desc
+            });
+        }
+    }, [searchParams]);
 
     // Local plans array with translations
     const localPlans = [
@@ -163,35 +189,35 @@ export default function BillingPage() {
     const handleUpgrade = (planId: string) => {
         if (!activeOrg?.id) return;
 
-        toast.loading('Redirecionando para o checkout...', { id: 'checkout' });
+        toast.loading(t.billing.checkout_redirect, { id: 'checkout' });
 
         checkoutMutation.mutate({
             organizationId: activeOrg.id,
             planId: planId.toUpperCase()
         }, {
             onSuccess: (data) => {
-                toast.success('Redirecionando...', { id: 'checkout' });
+                toast.success(t.common.success, { id: 'checkout' });
                 if (data.url) {
                     window.location.href = data.url;
                 }
             },
             onError: (err: any) => {
-                toast.error(err.response?.data?.error || 'Erro ao iniciar checkout.', { id: 'checkout' });
+                toast.error(err.response?.data?.error || t.common.error, { id: 'checkout' });
             }
         });
     };
 
     const handleCustomerPortal = () => {
         if (!activeOrg?.id) return;
-        toast.loading('Abrindo portal do cliente...', { id: 'portal' });
+        toast.loading(t.billing.portal_redirect, { id: 'portal' });
 
         customerPortalMutation.mutate({ organizationId: activeOrg.id }, {
             onSuccess: (data: any) => {
-                toast.success('Redirecionando...', { id: 'portal' });
+                toast.success(t.common.success, { id: 'portal' });
                 if (data.url) window.location.href = data.url;
             },
             onError: (err: any) => {
-                toast.error(err.response?.data?.error || 'Erro ao abrir o portal.', { id: 'portal' });
+                toast.error(err.response?.data?.error || t.common.error, { id: 'portal' });
             }
         });
     };
@@ -206,9 +232,29 @@ export default function BillingPage() {
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">{t.billing.title}</h1>
                 <p className="text-muted-foreground mt-1">
-                    {t.store.inventory_desc}
+                    {t.billing.plans[currentPlanId].description}
                 </p>
             </div>
+
+            {/* Upsell Banner for Enterprise */}
+            {current.id !== 'enterprise' && current.id !== 'max' && (
+                <div className="relative overflow-hidden rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-6 shadow-lg shadow-amber-500/5">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Zap className="w-24 h-24 text-amber-500" />
+                    </div>
+                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="space-y-2 text-center md:text-left">
+                            <h3 className="text-xl font-bold text-amber-400">{t.billing.enterprise_upsell_title}</h3>
+                            <p className="text-sm text-muted-foreground max-w-xl">
+                                {t.billing.enterprise_upsell_desc}
+                            </p>
+                        </div>
+                        <Button className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-12 px-8 shrink-0 shadow-lg shadow-amber-500/20 transition-all hover:scale-105" onClick={() => handleUpgrade('enterprise')}>
+                            {t.billing.enterprise_upsell_button}
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Current plan summary */}
             <div className="grid gap-4 md:grid-cols-3">
@@ -231,15 +277,15 @@ export default function BillingPage() {
                         <div className="space-y-3">
                             <div>
                                 <div className="flex items-center justify-between text-sm mb-1.5">
-                                    <span className="text-muted-foreground">Servidores Discord</span>
-                                    <span className="font-medium">{usageServers} / {current.limits.servers === -1 ? 'ilimitado' : current.limits.servers}</span>
+                                    <span className="text-muted-foreground">{t.billing.usage_servers}</span>
+                                    <span className="font-medium">{usageServers} / {current.limits.servers === -1 ? t.billing.unlimited : current.limits.servers}</span>
                                 </div>
                                 <Progress value={current.limits.servers === -1 ? 100 : Math.min((usageServers / current.limits.servers) * 100, 100)} className="h-1.5" />
                             </div>
                             <div>
                                 <div className="flex items-center justify-between text-sm mb-1.5">
-                                    <span className="text-muted-foreground">Tickets Abertos (este mês)</span>
-                                    <span className="font-medium">{usageTickets} / {current.limits.tickets === -1 ? 'ilimitado' : current.limits.tickets}</span>
+                                    <span className="text-muted-foreground">{t.billing.usage_tickets}</span>
+                                    <span className="font-medium">{usageTickets} / {current.limits.tickets === -1 ? t.billing.unlimited : current.limits.tickets}</span>
                                 </div>
                                 <Progress value={current.limits.tickets === -1 ? 0 : Math.min((usageTickets / current.limits.tickets) * 100, 100)} className="h-1.5" />
                             </div>
@@ -268,25 +314,39 @@ export default function BillingPage() {
                     </CardFooter>
                 </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-base">Próxima Cobrança</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex flex-col gap-1">
-                            <span className="text-3xl font-bold">R$ 29,00</span>
-                            <span className="text-sm text-muted-foreground">em 01 Mar 2026</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 rounded-lg p-3 border border-border">
-                            <Calendar className="w-4 h-4 shrink-0" />
-                            Ciclo mensal · Cobrança automática
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <CreditCard className="w-4 h-4 shrink-0" />
-                            Visa •••• 4242
-                        </div>
-                    </CardContent>
-                </Card>
+                {current.id !== 'free' && (
+                    <Card className="border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-transparent">
+                        <CardHeader>
+                            <CardTitle className="text-base">{t.billing.upcoming_invoice}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex flex-col gap-1">
+                                <span className="text-3xl font-bold">R$ {current.price},00</span>
+                                <span className="text-sm text-muted-foreground">{t.common.status}: {t.billing.active_plan}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 rounded-lg p-3 border border-border">
+                                <Calendar className="w-4 h-4 shrink-0" />
+                                {t.billing.manage_subscription}
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <CreditCard className="w-4 h-4 shrink-0" />
+                                {t.billing.update_card}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+                {current.id === 'free' && (
+                    <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-transparent flex flex-col justify-center items-center p-6 text-center">
+                        <Zap className="w-10 h-10 text-amber-500 mb-4" />
+                        <CardTitle className="text-lg mb-2">{t.billing.upgrade_cta} PRO</CardTitle>
+                        <CardDescription className="mb-4">
+                            {t.billing.pro_plan_desc}
+                        </CardDescription>
+                        <Button className="bg-amber-500 hover:bg-amber-600 font-bold" onClick={() => handleUpgrade('pro')}>
+                            {t.billing.upgrade_cta}
+                        </Button>
+                    </Card>
+                )}
             </div>
 
             {/* Plan cards */}
@@ -320,7 +380,7 @@ export default function BillingPage() {
                                             {plan.price === 0 ? t.billing.plans.free.name : `R$\u00A0${plan.price}`}
                                         </span>
                                         {plan.price > 0 && (
-                                            <span className="text-muted-foreground text-sm mb-1">/mês</span>
+                                            <span className="text-muted-foreground text-sm mb-1">/{t.billing.per_month || "mês"}</span>
                                         )}
                                     </div>
                                     <ul className="space-y-2">
@@ -345,7 +405,7 @@ export default function BillingPage() {
                                                 {t.billing.active_plan}
                                             </span>
                                         ) : checkoutMutation.isPending && checkoutMutation.variables?.planId === plan.id.toUpperCase() ? (
-                                            "Redirecionando..."
+                                            t.common.loading
                                         ) : (
                                             <span className="flex items-center gap-2">
                                                 <ArrowUpRight className="w-4 h-4" />
@@ -368,12 +428,12 @@ export default function BillingPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Fatura</TableHead>
-                                    <TableHead>Data</TableHead>
-                                    <TableHead>Plano</TableHead>
-                                    <TableHead>Valor</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Ação</TableHead>
+                                    <TableHead>{t.billing.invoice_id}</TableHead>
+                                    <TableHead>{t.billing.invoice_date}</TableHead>
+                                    <TableHead>{t.billing.invoice_plan}</TableHead>
+                                    <TableHead>{t.billing.invoice_amount}</TableHead>
+                                    <TableHead>{t.billing.invoice_status}</TableHead>
+                                    <TableHead className="text-right">{t.billing.invoice_action}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

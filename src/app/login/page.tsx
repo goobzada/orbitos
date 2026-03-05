@@ -7,8 +7,10 @@ import { Bot, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { useTranslation } from "@/components/providers/language-provider";
 
 function LoginPageContent() {
+    const { t, lang } = useTranslation();
     const searchParams = useSearchParams();
     const authError = searchParams.get('error');
     const authDetail = searchParams.get('detail');
@@ -33,10 +35,10 @@ function LoginPageContent() {
             // Cookie para o Next.js Middleware reconhecer a sessão no servidor
             document.cookie = `token=${data.token}; path=/; max-age=604800; SameSite=Lax`; // 7 dias
 
-            toast.success(`Login via ${provider} concluído!`);
+            toast.success(`${t.auth.authenticating}`);
             window.location.replace('/dashboard');
         } catch (error: any) {
-            toast.error("Servidor indisponível ou inacessível no momento.");
+            toast.error(t.auth.server_offline);
             setLoading(null);
         }
     };
@@ -58,14 +60,14 @@ function LoginPageContent() {
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-300">OrbitUp</span>
                             <span className="text-white/80 font-light">.io</span>
                         </h1>
-                        <p className="mt-2 text-lg text-white/60">Dashboard Profissional</p>
+                        <p className="mt-2 text-lg text-white/60">{t.auth.professional_dashboard}</p>
                     </div>
                     <div className="grid grid-cols-1 gap-4 mt-4 w-full max-w-sm">
                         {[
-                            "Multi-organização e multi-servidor",
-                            "Gestão completa de tickets e staff",
-                            "Analytics avançado em tempo real",
-                            "Segurança com JWT e OAuth2",
+                            t.landing.hero.title1 + " " + t.landing.hero.title2,
+                            t.dashboard.sidebar.tickets + " & " + t.dashboard.sidebar.staff,
+                            t.analytics.monthly_growth,
+                            t.landing.infra.badge,
                         ].map((item) => (
                             <div key={item} className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white/70">
                                 <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />
@@ -92,9 +94,9 @@ function LoginPageContent() {
                     </div>
 
                     <div>
-                        <h2 className="text-3xl font-bold tracking-tight">Bem-vindo de volta</h2>
+                        <h2 className="text-3xl font-bold tracking-tight">{t.auth.title}</h2>
                         <p className="mt-2 text-muted-foreground">
-                            Conecte sua conta do Discord para continuar.
+                            {t.auth.subtitle}
                         </p>
                     </div>
 
@@ -103,11 +105,11 @@ function LoginPageContent() {
                         <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
                             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                             <div>
-                                <p className="font-semibold">Falha na autenticação</p>
+                                <p className="font-semibold">{t.auth.error_title}</p>
                                 <p className="text-xs mt-0.5 text-red-400/80">
-                                    {authDetail || (authError === 'discord_denied' ? 'Você cancelou o acesso no Discord.' :
-                                        authError === 'no_token' ? 'O servidor não retornou o token.' :
-                                            'Tente novamente. Se persistir, verifique as configurações do Discord App.')}
+                                    {authDetail || (authError === 'discord_denied' ? t.auth.error_denied :
+                                        authError === 'no_token' ? t.auth.error_no_token :
+                                            t.auth.error_generic)}
                                 </p>
                             </div>
                         </div>
@@ -139,7 +141,7 @@ function LoginPageContent() {
                                 </svg>
                             )}
                             <span className="flex-1 text-center pr-8">
-                                {loading === 'discord' ? "Autenticando..." : "Entrar com Discord"}
+                                {loading === 'discord' ? t.auth.authenticating : t.auth.discord_btn}
                             </span>
                         </Button>
 
@@ -160,7 +162,7 @@ function LoginPageContent() {
                                 </svg>
                             )}
                             <span className="flex-1 text-center pr-8">
-                                {loading === 'google' ? "Autenticando..." : "Entrar com Google"}
+                                {loading === 'google' ? t.auth.authenticating : t.auth.google_btn}
                             </span>
                         </Button>
 
@@ -176,7 +178,7 @@ function LoginPageContent() {
                                 </svg>
                             )}
                             <span className="flex-1 text-center pr-8">
-                                {loading === 'github' ? "Autenticando..." : "Entrar com GitHub"}
+                                {loading === 'github' ? t.auth.authenticating : t.auth.github_btn}
                             </span>
                         </Button>
                     </div>
@@ -186,20 +188,20 @@ function LoginPageContent() {
                             <span className="w-full border-t border-border" />
                         </div>
                         <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground">Informações</span>
+                            <span className="bg-background px-2 text-muted-foreground">{t.auth.info}</span>
                         </div>
                     </div>
 
                     <div className="space-y-2 text-center text-xs text-muted-foreground">
-                        <p>Você será redirecionado para o Discord para autenticar.</p>
+                        <p>{t.auth.redirect_msg}</p>
                         <p>
-                            Ao entrar, você concorda com nossos{" "}
+                            {t.auth.terms_msg}{" "}
                             <Link href="#" className="underline underline-offset-4 hover:text-foreground transition-colors">
-                                Termos de Serviço
+                                {t.auth.terms_link}
                             </Link>{" "}
-                            e{" "}
+                            {lang === 'pt-BR' ? 'e' : lang === 'es-ES' ? 'y' : 'and'}{" "}
                             <Link href="#" className="underline underline-offset-4 hover:text-foreground transition-colors">
-                                Política de Privacidade
+                                {t.auth.privacy_link}
                             </Link>
                             .
                         </p>
@@ -207,7 +209,7 @@ function LoginPageContent() {
 
                     <div className="text-center">
                         <Link href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
-                            ← Voltar para a página inicial
+                            ← {t.auth.back_home}
                         </Link>
                     </div>
                 </div>

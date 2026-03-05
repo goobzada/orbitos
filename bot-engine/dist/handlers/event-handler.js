@@ -10,7 +10,8 @@ const logger_1 = require("../utils/logger");
 // Carrega todos os eventos dinamicamente da pasta /events
 function loadEvents(client) {
     const eventsPath = path_1.default.join(__dirname, '..', 'events');
-    const eventFiles = fs_1.default.readdirSync(eventsPath).filter(f => f.endsWith('.ts'));
+    const ext = __filename.endsWith('.ts') ? '.ts' : '.js'; // dev=.ts, prod=.js
+    const eventFiles = fs_1.default.readdirSync(eventsPath).filter(f => f.endsWith(ext));
     let count = 0;
     for (const file of eventFiles) {
         // eslint-disable-next-line @typescript-eslint/no-var-requires

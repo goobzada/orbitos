@@ -17,7 +17,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatRelative } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS, es } from "date-fns/locale";
+import { useTranslation } from "@/components/providers/language-provider";
 
 interface Activity {
     id: string;
@@ -55,11 +56,20 @@ const getSeverity = (action: string) => {
 };
 
 export function ActivityFeed({ activities }: ActivityFeedProps) {
+    const { t, lang } = useTranslation();
+
+    const getLocale = () => {
+        if (lang === 'en-US') return enUS;
+        if (lang === 'es-ES') return es;
+        return ptBR;
+    };
+
+    const locale = getLocale();
     return (
         <div className="space-y-4">
             {activities.length === 0 ? (
                 <div className="py-10 text-center border-2 border-dashed border-border/5 rounded-2xl">
-                    <p className="text-xs text-muted-foreground italic">Nenhuma atividade registrada no log recente.</p>
+                    <p className="text-xs text-muted-foreground italic">{t.analytics.no_activity || "Nenhuma atividade registrada no log recente."}</p>
                 </div>
             ) : activities.map((activity, idx) => {
                 const config = actionIcons[activity.action] || actionIcons['DEFAULT'];
@@ -82,11 +92,11 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
                             <div className="flex items-center justify-between">
                                 <p className="text-xs font-black tracking-tight uppercase">{activity.action.replace(/_/g, ' ')}</p>
                                 <span className="text-[10px] text-muted-foreground italic font-medium">
-                                    {formatRelative(date, new Date(), { locale: ptBR })}
+                                    {formatRelative(date, new Date(), { locale })}
                                 </span>
                             </div>
                             <p className="text-[11px] text-muted-foreground font-medium">
-                                {activity.resourceType} {activity.resourceId?.slice(0, 8)} modificado por {activity.userId?.slice(0, 8) || 'System'}
+                                {activity.resourceType} {activity.resourceId?.slice(0, 8)} {t.analytics.modified_by || "modificado por"} {activity.userId?.slice(0, 8) || 'System'}
                             </p>
                             <div className="flex items-center gap-2 pt-1.5 overflow-hidden">
                                 <Badge variant={getSeverity(activity.action) as any} className="text-[9px] font-black tracking-widest px-1.5 py-0">

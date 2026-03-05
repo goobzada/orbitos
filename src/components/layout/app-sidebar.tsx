@@ -50,16 +50,16 @@ export function AppSidebar() {
         { title: t.dashboard.sidebar.analytics, url: "/dashboard", icon: LayoutDashboard },
         { title: t.dashboard.sidebar.servers, url: "/dashboard/servers", icon: Server },
         { title: t.dashboard.sidebar.automations, url: "/dashboard/automations", icon: Command },
-        { title: '⚡ Automation Builder', url: "/dashboard/automations/builder", icon: Cpu },
+        { title: t.dashboard.sidebar.automation_builder, url: "/dashboard/automations/builder", icon: Cpu },
         { title: t.dashboard.sidebar.tickets, url: "/dashboard/tickets", icon: Ticket },
-        { title: "Staff", url: "/dashboard/staff", icon: Users },
-        { title: "Loja VIP", url: "/dashboard/store", icon: CreditCard },
+        { title: t.dashboard.sidebar.staff, url: "/dashboard/staff", icon: Users },
+        { title: t.dashboard.sidebar.store, url: "/dashboard/store", icon: CreditCard },
         { title: t.dashboard.sidebar.analytics, url: "/dashboard/analytics", icon: BarChart3 },
     ];
 
     const secondaryItems = [
         { title: t.dashboard.sidebar.billing, url: "/dashboard/billing", icon: CreditCard },
-        { title: 'API Docs', url: "/dashboard/docs", icon: BookOpen },
+        { title: t.dashboard.sidebar.api_docs, url: "/dashboard/docs", icon: BookOpen },
         { title: t.dashboard.sidebar.settings, url: "/dashboard/settings", icon: Settings },
     ];
 
@@ -95,7 +95,7 @@ export function AppSidebar() {
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarGroupLabel className="text-xs uppercase tracking-widest">
-                        {t.dashboard.sidebar.menu || "Menu Principal"}
+                        {t.dashboard.sidebar.menu}
                     </SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
@@ -130,7 +130,7 @@ export function AppSidebar() {
 
                 <SidebarGroup>
                     <SidebarGroupLabel className="text-xs uppercase tracking-widest">
-                        {t.dashboard.sidebar.system || "Sistema"}
+                        {t.dashboard.sidebar.system}
                     </SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
@@ -174,7 +174,7 @@ export function AppSidebar() {
                                     >
                                         <Link href="/platform">
                                             <ShieldCheck className={cn("shrink-0", pathname.startsWith('/platform') && "text-amber-500")} />
-                                            <span>Plataforma</span>
+                                            <span>{t.dashboard.sidebar.platform}</span>
                                             {pathname.startsWith('/platform') && (
                                                 <div className="ml-auto w-1 h-4 rounded-full bg-amber-500" />
                                             )}
@@ -197,7 +197,7 @@ export function AppSidebar() {
                                 onClick={() => exitImpersonation()}
                             >
                                 <LogOut />
-                                <span>Encerrar Suporte</span>
+                                <span>{t.dashboard.sidebar.exit_support}</span>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     )}
@@ -226,8 +226,8 @@ export function AppSidebar() {
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-semibold truncate">{user?.username || 'Perfil'}</p>
-                                    <p className="text-[10px] text-muted-foreground/60 truncate">Ver perfil</p>
+                                    <p className="text-xs font-semibold truncate">{user?.username || t.dashboard.sidebar.profile}</p>
+                                    <p className="text-[10px] text-muted-foreground/60 truncate">{t.dashboard.sidebar.view_profile}</p>
                                 </div>
                                 <UserCircle className="w-3.5 h-3.5 shrink-0 opacity-50" />
                             </Link>
@@ -241,7 +241,7 @@ export function AppSidebar() {
                             onClick={() => logout()}
                         >
                             <LogOut />
-                            <span>Sair da conta</span>
+                            <span>{t.dashboard.sidebar.logout}</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

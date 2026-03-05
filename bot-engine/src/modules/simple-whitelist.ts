@@ -31,16 +31,35 @@ async function handleStartButton(interaction: ButtonInteraction) {
     if (!interaction.guildId) return;
 
     try {
-        const config = await moduleLoader.getGuildModuleConfig(interaction.guildId, 'whitelist');
+        let config = await moduleLoader.getGuildModuleConfig(interaction.guildId, 'whitelist');
+
+        const isId = config?.verificationType === 'ID';
+        const isCode = config?.verificationType === 'CODE';
+
+        if (isId) {
+            config = { ...(config || {}), questions: ['Por favor, insira o seu Passaporte / ID do Jogo:'] };
+        } else if (isCode) {
+            config = { ...(config || {}), questions: ['Por favor, insira o seu Código de Verificação:'] };
+        } else if (!config || !config.questions || config.questions.length === 0) {
+            // Fallback: busca perguntas do whitelist_quiz se whitelist simples não tem
+            const quizConfig = await moduleLoader.getGuildModuleConfig(interaction.guildId, 'whitelist_quiz');
+            if (quizConfig && quizConfig.questions && quizConfig.questions.length > 0) {
+                const simpleQuestions = quizConfig.questions.map((q: any) => q.text || q.question || q).filter(Boolean);
+                config = {
+                    ...quizConfig,
+                    questions: simpleQuestions.slice(0, 5)
+                };
+            }
+        }
 
         if (!config || !config.questions || config.questions.length === 0) {
-            return interaction.reply({ content: 'O formulário de whitelist não está configurado corretamente.', ephemeral: true });
+            return interaction.reply({ content: '❌ O formulário de whitelist não está configurado corretamente.', ephemeral: true });
         }
 
         const questions: string[] = config.questions;
 
         if (questions.length > 5) {
-            return interaction.reply({ content: 'O formulário possui mais de 5 perguntas, o que o Discord não permite em um único modal. Reduza no dashboard.', ephemeral: true });
+            return interaction.reply({ content: '⚠️ O formulário possui mais de 5 perguntas, o que o Discord não permite em um único modal. Reduza no dashboard.', ephemeral: true });
         }
 
         const modal = new ModalBuilder()
@@ -65,7 +84,7 @@ async function handleStartButton(interaction: ButtonInteraction) {
 
     } catch (error: unknown) {
         log.error(`[SimpleWhitelist] Erro ao iniciar form: ${(error as Error).message}`);
-        interaction.reply({ content: 'Houve um erro interno ao processar a whitelist.', ephemeral: true });
+        interaction.reply({ content: '❌ Houve um erro interno ao processar a whitelist.', ephemeral: true });
     }
 }
 
@@ -73,14 +92,20 @@ async function handleModalSubmit(interaction: ModalSubmitInteraction) {
     const session = activeSessions.get(interaction.user.id);
 
     if (!session) {
-        return interaction.reply({ content: 'Sua sessão expirou. Inicie novamente clicando no botão do formulário.', ephemeral: true });
+        return interaction.reply({ content: '⏳ Sua sessão expirou. Use `/wl` novamente para iniciar.', ephemeral: true });
     }
 
     await interaction.deferReply({ ephemeral: true });
 
     try {
-        const config = await moduleLoader.getGuildModuleConfig(interaction.guildId!, 'whitelist');
-
+        let config = await moduleLoader.getGuildModuleConfig(interaction.guildId!, 'whitelist');
+        // Fallback: pega channelId/roleId do whitelist_quiz se necessário
+        if (!config || (!config.channelId && !config.roleId)) {
+            const quizConfig = await moduleLoader.getGuildModuleConfig(interaction.guildId!, 'whitelist_quiz');
+            if (quizConfig) {
+                config = { ...(config || {}), channelId: config?.channelId || quizConfig.channelId, roleId: config?.roleId || quizConfig.roleId, autoApprove: config?.autoApprove ?? quizConfig.autoApprove };
+            }
+        }
         const answers = session.questions.map((q, index) => {
             return {
                 question: q,
@@ -91,7 +116,7 @@ async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         activeSessions.delete(interaction.user.id);
 
         if (config.autoApprove) {
-            // Apply role immediately
+            // Aplicar cargo diretamente (sem review)
             const member = await interaction.guild?.members.fetch(interaction.user.id);
             if (member && config.roleId) {
                 await member.roles.add(config.roleId).catch(err => log.warn(`Failed to add role ${config.roleId} to user: ${err.message}`));
@@ -99,34 +124,44 @@ async function handleModalSubmit(interaction: ModalSubmitInteraction) {
 
             const embed = new EmbedBuilder()
                 .setColor(0x57F287)
-                .setDescription('✅ **Sua whitelist foi aprovada automaticamente!** Bem-vindo ao servidor.');
+                .setTitle('✅ Whitelist Aprovada!')
+                .setDescription('Sua whitelist foi aprovada automaticamente! Bem-vindo ao servidor.')
+                .setFooter({ text: 'OrbitOS Whitelist' })
+                .setTimestamp();
 
             return interaction.editReply({ embeds: [embed] });
 
         } else {
-            // Send to review channel
+            // Enviar para canal de review (staff analisa)
             const channelId = config.channelId;
             if (channelId) {
                 const reviewChannel = interaction.guild?.channels.cache.get(channelId) as TextChannel;
 
                 if (reviewChannel && 'send' in reviewChannel) {
                     const reviewEmbed = new EmbedBuilder()
-                        .setTitle(`📝 Nova Solicitação de Whitelist`)
-                        .setDescription(`Usuário: <@${interaction.user.id}> (${interaction.user.tag})`)
-                        .setColor(0xFEE75C);
+                        .setTitle('📝 Nova Solicitação de Whitelist')
+                        .setDescription(
+                            `**Usuário:** <@${interaction.user.id}> (${interaction.user.tag})\n` +
+                            `**ID:** \`${interaction.user.id}\`\n` +
+                            `**Data:** <t:${Math.floor(Date.now() / 1000)}:F>`
+                        )
+                        .setColor(0xFEE75C)
+                        .setThumbnail(interaction.user.displayAvatarURL({ size: 128 }))
+                        .setFooter({ text: 'OrbitOS Whitelist • Aguardando análise do staff' })
+                        .setTimestamp();
 
                     answers.forEach(item => {
-                        reviewEmbed.addFields({ name: item.question.substring(0, 256), value: item.answer.substring(0, 1024) });
+                        reviewEmbed.addFields({ name: `📋 ${item.question.substring(0, 256)}`, value: item.answer.substring(0, 1024) || '*Sem resposta*' });
                     });
 
                     const approveBtn = new ButtonBuilder()
                         .setCustomId(`wl_approve_${interaction.user.id}`)
-                        .setLabel('Aprovar')
+                        .setLabel('✅ Aprovar')
                         .setStyle(ButtonStyle.Success);
 
                     const rejectBtn = new ButtonBuilder()
                         .setCustomId(`wl_reject_${interaction.user.id}`)
-                        .setLabel('Reprovar')
+                        .setLabel('❌ Reprovar')
                         .setStyle(ButtonStyle.Danger);
 
                     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(approveBtn, rejectBtn);
@@ -137,7 +172,14 @@ async function handleModalSubmit(interaction: ModalSubmitInteraction) {
 
             const embed = new EmbedBuilder()
                 .setColor(0xFEE75C)
-                .setDescription('⏳ **Sua whitelist foi enviada para análise da nossa equipe!** Aguarde os resultados.');
+                .setTitle('⏳ Whitelist Enviada!')
+                .setDescription(
+                    'Sua whitelist foi enviada para análise da nossa equipe!\n\n' +
+                    '• **Aprovado** → Você receberá o cargo automaticamente + DM de confirmação.\n' +
+                    '• **Reprovado** → Você receberá uma DM e poderá tentar novamente com `/wl`.'
+                )
+                .setFooter({ text: 'OrbitOS Whitelist • Aguarde o resultado' })
+                .setTimestamp();
 
             return interaction.editReply({ embeds: [embed] });
         }
@@ -145,7 +187,7 @@ async function handleModalSubmit(interaction: ModalSubmitInteraction) {
     } catch (error: unknown) {
         activeSessions.delete(interaction.user.id);
         log.error(`[SimpleWhitelist] Submit Error: ${(error as Error).message}`);
-        return interaction.editReply({ content: `❌ Ocorreu um erro ao processar sua solicitação.` });
+        return interaction.editReply({ content: '❌ Ocorreu um erro ao processar sua solicitação. Tente novamente com `/wl`.' });
     }
 }
 
@@ -159,32 +201,59 @@ async function handleStaffAction(interaction: ButtonInteraction, action: 'approv
     await interaction.deferUpdate();
 
     try {
-        const config = await moduleLoader.getGuildModuleConfig(interaction.guildId!, 'whitelist');
+        let config = await moduleLoader.getGuildModuleConfig(interaction.guildId!, 'whitelist');
+        if (!config || !config.roleId) {
+            const quizConfig = await moduleLoader.getGuildModuleConfig(interaction.guildId!, 'whitelist_quiz');
+            if (quizConfig) {
+                config = { ...(config || {}), roleId: config?.roleId || quizConfig.roleId };
+            }
+        }
         const member = await interaction.guild?.members.fetch(userId).catch(() => null);
 
         if (action === 'approve') {
+            // 1. Dar o cargo ao membro
             if (member && config.roleId) {
                 await member.roles.add(config.roleId).catch(err => log.warn(`Failed to add role ${config.roleId}: ${err.message}`));
             }
 
-            // Tenta enviar DM para o usuário
-            member?.send('✅ **Parabéns! Sua whitelist foi APROVADA** no servidor!').catch(() => null);
+            // 2. Enviar DM de aprovação
+            const dmEmbed = new EmbedBuilder()
+                .setColor(0x57F287)
+                .setTitle('✅ Whitelist Aprovada!')
+                .setDescription(
+                    `Parabéns! Sua whitelist no servidor **${interaction.guild?.name}** foi **APROVADA**!\n\n` +
+                    'Você já recebeu o cargo de acesso. Divirta-se! 🎉'
+                )
+                .setFooter({ text: 'OrbitOS Whitelist' })
+                .setTimestamp();
+            member?.send({ embeds: [dmEmbed] }).catch(() => null);
 
+            // 3. Atualizar embed no canal de review
             const embed = EmbedBuilder.from(interaction.message.embeds[0]!)
-                .setColor(0x57F287) // Verde
+                .setColor(0x57F287)
                 .setTitle('✅ Solicitação Aprovada')
-                .setFooter({ text: `Aprovado por ${interaction.user.tag}` });
+                .setFooter({ text: `Aprovado por ${interaction.user.tag} • ${new Date().toLocaleString('pt-BR')}` });
 
             await interaction.editReply({ embeds: [embed], components: [] });
 
         } else {
-            // Tenta enviar DM para o usuário
-            member?.send('❌ **Infelizmente sua whitelist foi REPROVADA**. Tente novamente mais tarde.').catch(() => null);
+            // 1. Enviar DM de reprovação (orientando a tentar novamente com /wl)
+            const dmEmbed = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle('❌ Whitelist Reprovada')
+                .setDescription(
+                    `Infelizmente sua whitelist no servidor **${interaction.guild?.name}** foi **REPROVADA**.\n\n` +
+                    '📌 Você pode tentar novamente a qualquer momento usando o comando `/wl` no servidor.'
+                )
+                .setFooter({ text: 'OrbitOS Whitelist' })
+                .setTimestamp();
+            member?.send({ embeds: [dmEmbed] }).catch(() => null);
 
+            // 2. Atualizar embed no canal de review
             const embed = EmbedBuilder.from(interaction.message.embeds[0]!)
-                .setColor(0xED4245) // Vermelho
+                .setColor(0xED4245)
                 .setTitle('❌ Solicitação Reprovada')
-                .setFooter({ text: `Reprovado por ${interaction.user.tag}` });
+                .setFooter({ text: `Reprovado por ${interaction.user.tag} • ${new Date().toLocaleString('pt-BR')}` });
 
             await interaction.editReply({ embeds: [embed], components: [] });
         }
