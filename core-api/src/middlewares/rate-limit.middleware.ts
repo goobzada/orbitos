@@ -82,7 +82,7 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
     }
 
     // Support/admin operational flows: avoid blocking server provisioning actions.
-    const isServerProvisionAction = req.method === 'POST' && req.path === '/servers';
+    const isServerProvisionAction = req.method === 'POST' && /^\/servers\/?$/.test(req.path);
     if (isServerProvisionAction) {
         return next();
     }
