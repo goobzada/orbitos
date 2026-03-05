@@ -160,6 +160,23 @@ class StoreService {
         return product;
     }
     /**
+     * Delete produto
+     */
+    static async deleteProduct(orgId, productId, userId) {
+        await this.validatePlan(orgId);
+        const product = await prisma_1.default.storeProduct.delete({
+            where: { id: productId, organizationId: orgId }
+        });
+        await audit_service_1.auditService.log({
+            organizationId: orgId,
+            userId,
+            action: 'STORE_PRODUCT_DELETED',
+            resourceType: 'StoreProduct',
+            resourceId: product.id,
+        });
+        return product;
+    }
+    /**
      * Retorna orders do Tenant
      */
     static async listOrders(orgId) {

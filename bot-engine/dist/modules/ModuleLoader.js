@@ -18,7 +18,11 @@ class ModuleLoader {
         const folders = fs_1.default.readdirSync(modulesPath).filter(f => fs_1.default.statSync(path_1.default.join(modulesPath, f)).isDirectory());
         for (const folder of folders) {
             const folderPath = path_1.default.join(modulesPath, folder);
-            const files = fs_1.default.readdirSync(folderPath).filter(f => f.endsWith('.ts') && !f.endsWith('.d.ts'));
+            // Suporta .ts (dev/ts-node) e .js (produção compilada)
+            const allFiles = fs_1.default.readdirSync(folderPath);
+            const tsFiles = allFiles.filter(f => f.endsWith('.ts') && !f.endsWith('.d.ts'));
+            const jsFiles = allFiles.filter(f => f.endsWith('.js') && !f.endsWith('.d.js'));
+            const files = tsFiles.length > 0 ? tsFiles : jsFiles;
             for (const file of files) {
                 try {
                     const moduleImport = require(path_1.default.join(folderPath, file)).default;
@@ -27,7 +31,7 @@ class ModuleLoader {
                         if (moduleImport.init) {
                             moduleImport.init(this.client);
                         }
-                        logger_1.log.info(`[MODULE SERVER] 📦 Módulo carregado: ${moduleImport.name} (${folder})`);
+                        logger_1.log.info(`[MODULE SERVER] 📦 Módulo carregado: ${moduleImport.name} (${folder}) [${file}]`);
                     }
                 }
                 catch (error) {

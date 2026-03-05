@@ -44,8 +44,8 @@ exports.default = {
         client.user?.setPresence({
             status: 'online',
             activities: [{
-                    name: 'SaaSBot Dashboard',
-                    type: 0 // Tipo "Jogando"
+                    name: 'OrbitOS Dashboard',
+                    type: 0
                 }]
         });
         // Auto-registro das guilds na API Core ao ligar

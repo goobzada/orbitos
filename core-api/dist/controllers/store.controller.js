@@ -71,6 +71,21 @@ class StoreController {
             return res.status(500).json({ error: error.message });
         }
     }
+    static async deleteProduct(req, res) {
+        try {
+            const organizationId = req.params.organizationId;
+            const productId = req.params.id;
+            const userId = req.user.id;
+            const product = await store_service_1.StoreService.deleteProduct(organizationId, productId, userId);
+            return res.json({ success: true, product });
+        }
+        catch (error) {
+            if (error.message.includes('PLAN_UPGRADE_REQUIRED')) {
+                return res.status(403).json({ error: error.message });
+            }
+            return res.status(500).json({ error: error.message });
+        }
+    }
     // --- ORDERS ---
     static async listOrders(req, res) {
         try {

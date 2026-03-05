@@ -11,7 +11,8 @@ const logger_1 = require("../utils/logger");
 function loadCommands(client) {
     client.commands = new discord_js_1.Collection();
     const commandsPath = path_1.default.join(__dirname, '..', 'commands');
-    const commandFiles = fs_1.default.readdirSync(commandsPath).filter(f => f.endsWith('.ts'));
+    const ext = __filename.endsWith('.ts') ? '.ts' : '.js'; // dev=.ts, prod=.js
+    const commandFiles = fs_1.default.readdirSync(commandsPath).filter(f => f.endsWith(ext));
     let count = 0;
     for (const file of commandFiles) {
         // eslint-disable-next-line @typescript-eslint/no-var-requires

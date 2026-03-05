@@ -12,6 +12,8 @@ const logger_1 = require("./utils/logger");
 const api_client_1 = __importDefault(require("./utils/api-client"));
 const ws_client_1 = require("./services/ws-client");
 const ModuleLoader_1 = require("./modules/ModuleLoader");
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 dotenv_1.default.config();
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 if (!DISCORD_TOKEN || DISCORD_TOKEN === 'sua_chave_secreta_do_bot_aqui') {
@@ -40,6 +42,38 @@ exports.moduleLoader.loadModules();
 (0, command_handler_1.loadCommands)(exports.client);
 // Carrega os eventos dinamicamente da pasta /events
 (0, event_handler_1.loadEvents)(exports.client);
+// ── AUTO-DEPLOY de Slash Commands ────────────────────────────────────────────
+const autoDeployCommands = async () => {
+    const clientId = process.env.DISCORD_CLIENT_ID;
+    const token = process.env.DISCORD_TOKEN;
+    if (!clientId || !token) {
+        logger_1.log.warn('[COMMANDS] DISCORD_CLIENT_ID não definido — skip auto-deploy.');
+        return;
+    }
+    try {
+        const commandsPath = path_1.default.join(__dirname, 'commands');
+        const commandFiles = fs_1.default.readdirSync(commandsPath)
+            .filter(f => f.endsWith('.js') || f.endsWith('.ts'));
+        const body = [];
+        for (const file of commandFiles) {
+            try {
+                const mod = require(path_1.default.join(commandsPath, file));
+                const cmd = mod.default ?? mod;
+                if (cmd?.data)
+                    body.push(cmd.data.toJSON());
+            }
+            catch { /* ignora arquivo inválido */ }
+        }
+        if (body.length === 0)
+            return;
+        const rest = new discord_js_1.REST({ version: '10' }).setToken(token);
+        await rest.put(discord_js_1.Routes.applicationCommands(clientId), { body });
+        logger_1.log.info(`[COMMANDS] ✅ ${body.length} slash command(s) registrados globalmente.`);
+    }
+    catch (err) {
+        logger_1.log.warn(`[COMMANDS] Auto-deploy falhou (não crítico): ${err?.message}`);
+    }
+};
 // ── HEARTBEAT — Sincroniza status do bot com a API ─────────────────────
 const sendHeartbeat = async () => {
     if (!exports.client.isReady())
@@ -57,8 +91,9 @@ const sendHeartbeat = async () => {
     }
 };
 logger_1.log.info('Conectando ao Discord...');
-exports.client.on('ready', () => {
+exports.client.on('clientReady', () => {
     sendHeartbeat();
+    autoDeployCommands(); // registra comandos automaticamente a cada startup
 });
 exports.client.login(DISCORD_TOKEN).then(() => {
     // Inicializar cliente WebSocket Community OS e Heartbeat APÓS o login
