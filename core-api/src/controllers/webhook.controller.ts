@@ -43,6 +43,11 @@ export class WebhookController {
                 }
                 break;
             }
+            case 'customer.subscription.updated': {
+                const subscription = event.data.object as Stripe.Subscription;
+                await this.handleSubscriptionUpdated(subscription);
+                break;
+            }
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object as Stripe.Subscription;
                 await this.handleSubscriptionDeleted(subscription);
@@ -139,6 +144,34 @@ export class WebhookController {
             await prisma.organization.updateMany({
                 where: { stripeSubscriptionId: subscriptionId },
                 data: { isActive: true }
+            });
+        }
+    }
+
+    private static async handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+        console.log(`[STRIPE WEBHOOK] 🔄 Assinatura atualizada: ${subscription.id}`);
+
+        // Map Stripe product to plan (requires metadata or price lookup)
+        const priceId = subscription.items.data[0]?.price.id;
+        let newPlan = 'FREE';
+
+        // Match price ID to plan (configure these in your .env or Stripe dashboard)
+        const STRIPE_PRICE_PRO = process.env.STRIPE_PRICE_PRO;
+        const STRIPE_PRICE_ENTERPRISE = process.env.STRIPE_PRICE_ENTERPRISE;
+        const STRIPE_PRICE_MAX = process.env.STRIPE_PRICE_MAX;
+
+        if (priceId === STRIPE_PRICE_PRO) newPlan = 'PRO';
+        else if (priceId === STRIPE_PRICE_ENTERPRISE) newPlan = 'ENTERPRISE';
+        else if (priceId === STRIPE_PRICE_MAX) newPlan = 'MAX';
+
+        // Update organization plan if status is active
+        if (subscription.status === 'active' || subscription.status === 'trialing') {
+            await prisma.organization.updateMany({
+                where: { stripeSubscriptionId: subscription.id },
+                data: {
+                    plan: newPlan,
+                    isActive: true
+                }
             });
         }
     }

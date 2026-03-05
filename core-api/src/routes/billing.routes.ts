@@ -17,4 +17,10 @@ router.post('/:organizationId/checkout', billingController.createCheckoutSession
 // Criar Sessão do Portal do Cliente (Stripe Billing Portal)
 router.post('/:organizationId/portal', billingController.createCustomerPortalSession);
 
+// Cancelar Assinatura (ao final do período)
+router.post('/:organizationId/cancel', billingController.cancelSubscription);
+
+// Reativar Assinatura Cancelada
+router.post('/:organizationId/reactivate', billingController.reactivateSubscription);
+
 export default router;

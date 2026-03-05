@@ -913,3 +913,31 @@ export const useCustomerPortal = () => {
         },
     });
 };
+
+export const useCancelSubscription = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ organizationId }: { organizationId: string }) => {
+            const { data } = await api.post(`/billing/${organizationId}/cancel`);
+            return data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['billing-status', variables.organizationId] });
+            queryClient.invalidateQueries({ queryKey: ['organizations'] });
+        },
+    });
+};
+
+export const useReactivateSubscription = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ organizationId }: { organizationId: string }) => {
+            const { data } = await api.post(`/billing/${organizationId}/reactivate`);
+            return data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['billing-status', variables.organizationId] });
+            queryClient.invalidateQueries({ queryKey: ['organizations'] });
+        },
+    });
+};

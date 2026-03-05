@@ -16,7 +16,9 @@ import {
     useOrganizations,
     useBillingStatus,
     useCheckoutSession,
-    useCustomerPortal
+    useCustomerPortal,
+    useCancelSubscription,
+    useReactivateSubscription
 } from "@/lib/hooks";
 import { toast } from "sonner";
 import { useTranslation } from "@/components/providers/language-provider";
@@ -175,6 +177,8 @@ export default function BillingPage() {
     const { data: billingStatus, isLoading: isBillingLoading } = useBillingStatus(activeOrg?.id || null);
     const checkoutMutation = useCheckoutSession();
     const customerPortalMutation = useCustomerPortal();
+    const cancelSubscriptionMutation = useCancelSubscription();
+    const reactivateSubscriptionMutation = useReactivateSubscription();
 
     // Normalize plan: handles FREE, PRO, ENTERPRISE, MAX (case-insensitive)
     const rawPlan = (billingStatus?.plan || activeOrg?.plan || 'FREE').toLowerCase();
@@ -218,13 +222,59 @@ export default function BillingPage() {
             },
             onError: (err: any) => {
                 toast.error(err.response?.data?.error || t.common.error, { id: 'portal' });
+      
+
+    const handleCancelSubscription = () => {
+        if (!activeOrg?.id) return;
+        
+        if (!confirm('Tem certeza que deseja cancelar sua assinatura? O acesso continuará até o final do período de cobrança.')) {
+            return;
+        }
+
+        toast.loading('Cancelando assinatura...', { id: 'cancel' });
+
+        cancelSubscriptionMutation.mutate({ organizationId: activeOrg.id }, {
+            onSuccess: (data: any) => {
+                toast.success('Assinatura cancelada com sucesso', { 
+                    id: 'cancel',
+                    description: data.message || 'Seu acesso continuará até o final do período de cobrança.'
+                });
+            },
+            onError: (err: any) => {
+                toast.error(err.response?.data?.error || 'Erro ao cancelar assinatura', { id: 'cancel' });
             }
+        });
+    };
+
+    const handleReactivateSubscription = () => {
+        if (!activeOrg?.id) return;
+
+        toast.loading('Reativando assinatura...', { id: 'reactivate' });
+
+        reactivateSubscriptionMutation.mutate({ organizationId: activeOrg.id }, {
+            onSuccess: (data: any) => {
+                toast.success('Assinatura reativada com sucesso', { 
+                    id: 'reactivate',
+                    description: 'Sua assinatura continuará normalmente.'
+                });
+            },
+            onError: (err: any) => {
+                toast.error(err.response?.data?.error || 'Erro ao reativar assinatura', { id: 'reactivate' });
+            }
+        });
+    };      }
         });
     };
 
     if (isBillingLoading) {
         return <div className="p-8 text-center text-muted-foreground animate-pulse">{t.common.loading}</div>;
     }
+
+    const subscription = billingStatus?.subscription;
+    const isCanceling = subscription?.cancel_at_period_end;
+    const cancelDate = subscription?.current_period_end 
+        ? new Date(subscription.current_period_end * 1000).toLocaleDateString('pt-BR')
+        : null;
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -235,6 +285,30 @@ export default function BillingPage() {
                     {t.billing.plans[currentPlanId].description}
                 </p>
             </div>
+
+            {/* Alert when subscription is marked for cancellation */}
+            {isCanceling && current.id !== 'free' && (
+                <div className="relative overflow-hidden rounded-xl border border-rose-500/30 bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent p-5 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 text-rose-400 mt-0.5 shrink-0" />
+                            <div>
+                                <h3 className="font-semibold text-rose-400">Assinatura Cancelada</h3>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Seu plano será rebaixado para FREE em <strong>{cancelDate}</strong>. Você ainda tem acesso completo até lá.
+                                </p>
+                            </div>
+                        </div>
+                        <Button 
+                            onClick={handleReactivateSubscription} 
+                            disabled={reactivateSubscriptionMutation.isPending}
+                            className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold shrink-0"
+                        >
+                            Reativar Assinatura
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Upsell Banner for Enterprise */}
             {current.id !== 'enterprise' && current.id !== 'max' && (
@@ -302,15 +376,17 @@ export default function BillingPage() {
                             <CreditCard className="w-4 h-4" />
                             {t.billing.update_card}
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10"
-                            onClick={handleCustomerPortal}
-                            disabled={customerPortalMutation.isPending || current.id === 'free'}
-                        >
-                            {t.billing.manage_subscription}
-                        </Button>
+                        {!isCanceling && current.id !== 'free' && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10"
+                                onClick={handleCancelSubscription}
+                                disabled={cancelSubscriptionMutation.isPending}
+                            >
+                                Cancelar Plano
+                            </Button>
+                        )}
                     </CardFooter>
                 </Card>
 
