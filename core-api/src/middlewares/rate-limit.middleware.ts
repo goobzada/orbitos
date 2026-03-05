@@ -39,6 +39,11 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         return next();
     }
 
+    // OAuth endpoints can trigger multiple rapid redirects; avoid blocking login flow.
+    if (req.path === '/auth/discord' || req.path === '/auth/callback' || req.path === '/auth/discord/callback') {
+        return next();
+    }
+
     const usingFallback = !REDIS_ENABLED || !redisConnection || !isRedisConnected();
 
     // Log warning once when Redis is down (avoid spam)
@@ -54,7 +59,11 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
     }
 
     try {
-        const ip = req.ip || 'unknown';
+        // Behind Cloudflare, req.ip can collapse to edge IP without realip config.
+        // Prefer cf-connecting-ip so rate limiting stays per-user.
+        const cfIpHeader = req.headers['cf-connecting-ip'];
+        const realClientIp = Array.isArray(cfIpHeader) ? cfIpHeader[0] : cfIpHeader;
+        const ip = realClientIp || req.ip || 'unknown';
 
         // 1. Apply global rate limit per IP
         if (usingFallback) {
