@@ -423,6 +423,101 @@ export const usePlatformPayments = () => {
     });
 };
 
+export const usePlatformBillingOverview = () => {
+    return useQuery<any>({
+        queryKey: ['platform-billing-overview'],
+        queryFn: async () => {
+            const { data } = await api.get('/platform/billing/overview');
+            return data;
+        },
+    });
+};
+
+export const usePlatformSubscriptions = (params?: { page?: number; limit?: number; status?: string; planId?: string; search?: string }) => {
+    return useQuery<any>({
+        queryKey: ['platform-billing-subscriptions', params],
+        queryFn: async () => {
+            const { data } = await api.get('/platform/billing/subscriptions', { params });
+            return data;
+        },
+    });
+};
+
+export const usePlatformInvoices = (params?: { page?: number; limit?: number; status?: string; search?: string }) => {
+    return useQuery<any>({
+        queryKey: ['platform-billing-invoices', params],
+        queryFn: async () => {
+            const { data } = await api.get('/platform/billing/invoices', { params });
+            return data;
+        },
+    });
+};
+
+export const usePlatformPaymentsList = (params?: { page?: number; limit?: number; status?: string; search?: string }) => {
+    return useQuery<any>({
+        queryKey: ['platform-billing-payments', params],
+        queryFn: async () => {
+            const { data } = await api.get('/platform/billing/payments', { params });
+            return data;
+        },
+    });
+};
+
+export const usePlatformTenantBilling = (orgId: string) => {
+    return useQuery<any>({
+        queryKey: ['platform-billing-tenant', orgId],
+        queryFn: async () => {
+            const { data } = await api.get(`/platform/billing/tenants/${orgId}`);
+            return data;
+        },
+        enabled: !!orgId,
+    });
+};
+
+export const useChangeTenantPlan = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ orgId, priceId, proration }: { orgId: string; priceId: string; proration?: boolean }) => {
+            const { data } = await api.post(`/platform/billing/tenants/${orgId}/plan`, { priceId, proration });
+            return data;
+        },
+        onSuccess: (_data, { orgId }) => {
+            queryClient.invalidateQueries({ queryKey: ['platform-billing-tenant', orgId] });
+            queryClient.invalidateQueries({ queryKey: ['platform-billing-subscriptions'] });
+            queryClient.invalidateQueries({ queryKey: ['platform-billing-overview'] });
+        },
+    });
+};
+
+export const useCancelTenantSubscription = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ orgId, atPeriodEnd }: { orgId: string; atPeriodEnd?: boolean }) => {
+            const { data } = await api.post(`/platform/billing/tenants/${orgId}/cancel`, { atPeriodEnd });
+            return data;
+        },
+        onSuccess: (_data, { orgId }) => {
+            queryClient.invalidateQueries({ queryKey: ['platform-billing-tenant', orgId] });
+            queryClient.invalidateQueries({ queryKey: ['platform-billing-subscriptions'] });
+            queryClient.invalidateQueries({ queryKey: ['platform-billing-overview'] });
+        },
+    });
+};
+
+export const usePauseTenantSubscription = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (orgId: string) => {
+            const { data } = await api.post(`/platform/billing/tenants/${orgId}/pause`);
+            return data;
+        },
+        onSuccess: (_data, orgId) => {
+            queryClient.invalidateQueries({ queryKey: ['platform-billing-tenant', orgId] });
+            queryClient.invalidateQueries({ queryKey: ['platform-billing-subscriptions'] });
+        },
+    });
+};
+
 export const usePlatformAutomations = () => {
     return useQuery<any[]>({
         queryKey: ['platform-automations'],

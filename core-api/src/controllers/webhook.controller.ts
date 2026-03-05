@@ -17,17 +17,35 @@ export class WebhookController {
                 apiVersion: '2025-01-27.acacia' as any,
             });
 
-            if (endpointSecret && sig) {
-                event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
-            } else {
-                event = typeof payload === 'string' ? JSON.parse(payload) : payload;
+            if (!endpointSecret || !sig) {
+                console.error('[STRIPE WEBHOOK] ❌ Webhook recebido sem assinatura ou sem STRIPE_WEBHOOK_SECRET configurado.');
+                return res.status(400).send('Webhook Error: Missing signature or webhook secret.');
             }
+
+            event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
         } catch (err: any) {
             console.error(`[STRIPE WEBHOOK] ❌ Erro de assinatura:`, err.message);
             return res.status(400).send(`Webhook Error: ${err.message}`);
         }
 
         console.log(`[STRIPE WEBHOOK] 🔔 Evento recebido: ${event.type}`);
+
+        // Idempotency: skip already-processed events
+        const alreadyProcessed = await prisma.billingEvent.findUnique({
+            where: { stripeEventId: event.id },
+        });
+        if (alreadyProcessed) {
+            console.log(`[STRIPE WEBHOOK] ⚠️ Evento duplicado ignorado: ${event.id}`);
+            return res.json({ received: true });
+        }
+
+        // Record the event before processing (idempotency)
+        await prisma.billingEvent.create({
+            data: {
+                stripeEventId: event.id,
+                type: event.type,
+            },
+        });
 
         switch (event.type) {
             case 'checkout.session.completed': {
@@ -40,6 +58,17 @@ export class WebhookController {
                 if ((invoice as any).subscription) {
                     await this.processSuccessfulSubscriptionPayment(invoice);
                 }
+                break;
+            }
+            case 'invoice.payment_failed': {
+                const invoice = event.data.object as Stripe.Invoice;
+                await this.handleInvoicePaymentFailed(invoice);
+                break;
+            }
+            case 'customer.subscription.created':
+            case 'customer.subscription.updated': {
+                const subscription = event.data.object as Stripe.Subscription;
+                await this.handleSubscriptionUpdated(subscription);
                 break;
             }
             case 'customer.subscription.deleted': {
@@ -115,8 +144,15 @@ export class WebhookController {
                 plan: targetPlan,
                 stripeCustomerId: session.customer as string,
                 stripeSubscriptionId: session.subscription as string,
+                subscriptionStatus: 'active',
                 isActive: true
             }
+        });
+
+        // Update BillingEvent with orgId for traceability
+        await prisma.billingEvent.updateMany({
+            where: { stripeEventId: { startsWith: 'evt_' }, organizationId: null, type: 'checkout.session.completed' },
+            data: { organizationId },
         });
 
         eventBus.emit('org.plan.upgraded', {
@@ -131,13 +167,48 @@ export class WebhookController {
         const subscriptionId = (invoice as any).subscription;
         console.log(`[STRIPE WEBHOOK] 🔄 Assinatura renovada: ${subscriptionId}`);
 
-        // Se quisermos estender a validade ou logar o pagamento recorrente
         if (typeof subscriptionId === 'string') {
             await prisma.organization.updateMany({
                 where: { stripeSubscriptionId: subscriptionId },
-                data: { isActive: true }
+                data: {
+                    isActive: true,
+                    lastInvoiceStatus: 'paid',
+                    subscriptionStatus: 'active',
+                },
             });
         }
+    }
+
+    private static async handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+        const subscriptionId = (invoice as any).subscription;
+        console.log(`[STRIPE WEBHOOK] ⚠️ Pagamento de fatura falhou para assinatura: ${subscriptionId}`);
+
+        if (typeof subscriptionId === 'string') {
+            await prisma.organization.updateMany({
+                where: { stripeSubscriptionId: subscriptionId },
+                data: {
+                    lastInvoiceStatus: 'open',
+                    subscriptionStatus: 'past_due',
+                },
+            });
+        }
+    }
+
+    private static async handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+        console.log(`[STRIPE WEBHOOK] 🔄 Assinatura atualizada: ${subscription.id} → ${subscription.status}`);
+
+        const priceId = subscription.items.data[0]?.price?.id;
+
+        await prisma.organization.updateMany({
+            where: { stripeSubscriptionId: subscription.id },
+            data: {
+                subscriptionStatus: subscription.status,
+                planPriceId: priceId || undefined,
+                currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+                cancelAtPeriodEnd: subscription.cancel_at_period_end,
+                isActive: subscription.status === 'active' || subscription.status === 'trialing',
+            },
+        });
     }
 
     private static async handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -148,6 +219,8 @@ export class WebhookController {
             where: { stripeSubscriptionId: subscription.id },
             data: {
                 plan: 'FREE',
+                subscriptionStatus: 'canceled',
+                cancelAtPeriodEnd: false,
                 isActive: true // Continua ativo mas no free
             }
         });

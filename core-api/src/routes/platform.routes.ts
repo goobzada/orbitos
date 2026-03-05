@@ -4,6 +4,7 @@ import { requireRole } from '../middlewares/role.middleware';
 import prisma from '../lib/prisma';
 
 import { PlatformService } from '../services/domain/platform.service';
+import { platformBillingController } from '../controllers/platform-billing.controller';
 
 const platformRoutes = Router();
 const platformService = new PlatformService();
@@ -39,7 +40,33 @@ platformRoutes.get('/organizations', async (req: Request, res: Response) => {
     }
 });
 
-// GET /platform/billing
+// ─── Platform Billing (Stripe revenue overview for SaaS owner) ──────────────
+
+// GET /platform/billing/overview
+platformRoutes.get('/billing/overview', (req, res) => platformBillingController.getOverview(req, res));
+
+// GET /platform/billing/subscriptions
+platformRoutes.get('/billing/subscriptions', (req, res) => platformBillingController.getSubscriptions(req, res));
+
+// GET /platform/billing/invoices
+platformRoutes.get('/billing/invoices', (req, res) => platformBillingController.getInvoices(req, res));
+
+// GET /platform/billing/payments
+platformRoutes.get('/billing/payments', (req, res) => platformBillingController.getPayments(req, res));
+
+// GET /platform/billing/tenants/:orgId
+platformRoutes.get('/billing/tenants/:orgId', (req, res) => platformBillingController.getTenantBilling(req, res));
+
+// POST /platform/billing/tenants/:orgId/plan
+platformRoutes.post('/billing/tenants/:orgId/plan', (req, res) => platformBillingController.changeTenantPlan(req, res));
+
+// POST /platform/billing/tenants/:orgId/cancel
+platformRoutes.post('/billing/tenants/:orgId/cancel', (req, res) => platformBillingController.cancelTenantSubscription(req, res));
+
+// POST /platform/billing/tenants/:orgId/pause
+platformRoutes.post('/billing/tenants/:orgId/pause', (req, res) => platformBillingController.pauseTenantSubscription(req, res));
+
+// GET /platform/billing (legacy – list payments from local DB)
 platformRoutes.get('/billing', async (req: Request, res: Response) => {
     try {
         const payments = await prisma.payment.findMany({
