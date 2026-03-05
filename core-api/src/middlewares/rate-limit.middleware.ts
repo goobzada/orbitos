@@ -41,6 +41,11 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         return next();
     }
 
+    // CORS preflight should never be throttled.
+    if (req.method === 'OPTIONS') {
+        return next();
+    }
+
     // OAuth endpoints can trigger multiple rapid redirects; avoid blocking login flow.
     if (req.path === '/auth/discord' || req.path === '/auth/callback' || req.path === '/auth/discord/callback') {
         return next();

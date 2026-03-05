@@ -3,8 +3,20 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+function normalizeCoreApiUrl(rawUrl?: string): string {
+    const fallback = 'http://localhost:4000';
+    const value = (rawUrl || fallback).trim().replace(/\/+$/, '');
+
+    // In production, dashboard and bot access API behind /api namespace.
+    if (/^https?:\/\//i.test(value) && !/\/api$/i.test(value) && process.env.NODE_ENV === 'production') {
+        return `${value}/api`;
+    }
+
+    return value;
+}
+
 const coreApi = axios.create({
-    baseURL: process.env.CORE_API_URL || 'http://localhost:4000',
+    baseURL: normalizeCoreApiUrl(process.env.CORE_API_URL),
     headers: {
         'Content-Type': 'application/json',
         // Internal service key (in production, replace with a proper service account JWT)
