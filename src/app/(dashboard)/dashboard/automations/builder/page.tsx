@@ -15,6 +15,7 @@ import {
 } from '@/lib/hooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useActiveOrg } from '@/lib/use-org-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -514,7 +515,7 @@ function AutomationBuilderDialog({
 // ─── Página Principal ─────────────────────────────────────
 export default function AutomationsBuilderPage() {
     const { data: orgs } = useOrganizations();
-    const activeOrgId = typeof window !== 'undefined' ? localStorage.getItem('activeOrganizationId') : null;
+    const { activeOrgId } = useActiveOrg();
     const currentOrg = orgs?.find(o => o.id === activeOrgId) || orgs?.[0];
     const organizationId = currentOrg?.id || '';
 

@@ -54,6 +54,8 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         '/servers',
         '/stats/',
         '/platform',
+        '/automations/triggers',
+        '/automations/actions',
     ];
     if (req.method === 'GET' && noLimitReadPrefixes.some((prefix) => req.path.startsWith(prefix))) {
         return next();
