@@ -121,7 +121,16 @@ function LoginPageContent() {
                                 /* FIX: Start OAuth via backend route to guarantee same client_id/redirect_uri
                                  * used later in /auth/discord/callback token exchange. */
                                 const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-                                const discordUrl = `${apiBase}/auth/discord`;
+                                const normalizedApiBase = apiBase.replace(/\/+$/, '');
+
+                                // Production safety net: if build env points to the same site root
+                                // (e.g. https://orbitup.io), route login through /api namespace.
+                                const sameOriginRoot =
+                                    typeof window !== 'undefined' && normalizedApiBase === window.location.origin;
+
+                                const discordUrl = sameOriginRoot
+                                    ? `${window.location.origin}/api/auth/discord`
+                                    : `${normalizedApiBase}/auth/discord`;
                                 setLoading('discord');
                                 // Reseta o estado caso a navegação falhe (ex: popup bloqueado)
                                 setTimeout(() => setLoading(null), 8000);

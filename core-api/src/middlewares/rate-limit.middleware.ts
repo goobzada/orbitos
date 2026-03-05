@@ -65,6 +65,14 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         return next();
     }
 
+    // Settings save (including language switch) uses PATCH /organizations/:organizationId.
+    // This is a low-frequency user action and should not fail due to bursty dashboard traffic.
+    const isOrganizationSettingsPatch =
+        req.method === 'PATCH' && /^\/organizations\/[^/]+$/.test(req.path);
+    if (isOrganizationSettingsPatch) {
+        return next();
+    }
+
     const usingFallback = !REDIS_ENABLED || !redisConnection || !isRedisConnected();
 
     // Log warning once when Redis is down (avoid spam)
