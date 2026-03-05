@@ -149,12 +149,6 @@ export class WebhookController {
             }
         });
 
-        // Update BillingEvent with orgId for traceability
-        await prisma.billingEvent.updateMany({
-            where: { stripeEventId: { startsWith: 'evt_' }, organizationId: null, type: 'checkout.session.completed' },
-            data: { organizationId },
-        });
-
         eventBus.emit('org.plan.upgraded', {
             organizationId,
             plan: targetPlan,

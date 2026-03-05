@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import Stripe from 'stripe';
 import prisma from '../lib/prisma';
+import type { Organization, User } from '@prisma/client';
+
+type OrgWithOwner = Organization & { owner: Pick<User, 'email' | 'username' | 'discordId'> | null };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
     apiVersion: '2025-01-27.acacia' as any,
@@ -293,7 +296,7 @@ export class PlatformBillingController {
                 include: {
                     owner: { select: { email: true, username: true, discordId: true } },
                 },
-            }) as any;
+            }) as OrgWithOwner | null;
 
             if (!org) return res.status(404).json({ error: 'Organização não encontrada.' });
 
