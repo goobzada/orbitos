@@ -28,8 +28,8 @@ const internalLimiter = REDIS_ENABLED && redisConnection ? new RateLimiterRedis(
 // In-memory fallback limiters (when Redis is down)
 // Degraded mode is more bursty in production dashboards; keep limits higher to
 // avoid blocking legitimate UI polling when Redis is unavailable.
-const fallbackGlobalLimiter = new InMemoryRateLimiter(500, 1);
-const fallbackOrgLimiter = new InMemoryRateLimiter(100, 1);
+const fallbackGlobalLimiter = new InMemoryRateLimiter(2000, 1);
+const fallbackOrgLimiter = new InMemoryRateLimiter(500, 1);
 const fallbackInternalLimiter = new InMemoryRateLimiter(500, 1);
 
 let redisDownWarningLogged = false;
@@ -126,17 +126,30 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
     }
 
     try {
-        // Behind Cloudflare, req.ip can collapse to edge IP without realip config.
-        // Prefer cf-connecting-ip so rate limiting stays per-user.
+        // Behind Cloudflare/proxy, many users can collapse to the same IP.
+        // Prefer auth token identity (when available), then fall back to real client IP.
         const cfIpHeader = req.headers['cf-connecting-ip'];
         const realClientIp = Array.isArray(cfIpHeader) ? cfIpHeader[0] : cfIpHeader;
-        const ip = realClientIp || req.ip || 'unknown';
+        const xffHeader = req.headers['x-forwarded-for'];
+        const xffRaw = Array.isArray(xffHeader) ? xffHeader[0] : xffHeader;
+        const forwardedIp = xffRaw?.split(',')?.[0]?.trim();
+
+        const authHeader = req.headers.authorization;
+        const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : '';
+        const cookies = req.cookies ?? {};
+        const cookieToken = cookies.token || cookies.orbitos_token || '';
+        const tokenIdentity = bearerToken || cookieToken;
+
+        // Keep key short while preserving enough entropy.
+        const identityKey = tokenIdentity
+            ? `tok:${String(tokenIdentity).slice(-24)}`
+            : `ip:${realClientIp || forwardedIp || req.ip || 'unknown'}`;
 
         // 1. Apply global rate limit per IP
         if (usingFallback) {
-            await fallbackGlobalLimiter.consume(ip);
+            await fallbackGlobalLimiter.consume(identityKey);
         } else if (globalLimiter) {
-            await globalLimiter.consume(ip);
+            await globalLimiter.consume(identityKey);
         }
 
         // 2. Internal routes - apply service rate limit
