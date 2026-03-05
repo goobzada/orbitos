@@ -310,24 +310,157 @@ export default function BillingPage() {
                 </div>
             )}
 
-            {/* Upsell Banner for Enterprise */}
-            {current.id !== 'enterprise' && current.id !== 'max' && (
-                <div className="relative overflow-hidden rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-6 shadow-lg shadow-amber-500/5">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Zap className="w-24 h-24 text-amber-500" />
-                    </div>
-                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="space-y-2 text-center md:text-left">
-                            <h3 className="text-xl font-bold text-amber-400">{t.billing.enterprise_upsell_title}</h3>
-                            <p className="text-sm text-muted-foreground max-w-xl">
-                                {t.billing.enterprise_upsell_desc}
-                            </p>
+            {/* Dynamic Upsell Banners based on current plan */}
+            {!isCanceling && (
+                <>
+                    {/* FREE → PRO Upsell */}
+                    {current.id === 'free' && (
+                        <div className="relative overflow-hidden rounded-2xl border border-violet-500/30 bg-gradient-to-r from-violet-500/10 via-violet-500/5 to-transparent p-6 shadow-lg shadow-violet-500/10">
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                <Sparkles className="w-24 h-24 text-violet-500" />
+                            </div>
+                            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                                <div className="space-y-3 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <Badge className="bg-violet-500/20 text-violet-300 border-violet-500/30">Mais Popular</Badge>
+                                        <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">Economia de 30%</Badge>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-violet-400">Desbloqueie Todo o Poder do OrbitOS Pro</h3>
+                                    <p className="text-sm text-muted-foreground max-w-2xl">
+                                        Servidores ilimitados, analytics avançado, webhooks Discord e suporte prioritário. 
+                                        <strong className="text-violet-300"> Economize R$ 12/mês vs planos concorrentes.</strong>
+                                    </p>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                            <span>Ilimitado</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                            <span>Analytics Pro</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                            <span>Webhooks</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                            <span>Suporte 24h</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-center gap-3 shrink-0">
+                                    <div className="text-center">
+                                        <div className="text-sm text-muted-foreground">Apenas</div>
+                                        <div className="text-4xl font-black text-violet-400">R$ 29</div>
+                                        <div className="text-sm text-muted-foreground">/mês</div>
+                                    </div>
+                                    <Button 
+                                        size="lg"
+                                        className="bg-violet-500 hover:bg-violet-600 text-white font-bold h-12 px-8 shadow-lg shadow-violet-500/20 transition-all hover:scale-105" 
+                                        onClick={() => handleUpgrade('pro')}
+                                    >
+                                        <Sparkles className="w-4 h-4 mr-2" />
+                                        Fazer Upgrade Agora
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
-                        <Button className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-12 px-8 shrink-0 shadow-lg shadow-amber-500/20 transition-all hover:scale-105" onClick={() => handleUpgrade('enterprise')}>
-                            {t.billing.enterprise_upsell_button}
-                        </Button>
-                    </div>
-                </div>
+                    )}
+
+                    {/* PRO → ENTERPRISE Upsell */}
+                    {current.id === 'pro' && (
+                        <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-6 shadow-lg shadow-amber-500/10">
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                <Building2 className="w-24 h-24 text-amber-500" />
+                            </div>
+                            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                                <div className="space-y-3 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30">🏆 Para Grandes Operações</Badge>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-amber-400">{t.billing.enterprise_upsell_title}</h3>
+                                    <p className="text-sm text-muted-foreground max-w-2xl">
+                                        {t.billing.enterprise_upsell_desc}
+                                    </p>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-2">
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                            <span>SLA 99.9%</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                            <span>Gerente Dedicado</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                            <span>On-Premise</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-center gap-3 shrink-0">
+                                    <div className="text-center">
+                                        <div className="text-sm text-muted-foreground">A partir de</div>
+                                        <div className="text-4xl font-black text-amber-400">R$ 99</div>
+                                        <div className="text-sm text-muted-foreground">/mês</div>
+                                    </div>
+                                    <Button 
+                                        size="lg"
+                                        className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-12 px-8 shadow-lg shadow-amber-500/20 transition-all hover:scale-105" 
+                                        onClick={() => handleUpgrade('enterprise')}
+                                    >
+                                        <Building2 className="w-4 h-4 mr-2" />
+                                        {t.billing.enterprise_upsell_button}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ENTERPRISE → MAX Upsell */}
+                    {current.id === 'enterprise' && (
+                        <div className="relative overflow-hidden rounded-2xl border border-rose-500/30 bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent p-6 shadow-lg shadow-rose-500/10">
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                <Sparkles className="w-24 h-24 text-rose-500" />
+                            </div>
+                            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                                <div className="space-y-3 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <Badge className="bg-rose-500/20 text-rose-300 border-rose-500/30">🔥 Melhor Custo-Benefício</Badge>
+                                        <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">Economize R$ 888/ano</Badge>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-rose-400">Upgrade para MAX: Plano Anual com Desconto</h3>
+                                    <p className="text-sm text-muted-foreground max-w-2xl">
+                                        Tudo do Enterprise + bot engine dedicado, integrações de IA e suporte VIP 24/7. 
+                                        <strong className="text-rose-300"> Economize 25% pagando anualmente.</strong>
+                                    </p>
+                                    <div className="flex items-center gap-4 pt-2 text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-muted-foreground line-through">R$ 99/mês × 12</div>
+                                            <ArrowUpRight className="w-4 h-4 text-rose-400" />
+                                        </div>
+                                        <div className="font-bold text-rose-400">R$ 299/ano (R$ 24.92/mês)</div>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-center gap-3 shrink-0">
+                                    <div className="text-center">
+                                        <div className="text-sm text-muted-foreground">Pagamento anual</div>
+                                        <div className="text-4xl font-black text-rose-400">R$ 299</div>
+                                        <div className="text-xs text-emerald-400 font-semibold">Economize R$ 888</div>
+                                    </div>
+                                    <Button 
+                                        size="lg"
+                                        className="bg-rose-500 hover:bg-rose-600 text-white font-bold h-12 px-8 shadow-lg shadow-rose-500/20 transition-all hover:scale-105" 
+                                        onClick={() => handleUpgrade('max')}
+                                    >
+                                        <Sparkles className="w-4 h-4 mr-2" />
+                                        Upgrade para MAX
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
 
             {/* Current plan summary */}
@@ -495,6 +628,202 @@ export default function BillingPage() {
                     })}
                 </div>
             </div>
+
+            {/* Feature Comparison Table - Only show if not on MAX plan */}
+            {current.id !== 'max' && (
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold">Comparação de Recursos</h2>
+                        <Badge variant="outline" className="text-xs">
+                            Encontre o plano ideal para você
+                        </Badge>
+                    </div>
+                    <Card>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[280px]">Recurso</TableHead>
+                                            <TableHead className="text-center">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <span className="font-semibold">Free</span>
+                                                    <span className="text-xs text-muted-foreground">R$ 0</span>
+                                                </div>
+                                            </TableHead>
+                                            <TableHead className="text-center bg-violet-500/5">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <span className="font-semibold text-violet-400">Pro</span>
+                                                    <span className="text-xs text-muted-foreground">R$ 29/mês</span>
+                                                </div>
+                                            </TableHead>
+                                            <TableHead className="text-center bg-amber-500/5">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <span className="font-semibold text-amber-400">Enterprise</span>
+                                                    <span className="text-xs text-muted-foreground">R$ 99/mês</span>
+                                                </div>
+                                            </TableHead>
+                                            <TableHead className="text-center bg-rose-500/5">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <span className="font-semibold text-rose-400">Max</span>
+                                                    <span className="text-xs text-muted-foreground">R$ 299/ano</span>
+                                                </div>
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow>
+                                            <TableCell className="font-medium">Servidores Discord</TableCell>
+                                            <TableCell className="text-center text-muted-foreground">Até 3</TableCell>
+                                            <TableCell className="text-center bg-violet-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-violet-400 mx-auto" />
+                                            </TableCell>
+                                            <TableCell className="text-center bg-amber-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-amber-400 mx-auto" />
+                                            </TableCell>
+                                            <TableCell className="text-center bg-rose-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-rose-400 mx-auto" />
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="font-medium">Tickets/mês</TableCell>
+                                            <TableCell className="text-center text-muted-foreground">100</TableCell>
+                                            <TableCell className="text-center bg-violet-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-violet-400 mx-auto" />
+                                            </TableCell>
+                                            <TableCell className="text-center bg-amber-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-amber-400 mx-auto" />
+                                            </TableCell>
+                                            <TableCell className="text-center bg-rose-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-rose-400 mx-auto" />
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="font-medium">Analytics Avançado</TableCell>
+                                            <TableCell className="text-center">—</TableCell>
+                                            <TableCell className="text-center bg-violet-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-violet-400 mx-auto" />
+                                            </TableCell>
+                                            <TableCell className="text-center bg-amber-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-amber-400 mx-auto" />
+                                            </TableCell>
+                                            <TableCell className="text-center bg-rose-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-rose-400 mx-auto" />
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="font-medium">Webhooks Discord</TableCell>
+                                            <TableCell className="text-center">—</TableCell>
+                                            <TableCell className="text-center bg-violet-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-violet-400 mx-auto" />
+                                            </TableCell>
+                                            <TableCell className="text-center bg-amber-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-amber-400 mx-auto" />
+                                            </TableCell>
+                                            <TableCell className="text-center bg-rose-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-rose-400 mx-auto" />
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="font-medium">SLA Garantido</TableCell>
+                                            <TableCell className="text-center">—</TableCell>
+                                            <TableCell className="text-center bg-violet-500/5">—</TableCell>
+                                            <TableCell className="text-center bg-amber-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-amber-400 mx-auto" />
+                                            </TableCell>
+                                            <TableCell className="text-center bg-rose-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-rose-400 mx-auto" />
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="font-medium">Gerente de Conta Dedicado</TableCell>
+                                            <TableCell className="text-center">—</TableCell>
+                                            <TableCell className="text-center bg-violet-500/5">—</TableCell>
+                                            <TableCell className="text-center bg-amber-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-amber-400 mx-auto" />
+                                            </TableCell>
+                                            <TableCell className="text-center bg-rose-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-rose-400 mx-auto" />
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="font-medium">Deploy On-Premise</TableCell>
+                                            <TableCell className="text-center">—</TableCell>
+                                            <TableCell className="text-center bg-violet-500/5">—</TableCell>
+                                            <TableCell className="text-center bg-amber-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-amber-400 mx-auto" />
+                                            </TableCell>
+                                            <TableCell className="text-center bg-rose-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-rose-400 mx-auto" />
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="font-medium">Bot Engine Dedicado</TableCell>
+                                            <TableCell className="text-center">—</TableCell>
+                                            <TableCell className="text-center bg-violet-500/5">—</TableCell>
+                                            <TableCell className="text-center bg-amber-500/5">—</TableCell>
+                                            <TableCell className="text-center bg-rose-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-rose-400 mx-auto" />
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="font-medium">Integrações de IA</TableCell>
+                                            <TableCell className="text-center">—</TableCell>
+                                            <TableCell className="text-center bg-violet-500/5">—</TableCell>
+                                            <TableCell className="text-center bg-amber-500/5">—</TableCell>
+                                            <TableCell className="text-center bg-rose-500/5">
+                                                <CheckCircle2 className="w-4 h-4 text-rose-400 mx-auto" />
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow className="border-t-2">
+                                            <TableCell className="font-semibold">Suporte</TableCell>
+                                            <TableCell className="text-center text-xs text-muted-foreground">E-mail</TableCell>
+                                            <TableCell className="text-center text-xs bg-violet-500/5 font-medium text-violet-400">Prioritário</TableCell>
+                                            <TableCell className="text-center text-xs bg-amber-500/5 font-medium text-amber-400">24/7</TableCell>
+                                            <TableCell className="text-center text-xs bg-rose-500/5 font-medium text-rose-400">VIP 24/7</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell></TableCell>
+                                            <TableCell className="text-center">
+                                                {current.id === 'free' ? (
+                                                    <Badge variant="outline" className="text-xs">Plano Atual</Badge>
+                                                ) : null}
+                                            </TableCell>
+                                            <TableCell className="text-center bg-violet-500/5">
+                                                {current.id === 'pro' ? (
+                                                    <Badge className="bg-violet-500/20 text-violet-300 border-violet-500/30 text-xs">Plano Atual</Badge>
+                                                ) : current.id === 'free' ? (
+                                                    <Button size="sm" className="bg-violet-500 hover:bg-violet-600 text-white h-7 text-xs" onClick={() => handleUpgrade('pro')}>
+                                                        Fazer Upgrade
+                                                    </Button>
+                                                ) : null}
+                                            </TableCell>
+                                            <TableCell className="text-center bg-amber-500/5">
+                                                {current.id === 'enterprise' ? (
+                                                    <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-xs">Plano Atual</Badge>
+                                                ) : current.id !== 'max' ? (
+                                                    <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-black h-7 text-xs font-semibold" onClick={() => handleUpgrade('enterprise')}>
+                                                        Fazer Upgrade
+                                                    </Button>
+                                                ) : null}
+                                            </TableCell>
+                                            <TableCell className="text-center bg-rose-500/5">
+                                                {current.id === 'max' ? (
+                                                    <Badge className="bg-rose-500/20 text-rose-300 border-rose-500/30 text-xs">Plano Atual</Badge>
+                                                ) : (
+                                                    <Button size="sm" className="bg-rose-500 hover:bg-rose-600 text-white h-7 text-xs" onClick={() => handleUpgrade('max')}>
+                                                        Fazer Upgrade
+                                                    </Button>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
 
             {/* Invoice history */}
             <div>
