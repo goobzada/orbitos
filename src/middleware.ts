@@ -67,7 +67,9 @@ export async function middleware(request: NextRequest) {
     }
 
     // Já logado e tentando acessar /login → redireciona para dashboard correto
-    if (isLogin) {
+    // MAS não redireciona durante o callback OAuth (o callback precisa processar o code)
+    const isCallback = pathname.startsWith('/login/callback');
+    if (isLogin && !isCallback) {
         const dest = role === 'SUPER_ADMIN' ? '/platform' : '/dashboard';
         return NextResponse.redirect(new URL(dest, request.url));
     }

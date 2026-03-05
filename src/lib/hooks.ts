@@ -6,12 +6,20 @@ import { Server, Ticket, User, StaffMember, Organization } from '@/types';
 // ─── Auth ──────────────────────────────────────────────
 
 export const useMe = () => {
+    // Só dispara a requisição se houver um token disponível no client.
+    // Isso evita 401s desnecessários que disparam o fluxo de logout durante
+    // o carregamento inicial antes do cookie/localStorage estar pronto.
+    const hasToken = typeof window !== 'undefined'
+        ? !!(localStorage.getItem('token') || document.cookie.includes('token='))
+        : false;
+
     return useQuery<User>({
         queryKey: ['me'],
         queryFn: async () => {
             const { data } = await api.get('/auth/me');
             return data;
         },
+        enabled: hasToken,
         retry: false,          // não retenta: se der 401, é sessão inválida mesmo
         staleTime: 5 * 60_000, // considera fresh por 5 min
     });

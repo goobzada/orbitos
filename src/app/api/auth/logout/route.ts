@@ -4,14 +4,13 @@ const COOKIE_NAMES = ['token', 'orbitos_token', 'orbitos_current_org', 'orbitos_
 
 function clearCookies(response: NextResponse) {
     COOKIE_NAMES.forEach(name => {
+        response.cookies.delete(name);
         response.cookies.set({
             name: name,
             value: '',
-            httpOnly: false, // Foi setado no via document.cookie, então httpOnly: false para garantir match (ou true se fosse HttpOnly original)
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
             path: '/',
             maxAge: 0,
+            expires: new Date(0),
         });
     });
 }
@@ -27,14 +26,14 @@ function getPublicOrigin(request: NextRequest): string {
     try {
         return new URL(request.url).origin;
     } catch {
-        return 'http://localhost:3001';
+        return 'http://localhost:3000';
     }
 }
 
 // GET /api/auth/logout — limpa cookie E redireciona para /login
 export async function GET(request: NextRequest) {
     const origin = getPublicOrigin(request);
-    const response = NextResponse.redirect(`${origin}/login`);
+    const response = NextResponse.redirect(`${origin}/login?clear=1`);
     clearCookies(response);
     return response;
 }

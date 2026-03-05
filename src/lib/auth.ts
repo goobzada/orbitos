@@ -88,17 +88,13 @@ export const logout = async (opts?: { redirect?: boolean }) => {
         clearTokenStorage(); // limpa client-side imediatamente
 
         if (opts?.redirect !== false && typeof window !== 'undefined') {
-            // Fix definitivo: Chama POST para limpar cookies no browser (com credenciais) e redireciona depois
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                credentials: 'include', // forca o envio dos cookies pro endpoint limpar
-            });
-            window.location.href = '/login';
+            // Fix definitivo: Redireciona diretamente para o endpoint de logout GET
+            // Isso garante que o navegador e o SSR destruirão de fato os cookies de sessão de forma síncrona.
+            window.location.href = '/api/auth/logout';
         }
     } catch (e) {
-        // Fallback: se o POST falhar, redirecionamos para o GET que também limpa e redireciona
         if (opts?.redirect !== false && typeof window !== 'undefined') {
-            window.location.replace('/api/auth/logout');
+            window.location.href = '/login?clear=1';
         }
     } finally {
         setTimeout(() => { isLoggingOut = false; }, 1500);

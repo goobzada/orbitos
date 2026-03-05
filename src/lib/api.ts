@@ -132,6 +132,9 @@ api.interceptors.response.use(
 
             // Limpa tokens e redireciona para /login (uma única vez)
             logout({ redirect: true });
+
+            // Reseta o guard após 3s para não bloquear permanentemente
+            setTimeout(() => { isHandlingAuthError = false; }, 3000);
         }
 
         return Promise.reject(error);
