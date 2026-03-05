@@ -580,7 +580,7 @@ export const useStoreSettings = (organizationId: string) => {
     return useQuery<any>({
         queryKey: ['store-settings', organizationId],
         queryFn: async () => {
-            const { data } = await api.get(`/store/settings?organizationId=${organizationId}`);
+            const { data } = await api.get(`/store/${organizationId}/settings`);
             return data;
         },
         enabled: !!organizationId,
@@ -630,7 +630,7 @@ export const useUpdateStoreSettings = (organizationId: string) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (data: any) => {
-            const { data: res } = await api.put(`/store/settings?organizationId=${organizationId}`, data);
+            const { data: res } = await api.put(`/store/${organizationId}/settings`, data);
             return res;
         },
         onSuccess: () => {
@@ -643,7 +643,7 @@ export const useStoreProducts = (organizationId: string) => {
     return useQuery<any[]>({
         queryKey: ['store-products', organizationId],
         queryFn: async () => {
-            const { data } = await api.get(`/store/products?organizationId=${organizationId}`);
+            const { data } = await api.get(`/store/${organizationId}/products`);
             return data;
         },
         enabled: !!organizationId,
@@ -654,7 +654,7 @@ export const useCreateStoreProduct = (organizationId: string) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (data: any) => {
-            const { data: res } = await api.post(`/store/products?organizationId=${organizationId}`, data);
+            const { data: res } = await api.post(`/store/${organizationId}/products`, data);
             return res;
         },
         onSuccess: () => {
@@ -667,7 +667,7 @@ export const useUpdateStoreProduct = (organizationId: string) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ productId, data }: { productId: string, data: any }) => {
-            const { data: res } = await api.put(`/store/products/${productId}?organizationId=${organizationId}`, data);
+            const { data: res } = await api.put(`/store/${organizationId}/products/${productId}`, data);
             return res;
         },
         onSuccess: () => {
@@ -680,7 +680,7 @@ export const useDeleteStoreProduct = (organizationId: string) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (productId: string) => {
-            const { data: res } = await api.delete(`/store/products/${productId}?organizationId=${organizationId}`);
+            const { data: res } = await api.delete(`/store/${organizationId}/products/${productId}`);
             return res;
         },
         onSuccess: () => {
@@ -693,7 +693,7 @@ export const useStoreOrders = (organizationId: string) => {
     return useQuery<any[]>({
         queryKey: ['store-orders', organizationId],
         queryFn: async () => {
-            const { data } = await api.get(`/store/orders?organizationId=${organizationId}`);
+            const { data } = await api.get(`/store/${organizationId}/orders`);
             return data;
         },
         enabled: !!organizationId,

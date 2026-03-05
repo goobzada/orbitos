@@ -5,6 +5,7 @@ import { ExternalLink, BookOpen, Code2, Shield, Zap, Globe, Key, Copy, CheckCirc
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useTranslation } from "@/components/providers/language-provider";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -55,6 +56,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export default function ApiDocsPage() {
+    const { t } = useTranslation();
     const [activeCategory, setActiveCategory] = useState('Todos');
 
     const categories = ['Todos', ...Array.from(new Set(quickRefs.map(r => r.category)))];
@@ -66,10 +68,10 @@ export default function ApiDocsPage() {
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
-                        API Reference
+                        {t.docs.title}
                     </h1>
                     <p className="text-muted-foreground mt-1.5 text-sm">
-                        Documentação completa dos endpoints disponíveis para integração com o OrbitOS.
+                        {t.docs.subtitle}
                     </p>
                 </div>
                 <div className="flex gap-3">
@@ -96,13 +98,13 @@ export default function ApiDocsPage() {
                         <div className="h-9 w-9 rounded-lg bg-violet-500/10 flex items-center justify-center">
                             <Globe className="h-5 w-5 text-violet-400" />
                         </div>
-                        <h3 className="font-bold">Base URL</h3>
+                        <h3 className="font-bold">{t.docs.base_url}</h3>
                     </div>
                     <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-2">
                         <code className="text-xs text-violet-300 flex-1 truncate">{API_BASE}</code>
                         <CopyButton text={API_BASE} />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">Todas as requisições são relativas a esta URL.</p>
+                    <p className="text-xs text-muted-foreground mt-2">{t.docs.base_url_desc}</p>
                 </div>
 
                 <div className="bg-card border border-border/50 rounded-2xl p-5">
@@ -110,13 +112,13 @@ export default function ApiDocsPage() {
                         <div className="h-9 w-9 rounded-lg bg-cyan-500/10 flex items-center justify-center">
                             <Key className="h-5 w-5 text-cyan-400" />
                         </div>
-                        <h3 className="font-bold">Autenticação</h3>
+                        <h3 className="font-bold">{t.docs.auth}</h3>
                     </div>
                     <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-2">
                         <code className="text-xs text-cyan-300 flex-1 truncate">Authorization: Bearer {'<token>'}</code>
                         <CopyButton text="Authorization: Bearer <token>" />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">Token JWT obtido via login Discord OAuth2.</p>
+                    <p className="text-xs text-muted-foreground mt-2">{t.docs.auth_desc}</p>
                 </div>
 
                 <div className="bg-card border border-border/50 rounded-2xl p-5">
@@ -124,11 +126,11 @@ export default function ApiDocsPage() {
                         <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                             <Shield className="h-5 w-5 text-emerald-400" />
                         </div>
-                        <h3 className="font-bold">Rate Limits</h3>
+                        <h3 className="font-bold">{t.docs.rate_limits}</h3>
                     </div>
                     <div className="space-y-1.5 mt-1">
                         <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground">Global (por IP)</span>
+                            <span className="text-muted-foreground">{t.docs.rate_limit_global}</span>
                             <span className="text-emerald-400 font-mono">100 req/15min</span>
                         </div>
                         <div className="flex justify-between text-xs">
@@ -143,7 +145,7 @@ export default function ApiDocsPage() {
             <div className="bg-gradient-to-r from-violet-950/40 to-slate-950/30 border border-violet-500/20 rounded-2xl p-6">
                 <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
                     <Zap className="h-5 w-5 text-violet-400" />
-                    Limites por Plano
+                    {t.docs.plan_limits}
                 </h2>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -166,9 +168,9 @@ export default function ApiDocsPage() {
                                     <td className="py-2.5 pr-6 text-muted-foreground text-xs">{label}</td>
                                     {values.map((v, i) => (
                                         <td key={i} className={`py-2.5 pr-6 font-mono font-bold text-xs ${v === '∞' ? 'text-emerald-400' :
-                                                i === 0 ? 'text-slate-400' :
-                                                    i === 1 ? 'text-violet-400' :
-                                                        i === 2 ? 'text-amber-400' : 'text-rose-400'
+                                            i === 0 ? 'text-slate-400' :
+                                                i === 1 ? 'text-violet-400' :
+                                                    i === 2 ? 'text-amber-400' : 'text-rose-400'
                                             }`}>{v}</td>
                                     ))}
                                 </tr>
@@ -181,15 +183,15 @@ export default function ApiDocsPage() {
             {/* Quick Reference */}
             <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <h2 className="font-bold text-lg">Referência Rápida de Endpoints</h2>
+                    <h2 className="font-bold text-lg">{t.docs.quick_ref}</h2>
                     <div className="flex flex-wrap gap-2">
                         {categories.map(cat => (
                             <button
                                 key={cat}
                                 onClick={() => setActiveCategory(cat)}
                                 className={`px-3 py-1 rounded-full text-xs font-medium transition-all border ${activeCategory === cat
-                                        ? 'bg-violet-500/10 border-violet-500/50 text-violet-400'
-                                        : 'bg-card border-border/50 text-muted-foreground hover:border-border'
+                                    ? 'bg-violet-500/10 border-violet-500/50 text-violet-400'
+                                    : 'bg-card border-border/50 text-muted-foreground hover:border-border'
                                     }`}
                             >
                                 {cat}
@@ -238,7 +240,7 @@ export default function ApiDocsPage() {
 
             {/* Exemplo de uso */}
             <div className="space-y-4">
-                <h2 className="font-bold text-lg">Exemplo de Uso</h2>
+                <h2 className="font-bold text-lg">{t.docs.usage_example}</h2>
                 <div className="bg-[#0f0f13] border border-border/50 rounded-2xl overflow-hidden">
                     <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-secondary/10">
                         <div className="flex gap-1.5">
@@ -287,8 +289,8 @@ curl -X POST "${API_BASE}/automations/ORG_ID" \\
                         <BookOpen className="h-6 w-6 text-violet-400" />
                     </div>
                     <div className="flex-1">
-                        <p className="font-bold group-hover:text-violet-300 transition-colors">Swagger UI Interativo</p>
-                        <p className="text-xs text-muted-foreground">Teste os endpoints diretamente no browser</p>
+                        <p className="font-bold group-hover:text-violet-300 transition-colors">{t.docs.interactive_swagger}</p>
+                        <p className="text-xs text-muted-foreground">{t.docs.interactive_swagger_desc}</p>
                     </div>
                     <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
                 </a>
@@ -303,8 +305,8 @@ curl -X POST "${API_BASE}/automations/ORG_ID" \\
                         <Code2 className="h-6 w-6 text-cyan-400" />
                     </div>
                     <div className="flex-1">
-                        <p className="font-bold group-hover:text-cyan-300 transition-colors">OpenAPI JSON Spec</p>
-                        <p className="text-xs text-muted-foreground">Importe no Postman, Insomnia ou seu SDK favorito</p>
+                        <p className="font-bold group-hover:text-cyan-300 transition-colors">{t.docs.openapi_spec}</p>
+                        <p className="text-xs text-muted-foreground">{t.docs.openapi_spec_desc}</p>
                     </div>
                     <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
                 </a>

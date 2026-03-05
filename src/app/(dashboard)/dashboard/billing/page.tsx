@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useOrganizations, useBillingStatus, useCheckoutSession, useCustomerPortal } from "@/lib/hooks";
 import { toast } from "sonner";
+import { useTranslation } from "@/components/providers/language-provider";
 
 const plans = [
     {
@@ -106,9 +107,43 @@ const invoices = [
 ];
 
 export default function BillingPage() {
+    const { t } = useTranslation();
     const { data: organizations } = useOrganizations();
     const activeOrganizationId = typeof window !== 'undefined' ? localStorage.getItem('activeOrganizationId') : null;
     const activeOrg = organizations?.find(org => org.id === activeOrganizationId) || organizations?.[0];
+
+    // Local plans array with translations
+    const localPlans = [
+        {
+            ...plans[0],
+            name: t.billing.plans.free.name,
+            description: t.billing.plans.free.description,
+            features: t.billing.plans.free.features,
+            cta: t.billing.active_plan
+        },
+        {
+            ...plans[1],
+            name: t.billing.plans.pro.name,
+            description: t.billing.plans.pro.description,
+            features: t.billing.plans.pro.features,
+            cta: t.billing.upgrade_cta
+        },
+        {
+            ...plans[2],
+            name: t.billing.plans.enterprise.name,
+            description: t.billing.plans.enterprise.description,
+            features: t.billing.plans.enterprise.features,
+            cta: t.billing.upgrade_cta
+        },
+        {
+            ...plans[3],
+            name: t.billing.plans.max.name,
+            description: t.billing.plans.max.description,
+            features: t.billing.plans.max.features,
+            cta: t.billing.upgrade_cta
+        }
+    ];
+
 
     // Buscar status de faturamento real
     const { data: billingStatus, isLoading: isBillingLoading } = useBillingStatus(activeOrg?.id || null);
@@ -118,7 +153,7 @@ export default function BillingPage() {
     // Normalize plan: handles FREE, PRO, ENTERPRISE, MAX (case-insensitive)
     const rawPlan = (billingStatus?.plan || activeOrg?.plan || 'FREE').toLowerCase();
     const currentPlanId = rawPlan;
-    const current = plans.find(p => p.id === currentPlanId) || plans[0];
+    const current = localPlans.find(p => p.id === currentPlanId) || localPlans[0];
 
     const usageServers = billingStatus?.usage?.servers ?? (activeOrg as any)?._count?.servers ?? 0;
     const usageTickets = billingStatus?.usage?.tickets ?? 0;
@@ -162,16 +197,16 @@ export default function BillingPage() {
     };
 
     if (isBillingLoading) {
-        return <div className="p-8 text-center text-muted-foreground animate-pulse">Carregando informações de faturamento...</div>;
+        return <div className="p-8 text-center text-muted-foreground animate-pulse">{t.common.loading}</div>;
     }
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Planos & Billing</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t.billing.title}</h1>
                 <p className="text-muted-foreground mt-1">
-                    Gerencie sua assinatura, veja o uso atual e histórico de faturas.
+                    {t.store.inventory_desc}
                 </p>
             </div>
 
@@ -182,10 +217,10 @@ export default function BillingPage() {
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <current.icon className={`w-5 h-5 ${current.color}`} />
-                                Plano {current.name} — Ativo
+                                {t.billing.current_plan} {current.name} — {t.billing.active_plan}
                             </CardTitle>
                             <CardDescription>
-                                {current.id === 'free' ? 'Plano gratuito permanente' : 'Renova automaticamente no próximo ciclo'}
+                                {current.id === 'free' ? t.billing.plans.free.description : t.billing.manage_subscription}
                             </CardDescription>
                         </div>
                         <Badge className={`bg-${current.id === 'pro' ? 'violet' : current.id === 'enterprise' ? 'amber' : 'slate'}-500/20 text-${current.id === 'pro' ? 'violet' : current.id === 'enterprise' ? 'amber' : 'slate'}-300 border-${current.id === 'pro' ? 'violet' : current.id === 'enterprise' ? 'amber' : 'slate'}-500/30`}>
@@ -219,7 +254,7 @@ export default function BillingPage() {
                             disabled={customerPortalMutation.isPending || current.id === 'free'}
                         >
                             <CreditCard className="w-4 h-4" />
-                            Atualizar Cartão
+                            {t.billing.update_card}
                         </Button>
                         <Button
                             variant="ghost"
@@ -228,7 +263,7 @@ export default function BillingPage() {
                             onClick={handleCustomerPortal}
                             disabled={customerPortalMutation.isPending || current.id === 'free'}
                         >
-                            Gerenciar Assinatura
+                            {t.billing.manage_subscription}
                         </Button>
                     </CardFooter>
                 </Card>
@@ -256,9 +291,9 @@ export default function BillingPage() {
 
             {/* Plan cards */}
             <div>
-                <h2 className="text-xl font-bold mb-4">Escolha seu Plano</h2>
+                <h2 className="text-xl font-bold mb-4">{t.billing.choose_plan}</h2>
                 <div className="grid gap-4 md:grid-cols-3">
-                    {plans.map((plan) => {
+                    {localPlans.map((plan) => {
                         const isCurrentPlan = plan.id === current.id;
                         return (
                             <Card
@@ -282,14 +317,14 @@ export default function BillingPage() {
                                 <CardContent className="flex-1 space-y-4">
                                     <div className="flex items-end gap-1">
                                         <span className="text-4xl font-extrabold">
-                                            {plan.price === 0 ? "Grátis" : `R$\u00A0${plan.price}`}
+                                            {plan.price === 0 ? t.billing.plans.free.name : `R$\u00A0${plan.price}`}
                                         </span>
                                         {plan.price > 0 && (
                                             <span className="text-muted-foreground text-sm mb-1">/mês</span>
                                         )}
                                     </div>
                                     <ul className="space-y-2">
-                                        {plan.features.map((f) => (
+                                        {plan.features.map((f: string) => (
                                             <li key={f} className="flex items-start gap-2 text-sm">
                                                 <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
                                                 <span className="text-muted-foreground">{f}</span>
@@ -307,7 +342,7 @@ export default function BillingPage() {
                                         {isCurrentPlan ? (
                                             <span className="flex items-center gap-2">
                                                 <CheckCircle2 className="w-4 h-4" />
-                                                Plano Atual
+                                                {t.billing.active_plan}
                                             </span>
                                         ) : checkoutMutation.isPending && checkoutMutation.variables?.planId === plan.id.toUpperCase() ? (
                                             "Redirecionando..."
@@ -327,7 +362,7 @@ export default function BillingPage() {
 
             {/* Invoice history */}
             <div>
-                <h2 className="text-xl font-bold mb-4">Histórico de Faturas</h2>
+                <h2 className="text-xl font-bold mb-4">{t.billing.invoice_history}</h2>
                 <Card>
                     <CardContent className="p-0">
                         <Table>

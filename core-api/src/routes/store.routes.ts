@@ -19,7 +19,7 @@ router.put('/:organizationId/settings', StoreController.updateSettings);
 router.get('/:organizationId/products', StoreController.listProducts);
 router.post('/:organizationId/products', checkPlanLimit('maxProducts'), StoreController.createProduct);
 router.put('/:organizationId/products/:id', StoreController.updateProduct);
-// router.delete('/:organizationId/products/:id', StoreController.deleteProduct);
+router.delete('/:organizationId/products/:id', StoreController.deleteProduct);
 
 // --- ORDERS ---
 router.get('/:organizationId/orders', StoreController.listOrders);

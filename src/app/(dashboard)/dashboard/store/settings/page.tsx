@@ -10,8 +10,10 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from 'sonner';
 import { useActiveOrg } from "@/lib/use-org-store";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "@/components/providers/language-provider";
 
 export default function StoreSettingsPage() {
+    const { t } = useTranslation();
     const { activeOrgId } = useActiveOrg();
     const { data: orgs } = useOrganizations();
     const org = orgs?.find(o => o.id === activeOrgId);
@@ -45,9 +47,9 @@ export default function StoreSettingsPage() {
     const handleSave = async () => {
         try {
             await updateSettings.mutateAsync(formData);
-            toast.success('Configurações da loja salvas com sucesso!');
+            toast.success(t.common.success);
         } catch (err) {
-            toast.error('Erro ao salvar configurações.');
+            toast.error(t.common.error);
         }
     };
 
@@ -56,17 +58,17 @@ export default function StoreSettingsPage() {
             <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 w-24 h-24 rounded-3xl flex items-center justify-center mb-6 border border-amber-500/30 shadow-2xl shadow-amber-500/10">
                 <ShieldCheck className="w-12 h-12 text-amber-500" />
             </div>
-            <h2 className="text-3xl font-black mb-3">Recurso Exclusivo</h2>
+            <h2 className="text-3xl font-black mb-3">{t.store.exclusive_feature}</h2>
             <p className="max-w-md text-muted-foreground mb-8 text-lg leading-relaxed">
-                A ativação da Store Engine de alta performance está disponível apenas para membros <span className="text-violet-500 font-bold uppercase tracking-widest text-sm">Pro</span> ou <span className="text-amber-500 font-bold uppercase tracking-widest text-sm">Max</span>.
+                {t.store.exclusive_desc}
             </p>
             <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-black h-14 px-10 rounded-2xl shadow-xl shadow-violet-500/20 transition-all hover:scale-105 active:scale-95">
-                DAR UM UPGRADE AGORA
+                {t.billing.upgrade_cta}
             </Button>
         </div>
     );
 
-    if (isLoading) return <div className="max-w-4xl mx-auto p-12 text-center text-muted-foreground">Carregando configurações...</div>;
+    if (isLoading) return <div className="max-w-4xl mx-auto p-12 text-center text-muted-foreground">{t.common.loading}</div>;
 
     return (
         <div className="max-w-5xl mx-auto space-y-10 fade-in pb-20 relative">
@@ -74,11 +76,11 @@ export default function StoreSettingsPage() {
                 <div>
                     <div className="flex items-center gap-2 text-violet-500 font-semibold text-xs uppercase tracking-widest mb-2">
                         <Cog className="w-4 h-4" />
-                        Preferências do Sistema
+                        OrbitOS Settings
                     </div>
-                    <h1 className="text-4xl font-black tracking-tight">Configurações da Loja</h1>
+                    <h1 className="text-4xl font-black tracking-tight">{t.store.settings.title}</h1>
                     <p className="text-muted-foreground mt-2 max-w-xl">
-                        Gerencie gateways de pagamento, visibilidade pública e comportamento do checkout.
+                        {t.store.settings.subtitle}
                     </p>
                 </div>
                 <Button
@@ -87,7 +89,7 @@ export default function StoreSettingsPage() {
                     className="bg-violet-600 hover:bg-violet-700 text-white gap-2 font-bold h-12 px-8 rounded-xl shadow-lg shadow-violet-500/25"
                 >
                     {updateSettings.isPending ? <Zap className="w-4 h-4 animate-bounce" /> : <Save className="w-4 h-4" />}
-                    {updateSettings.isPending ? 'Salvando...' : 'Salvar Configurações'}
+                    {updateSettings.isPending ? t.common.loading : t.common.save}
                 </Button>
             </div>
 
@@ -99,8 +101,8 @@ export default function StoreSettingsPage() {
                     <div className="p-8 rounded-[2rem] border border-border bg-card/40 backdrop-blur-sm shadow-sm space-y-8">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
-                                <h3 className="text-xl font-bold">Estado da Store Engine</h3>
-                                <p className="text-sm text-muted-foreground">Controle se a sua loja está pública para os jogadores.</p>
+                                <h3 className="text-xl font-bold">{t.store.settings.engine_status}</h3>
+                                <p className="text-sm text-muted-foreground">{t.store.settings.engine_status_desc}</p>
                             </div>
                             <Switch
                                 checked={formData.enabled}
@@ -110,7 +112,7 @@ export default function StoreSettingsPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border/50">
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Moeda Transacional</Label>
+                                <Label className="text-xs font-bold uppercase text-muted-foreground tracking-widest">{t.store.settings.currency}</Label>
                                 <Select
                                     value={formData.currency}
                                     onValueChange={(val) => setFormData({ ...formData, currency: val })}
@@ -126,7 +128,7 @@ export default function StoreSettingsPage() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Provedor de Checkout</Label>
+                                <Label className="text-xs font-bold uppercase text-muted-foreground tracking-widest">{t.store.settings.checkout_provider}</Label>
                                 <Select
                                     value={formData.checkoutProvider}
                                     onValueChange={(val) => setFormData({ ...formData, checkoutProvider: val })}
@@ -152,7 +154,7 @@ export default function StoreSettingsPage() {
                             </div>
                             <div>
                                 <h3 className="text-xl font-bold leading-tight">Stripe (Cartão de Crédito)</h3>
-                                <p className="text-sm text-muted-foreground">Checkout internacional seguro e recorrências nativas.</p>
+                                <p className="text-sm text-muted-foreground">{t.store.settings.stripe_desc}</p>
                             </div>
                         </div>
 
@@ -190,7 +192,7 @@ export default function StoreSettingsPage() {
                             </div>
                             <div>
                                 <h3 className="text-xl font-bold leading-tight">Pix (Mercado Pago / Asaas)</h3>
-                                <p className="text-sm text-muted-foreground">Pagamento instantâneo via QR Code para o público brasileiro.</p>
+                                <p className="text-sm text-muted-foreground">{t.store.settings.pix_desc}</p>
                             </div>
                         </div>
 
@@ -228,7 +230,7 @@ export default function StoreSettingsPage() {
                         <div className="p-3 rounded-lg bg-black/20 font-mono text-[10px] break-all border border-border/50 text-violet-300">
                             {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/webhook/stripe
                         </div>
-                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Copie este URL para o Dashboard do Stripe.</p>
+                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">{t.store.settings.copy_webhook}</p>
                     </div>
                 </div>
             </div>

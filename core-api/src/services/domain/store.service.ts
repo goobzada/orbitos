@@ -176,6 +176,27 @@ export class StoreService {
     }
 
     /**
+     * Delete produto
+     */
+    static async deleteProduct(orgId: string, productId: string, userId: string) {
+        await this.validatePlan(orgId);
+
+        const product = await prisma.storeProduct.delete({
+            where: { id: productId, organizationId: orgId }
+        });
+
+        await auditService.log({
+            organizationId: orgId,
+            userId,
+            action: 'STORE_PRODUCT_DELETED',
+            resourceType: 'StoreProduct',
+            resourceId: product.id,
+        });
+
+        return product;
+    }
+
+    /**
      * Retorna orders do Tenant
      */
     static async listOrders(orgId: string) {

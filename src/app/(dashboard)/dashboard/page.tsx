@@ -10,44 +10,46 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { useOverviewStats, useRecentActivity } from "@/lib/hooks";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useTranslation } from "@/components/providers/language-provider";
 
 export default function DashboardOverview() {
+    const { t } = useTranslation();
     const { data: overviews, isLoading: isLoadingStats } = useOverviewStats();
     const { data: activities = [], isLoading: isLoadingActivity } = useRecentActivity(10);
 
     const statsConfig = [
         {
-            title: "Servidores Ativos",
+            title: t.analytics.active_servers,
             value: overviews?.activeServers?.toLocaleString() || "0",
             trend: overviews?.activeServersTrend || 0,
-            comparisonLabel: "vs mês passado",
+            comparisonLabel: "vs " + t.common.status,
             icon: Server,
             color: "violet" as const,
             sparkline: [{ value: 10 }, { value: 15 }, { value: 8 }, { value: 20 }, { value: 18 }, { value: 25 }]
         },
         {
-            title: "Tickets Abertos",
+            title: t.analytics.open_tickets,
             value: overviews?.openTickets?.toLocaleString() || "0",
             trend: overviews?.openTicketsTrend || 0,
-            comparisonLabel: "Tickets em aberto agora",
+            comparisonLabel: t.analytics.open_tickets,
             icon: Ticket,
             color: "amber" as const,
             sparkline: [{ value: 30 }, { value: 25 }, { value: 35 }, { value: 20 }, { value: 28 }, { value: 15 }]
         },
         {
-            title: "Staff Online",
+            title: t.analytics.staff_online,
             value: overviews?.staffOnline?.toLocaleString() || "0",
             trend: overviews?.staffTrend || 0,
-            comparisonLabel: "Moderadores ativos",
+            comparisonLabel: t.analytics.staff_online,
             icon: Users,
             color: "emerald" as const,
             sparkline: [{ value: 5 }, { value: 8 }, { value: 4 }, { value: 12 }, { value: 9 }, { value: 11 }]
         },
         {
-            title: "Receita (24h)",
+            title: t.analytics.revenue_24h,
             value: overviews?.revenue24h !== undefined ? `R$ ${overviews.revenue24h.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : "R$ 0,00",
             trend: overviews?.revenueTrend || 0,
-            comparisonLabel: "Vendas processadas",
+            comparisonLabel: t.common.actions,
             icon: BarChart3,
             color: "blue" as const,
             sparkline: [{ value: 100 }, { value: 150 }, { value: 120 }, { value: 200 }, { value: 180 }, { value: 220 }]
@@ -69,7 +71,7 @@ export default function DashboardOverview() {
                         </h1>
                         <div className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                            CONEXÃO ATIVA COM O MOTOR DE INFRAESTRUTURA
+                            {t.analytics.conn_active}
                         </div>
                     </div>
                 </motion.div>
@@ -107,8 +109,8 @@ export default function DashboardOverview() {
                             <CardHeader className="border-b border-border/5 bg-muted/10 p-6">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <CardTitle className="text-lg font-black tracking-tight uppercase">Crescimento_Mensal</CardTitle>
-                                        <CardDescription className="text-xs font-medium">Volume de faturamento e ordens processadas.</CardDescription>
+                                        <CardTitle className="text-lg font-black tracking-tight uppercase">{t.analytics.monthly_growth}</CardTitle>
+                                        <CardDescription className="text-xs font-medium">{t.analytics.revenue_desc}</CardDescription>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Badge variant="outline" className="text-[10px] font-black border-primary/20 text-primary">REVENUE_DATA</Badge>
@@ -134,8 +136,8 @@ export default function DashboardOverview() {
                             <CardHeader className="border-b border-border/5 bg-muted/10 p-6">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <CardTitle className="text-lg font-black tracking-tight uppercase">Audit_Events</CardTitle>
-                                        <CardDescription className="text-xs font-medium">Rastreamento de infraestrutura global.</CardDescription>
+                                        <CardTitle className="text-lg font-black tracking-tight uppercase">{t.analytics.audit_events}</CardTitle>
+                                        <CardDescription className="text-xs font-medium">{t.analytics.infra_tracking}</CardDescription>
                                     </div>
                                     <div className="w-2 h-2 rounded-full bg-primary animate-ping shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
                                 </div>
@@ -145,10 +147,10 @@ export default function DashboardOverview() {
                             </CardContent>
                             <div className="p-4 border-t border-border/5 bg-muted/5">
                                 <button
-                                    onClick={() => toast.info("Em breve: Log de Auditoria Completo", { description: "Esta funcionalidade será liberada na v1.3." })}
+                                    onClick={() => toast.info(t.analytics.coming_soon, { description: t.analytics.version + " 1.3" })}
                                     className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
                                 >
-                                    Ver Log de Auditoria Completo
+                                    {t.analytics.view_audit_log}
                                 </button>
                             </div>
                         </Card>
@@ -167,7 +169,7 @@ export default function DashboardOverview() {
                         className="p-6 rounded-3xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/10 flex items-center justify-between group cursor-help hover:scale-[1.02] transition-transform"
                     >
                         <div>
-                            <p className="text-[10px] font-black text-primary uppercase tracking-widest">OrbitOS_Version</p>
+                            <p className="text-[10px] font-black text-primary uppercase tracking-widest">{t.analytics.version}</p>
                             <p className="text-xl font-black tracking-tighter">1.2.4-enterprise</p>
                         </div>
                         <ShieldCheck className="w-8 h-8 text-primary/40 group-hover:scale-110 transition-transform" />
@@ -177,7 +179,7 @@ export default function DashboardOverview() {
                         className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/10 flex items-center justify-between group cursor-help hover:scale-[1.02] transition-transform"
                     >
                         <div>
-                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">SLA_Commitment</p>
+                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{t.analytics.sla}</p>
                             <p className="text-xl font-black tracking-tighter">99.98% Stable</p>
                         </div>
                         <BadgeCheck className="w-8 h-8 text-emerald-500/40 group-hover:scale-110 transition-transform" />
@@ -187,7 +189,7 @@ export default function DashboardOverview() {
                         className="p-6 rounded-3xl bg-gradient-to-br from-violet-500/10 to-transparent border border-violet-500/10 flex items-center justify-between group cursor-help hover:scale-[1.02] transition-transform"
                     >
                         <div>
-                            <p className="text-[10px] font-black text-violet-500 uppercase tracking-widest">Data_Isolation</p>
+                            <p className="text-[10px] font-black text-violet-500 uppercase tracking-widest">{t.analytics.data_isolation}</p>
                             <p className="text-xl font-black tracking-tighter">Tenant-Strict</p>
                         </div>
                         <ShieldAlert className="w-8 h-8 text-violet-500/40 group-hover:scale-110 transition-transform" />
