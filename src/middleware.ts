@@ -7,7 +7,14 @@ import type { NextRequest } from 'next/server';
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'orbicapp.com';
 const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || `app.${ROOT_DOMAIN}`;
 const STORES_GATEWAY_DOMAIN = process.env.NEXT_PUBLIC_STORES_GATEWAY_DOMAIN || `stores.${ROOT_DOMAIN}`;
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+/*
+ * Middleware runs server-side. Prefer an internal API URL to avoid
+ * recursive calls to the web host (which can return 404 for API paths).
+ */
+const API_URL =
+    process.env.INTERNAL_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'http://localhost:4000';
 
 function getHost(request: NextRequest): string {
     const forwardedHost = request.headers.get('x-forwarded-host');
