@@ -82,6 +82,15 @@ export class InternalController {
         const { id } = req.params as { id: string };
 
         try {
+            const existing = await prisma.ticket.findUnique({
+                where: { id },
+                include: { server: true }
+            });
+
+            if (!existing) {
+                return res.status(404).json({ error: 'Ticket não encontrado.' });
+            }
+
             const ticket = await prisma.ticket.update({
                 where: { id },
                 data: { status: TicketStatus.CLOSED, closedAt: new Date() },
@@ -125,7 +134,7 @@ export class InternalController {
 
             if (ticket) {
                 console.log(`[TICKET LINK] 🔗 Vinculando canal ${channelId} ao ticket ${ticket.id} automaticamente.`);
-                await prisma.ticket.update({
+                await prisma.ticket.updateMany({
                     where: { id: ticket.id },
                     data: { channelId }
                 });
@@ -148,7 +157,7 @@ export class InternalController {
             }
         });
 
-        await prisma.ticket.update({
+        await prisma.ticket.updateMany({
             where: { id: ticket.id },
             data: { updatedAt: new Date() }
         });
