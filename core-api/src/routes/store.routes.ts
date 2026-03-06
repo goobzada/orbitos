@@ -23,5 +23,6 @@ router.delete('/:organizationId/products/:id', StoreController.deleteProduct);
 
 // --- ORDERS ---
 router.get('/:organizationId/orders', StoreController.listOrders);
+router.put('/:organizationId/orders/:id/deliver', StoreController.deliverOrder);
 
 export default router;

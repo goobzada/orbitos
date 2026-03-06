@@ -1,13 +1,14 @@
 "use client";
 
-import { useOrganizations, useStoreOrders } from "@/lib/hooks";
-import { PackageOpen, Filter, ArrowDownToLine, Receipt, Search, CreditCard, CheckCircle2, Clock, AlertTriangle, ExternalLink, User } from 'lucide-react';
+import { useOrganizations, useStoreOrders, useDeliverOrder } from "@/lib/hooks";
+import { PackageOpen, Filter, ArrowDownToLine, Receipt, Search, CreditCard, CheckCircle2, Clock, AlertTriangle, ExternalLink, User, Truck } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useState } from "react";
 import { useActiveOrg } from "@/lib/use-org-store";
+import { toast } from "sonner";
 
 export default function StoreOrdersPage() {
     const { activeOrgId } = useActiveOrg();
@@ -16,9 +17,19 @@ export default function StoreOrdersPage() {
     const isFree = org?.plan === 'FREE';
 
     const { data: orders, isLoading } = useStoreOrders(activeOrgId || "");
+    const deliverOrder = useDeliverOrder(activeOrgId || "");
     const [searchTerm, setSearchTerm] = useState("");
 
-    const filteredOrders = orders?.filter(o =>
+    const handleDeliver = async (orderId: string) => {
+        try {
+            await deliverOrder.mutateAsync(orderId);
+            toast.success("Pedido marcado como entregue!");
+        } catch {
+            toast.error("Erro ao marcar entrega.");
+        }
+    };
+
+    const filteredOrders = orders?.filter((o: any) =>
         o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         o.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         o.externalCustomerId?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -159,9 +170,22 @@ export default function StoreOrdersPage() {
                                             {getDeliveryBadge(order.items?.[0]?.deliveryStatus || 'PENDING')}
                                         </TableCell>
                                         <TableCell className="py-5 px-6 text-right">
-                                            <div className="flex flex-col items-end">
-                                                <span className="text-sm font-bold text-foreground">{new Date(order.createdAt).toLocaleDateString('pt-BR')}</span>
-                                                <span className="text-[10px] text-muted-foreground">{new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                            <div className="flex flex-col items-end gap-2">
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-sm font-bold text-foreground">{new Date(order.createdAt).toLocaleDateString('pt-BR')}</span>
+                                                    <span className="text-[10px] text-muted-foreground">{new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                </div>
+                                                {order.items?.[0]?.deliveryStatus !== 'DELIVERED' && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="h-7 px-3 text-[10px] font-bold uppercase gap-1 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10"
+                                                        onClick={() => handleDeliver(order.id)}
+                                                        disabled={deliverOrder.isPending}
+                                                    >
+                                                        <Truck className="w-3 h-3" /> Marcar Entregue
+                                                    </Button>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>

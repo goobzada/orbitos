@@ -32,7 +32,9 @@ const TEMPLATES = [
     { key: 'terminal-dark', name: 'Terminal Dark', plan: 'PRO', emoji: '🖥️', description: 'Estilo CLI para devs e infra.' },
     { key: 'aurora-landing', name: 'Aurora Landing', plan: 'PRO', emoji: '🌌', description: 'Landing de upsell com aurora animada.' },
     { key: 'modular-blocks', name: 'Modular Blocks', plan: 'PRO', emoji: '🧱', description: 'Dashboard em blocos estilo Notion.' },
-    { key: 'cosmic-ultra', name: 'Cosmic Ultra', plan: 'MAX', emoji: '🌌', description: 'Experiência exclusiva Black Edition.' },
+    { key: 'cosmic-ultra', name: 'Cosmic Ultra', plan: 'MAX', emoji: '🌌', description: 'Deep space exclusivo — partículas e glassmorphism intenso.' },
+    { key: 'obsidian-empire', name: 'Obsidian Empire', plan: 'MAX', emoji: '👑', description: 'Dark luxury puro. Dourado, edges afiadas e power-vibes.' },
+    { key: 'hologram-pro', name: 'Hologram PRO', plan: 'MAX', emoji: '🔷', description: 'UI holográfica futurista. Cyan neon e efeitos HUD exclusivos.' },
 ];
 
 interface FormState {

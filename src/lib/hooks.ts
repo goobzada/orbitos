@@ -701,6 +701,19 @@ export const useStoreOrders = (organizationId: string) => {
     });
 };
 
+export const useDeliverOrder = (organizationId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (orderId: string) => {
+            const { data } = await api.put(`/store/${organizationId}/orders/${orderId}/deliver`);
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['store-orders', organizationId] });
+        },
+    });
+};
+
 export const useCheckout = (organizationId: string) => {
     return useMutation({
         mutationFn: async (data: any) => {

@@ -138,6 +138,64 @@ async function seedTemplates() {
         }
     });
 
+    await prisma.templatePreset.upsert({
+        where: { key: 'obsidian-empire' },
+        update: {},
+        create: {
+            key: 'obsidian-empire',
+            name: 'Obsidian Empire',
+            description: 'Dark luxury puro. Dourado, edges afiadas e power-vibes para comunidades dominantes.',
+            minPlan: 'MAX',
+            config: {
+                layoutType: 'dashboard-sidebar',
+                navigation: 'sidebar',
+                heroMode: 'full',
+                cardShape: 'sharp-gold',
+                backgroundPattern: 'obsidian-grid',
+                fontPreset: 'luxury',
+                accentColor: '#C9A84C',
+                primaryColor: '#C9A84C',
+                backgroundColor: '#050505',
+                surfaceColor: '#0F0F0F',
+                navBackground: '#080808',
+                borderColor: '#C9A84C33',
+                textColor: '#F5F0E8',
+                fontFamily: 'Playfair Display',
+                borderRadiusPx: 4,
+                letterSpacingPx: 1
+            }
+        }
+    });
+
+    await prisma.templatePreset.upsert({
+        where: { key: 'hologram-pro' },
+        update: {},
+        create: {
+            key: 'hologram-pro',
+            name: 'Hologram PRO',
+            description: 'UI holográfica futurista. Cyan neon, camadas translúcidas e efeitos HUD exclusivos.',
+            minPlan: 'MAX',
+            config: {
+                layoutType: 'dashboard-topnav',
+                navigation: 'topnav',
+                heroMode: 'full',
+                cardShape: 'holo-glass',
+                backgroundPattern: 'hologram-mesh',
+                fontPreset: 'tech',
+                accentColor: '#00F5FF',
+                primaryColor: '#00F5FF',
+                backgroundColor: '#01040D',
+                surfaceColor: '#030C1A',
+                navBackground: '#020816',
+                borderColor: '#00F5FF22',
+                textColor: '#D0F4FF',
+                fontFamily: 'JetBrains Mono',
+                borderRadiusPx: 2,
+                letterSpacingPx: 1
+            }
+        }
+    });
+
     console.log('✅ Template Presets criados!');
 }
 

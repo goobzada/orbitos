@@ -208,6 +208,46 @@ export class StoreService {
     }
 
     /**
+     * Marca itens de um pedido manual como entregues.
+     */
+    static async deliverOrder(orgId: string, orderId: string, userId: string) {
+        await this.validatePlan(orgId);
+
+        const order = await prisma.storeOrder.findFirst({
+            where: { id: orderId, organizationId: orgId },
+            include: { items: true }
+        });
+
+        if (!order) throw new Error('Pedido n\u00e3o encontrado.');
+
+        await prisma.storeOrderItem.updateMany({
+            where: { orderId },
+            data: {
+                deliveryStatus: 'DELIVERED',
+                deliveryLog: `Entregue manualmente em ${new Date().toISOString()}`,
+            }
+        });
+
+        if (order.status !== 'PAID') {
+            await prisma.storeOrder.update({
+                where: { id: orderId },
+                data: { status: 'PAID', paidAt: new Date() }
+            });
+        }
+
+        await auditService.log({
+            organizationId: orgId,
+            userId,
+            action: 'ORDER_DELIVERED',
+            resourceType: 'StoreOrder',
+            resourceId: orderId,
+            metadata: { manual: true },
+        });
+
+        return { success: true, orderId };
+    }
+
+    /**
      * Checkout de um pedido usando Stripe Real.
      */
     static async createCheckoutSession(orgId: string, data: any) {

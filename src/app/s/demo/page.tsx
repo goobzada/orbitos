@@ -67,7 +67,42 @@ const catalog: Record<string, TemplateConfig> = {
         backgroundPattern: "none",
         cardShape: "block",
         fontPreset: "default",
-    }
+    },
+    "cosmic-ultra": {
+        templateKey: "cosmic-ultra",
+        layoutType: "dashboard-sidebar",
+        heroMode: "small",
+        navigation: "sidebar",
+        backgroundPattern: "cosmos",
+        cardShape: "glass-intense",
+        fontPreset: "modern",
+    },
+    "obsidian-empire": {
+        templateKey: "obsidian-empire",
+        layoutType: "dashboard-sidebar",
+        heroMode: "full",
+        navigation: "sidebar",
+        backgroundPattern: "obsidian-grid",
+        cardShape: "sharp-gold",
+        fontPreset: "luxury",
+        primaryColor: "#C9A84C",
+        backgroundColor: "#050505",
+        surfaceColor: "#0F0F0F",
+        borderColor: "#C9A84C33",
+    } as any,
+    "hologram-pro": {
+        templateKey: "hologram-pro",
+        layoutType: "dashboard-topnav",
+        heroMode: "full",
+        navigation: "topnav",
+        backgroundPattern: "hologram-mesh",
+        cardShape: "holo-glass",
+        fontPreset: "tech",
+        primaryColor: "#00F5FF",
+        backgroundColor: "#01040D",
+        surfaceColor: "#030C1A",
+        borderColor: "#00F5FF22",
+    } as any,
 };
 
 export default function CatalogDemoPage() {

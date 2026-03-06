@@ -97,6 +97,18 @@ export class StoreController {
         }
     }
 
+    static async deliverOrder(req: Request, res: Response) {
+        try {
+            const organizationId = req.params.organizationId as string;
+            const orderId = req.params.id as string;
+            const userId = req.user!.id;
+            const result = await StoreService.deliverOrder(organizationId, orderId, userId);
+            return res.json(result);
+        } catch (error: any) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
     // --- PUBLIC ENDPOINTS ---
     static async getPublicProducts(req: Request, res: Response) {
         try {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useOrganizations, useStoreProducts, useCreateStoreProduct, useDeleteStoreProduct } from "@/lib/hooks";
+import { useOrganizations, useStoreProducts, useCreateStoreProduct, useDeleteStoreProduct, useUpdateStoreProduct } from "@/lib/hooks";
 import { Plus, Tag, Search, Box, MoreVertical, Trash2, Edit2, Globe, Sparkles, CreditCard, Rocket, ShieldCheck, Zap, Server } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,9 +32,44 @@ export default function StoreProductsPage() {
     const { data: products, isLoading } = useStoreProducts(activeOrgId || "");
     const createProduct = useCreateStoreProduct(activeOrgId || "");
     const deleteProduct = useDeleteStoreProduct(activeOrgId || "");
+    const updateProduct = useUpdateStoreProduct(activeOrgId || "");
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<any>(null);
     const [searchTerm, setSearchTerm] = useState("");
+
+    const openEdit = (product: any) => {
+        setEditingProduct({
+            id: product.id,
+            name: product.name,
+            slug: product.slug || '',
+            priceCents: product.priceCents / 100,
+            billingCycle: product.billingCycle || 'ONE_TIME',
+            deliveryType: product.deliveryType || 'MANUAL',
+            category: product.category || '',
+            status: product.status || 'ACTIVE',
+        });
+        setIsEditOpen(true);
+    };
+
+    const handleEdit = async () => {
+        if (!editingProduct) return;
+        try {
+            await updateProduct.mutateAsync({
+                productId: editingProduct.id,
+                data: {
+                    ...editingProduct,
+                    priceCents: Number(editingProduct.priceCents) * 100,
+                },
+            });
+            toast.success(t.common.success);
+            setIsEditOpen(false);
+            setEditingProduct(null);
+        } catch {
+            toast.error(t.common.error);
+        }
+    };
 
     // New Product State
     const [newProduct, setNewProduct] = useState({
@@ -106,6 +141,7 @@ export default function StoreProductsPage() {
     }
 
     return (
+        <>
         <div className="max-w-7xl mx-auto space-y-8 fade-in pb-12">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -295,7 +331,7 @@ export default function StoreProductsPage() {
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-md border-border rounded-xl">
-                                            <DropdownMenuItem className="gap-2 cursor-pointer">
+                                            <DropdownMenuItem onClick={() => openEdit(product)} className="gap-2 cursor-pointer">
                                                 <Edit2 className="w-4 h-4" /> {t.common.edit}
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => handleDelete(product.id)} className="gap-2 cursor-pointer text-destructive focus:text-destructive">
@@ -326,9 +362,111 @@ export default function StoreProductsPage() {
                             </Card>
                         ))}
                     </div>
-                )}
+                )}  
             </div>
         </div>
+
+        {/* Edit Product Dialog */}
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+            <DialogContent className="sm:max-w-[600px] border-border bg-card/95 backdrop-blur-xl">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                        <Edit2 className="w-6 h-6 text-violet-500" />
+                        {t.common.edit} Produto
+                    </DialogTitle>
+                </DialogHeader>
+                {editingProduct && (
+                    <div className="grid gap-6 py-6">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">{t.store.product_name}</Label>
+                                <Input
+                                    placeholder="Ex: VIP Diamante"
+                                    className="bg-background/50 border-border"
+                                    value={editingProduct.name}
+                                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">{t.store.product_slug}</Label>
+                                <Input
+                                    placeholder="vip-diamante"
+                                    className="bg-background/50 border-border"
+                                    value={editingProduct.slug}
+                                    onChange={(e) => setEditingProduct({ ...editingProduct, slug: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">{t.store.base_price}</Label>
+                                <div className="relative">
+                                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <Input
+                                        type="number"
+                                        placeholder="29.90"
+                                        className="pl-9 bg-background/50 border-border"
+                                        value={editingProduct.priceCents || ""}
+                                        onChange={(e) => setEditingProduct({ ...editingProduct, priceCents: Number(e.target.value) })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">{t.store.billing_cycle}</Label>
+                                <Select
+                                    value={editingProduct.billingCycle}
+                                    onValueChange={(val) => setEditingProduct({ ...editingProduct, billingCycle: val })}
+                                >
+                                    <SelectTrigger className="bg-background/50 border-border"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ONE_TIME">{t.store.one_time}</SelectItem>
+                                        <SelectItem value="MONTHLY">{t.store.monthly}</SelectItem>
+                                        <SelectItem value="YEARLY">{t.store.yearly}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">{t.store.delivery_driver}</Label>
+                                <Select
+                                    value={editingProduct.deliveryType}
+                                    onValueChange={(val) => setEditingProduct({ ...editingProduct, deliveryType: val })}
+                                >
+                                    <SelectTrigger className="bg-background/50 border-border"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="MANUAL">Entrega Manual</SelectItem>
+                                        <SelectItem value="DISCORD_ROLE">Discord Role (Auto)</SelectItem>
+                                        <SelectItem value="MINECRAFT_COMMAND">MC Command (Auto)</SelectItem>
+                                        <SelectItem value="FIVEM_EVENT">FiveM Event (Auto)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">{t.common.category}</Label>
+                                <Input
+                                    placeholder="Ex: Ranks"
+                                    className="bg-background/50 border-border"
+                                    value={editingProduct.category}
+                                    onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsEditOpen(false)} className="rounded-xl border-border">{t.common.cancel}</Button>
+                    <Button
+                        onClick={handleEdit}
+                        disabled={updateProduct.isPending}
+                        className="bg-violet-600 hover:bg-violet-700 text-white font-bold px-8 rounded-xl"
+                    >
+                        {updateProduct.isPending ? t.common.loading : t.common.save}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        </>
     );
 }
 

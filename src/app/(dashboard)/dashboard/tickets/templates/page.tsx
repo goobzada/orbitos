@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useParams } from "next/navigation";
-import { useTicketTemplates, useDeleteTicketTemplate, useServers } from "@/lib/hooks";
+import { useTicketTemplates, useCreateTicketTemplate, useDeleteTicketTemplate, useServers } from "@/lib/hooks";
 import { toast } from "sonner";
 import {
     Dialog,
@@ -26,21 +26,49 @@ export default function TemplatesPage() {
     const orgId = organizationId as string;
     const { data: servers = [] } = useServers();
     const { data: templates = [], isLoading } = useTicketTemplates(orgId);
+    const createTemplate = useCreateTicketTemplate(orgId);
     const deleteTemplate = useDeleteTicketTemplate(orgId);
 
     const [serverFilter, setServerFilter] = useState("all");
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [newName, setNewName] = useState('');
+    const [newKey, setNewKey] = useState('');
+    const [newServerId, setNewServerId] = useState('');
 
     const filteredTemplates = serverFilter === "all"
         ? templates
-        : templates.filter(p => p.serverId === serverFilter);
+        : templates.filter((p: any) => p.serverId === serverFilter);
 
     const handleDelete = async (id: string) => {
         if (!confirm("Excluir este template?")) return;
         try {
             await deleteTemplate.mutateAsync(id);
             toast.success("Template removido.");
-        } catch (error) {
+        } catch {
             toast.error("Erro ao remover template.");
+        }
+    };
+
+    const handleCreate = async () => {
+        if (!newName.trim() || !newKey.trim() || !newServerId) {
+            toast.error("Preencha todos os campos obrigatórios.");
+            return;
+        }
+        try {
+            await createTemplate.mutateAsync({
+                serverId: newServerId,
+                name: newName.trim(),
+                key: newKey.trim(),
+                title: newName.trim(),
+                isActive: true,
+            });
+            toast.success("Template criado com sucesso!");
+            setDialogOpen(false);
+            setNewName('');
+            setNewKey('');
+            setNewServerId('');
+        } catch {
+            toast.error("Erro ao criar template. Verifique os dados e tente novamente.");
         }
     };
 
@@ -51,7 +79,7 @@ export default function TemplatesPage() {
                     <h2 className="text-2xl font-black tracking-tighter">Templates de Suporte</h2>
                     <p className="text-sm text-muted-foreground font-medium">Configure os formulários que os usuários preenchem ao abrir tickets.</p>
                 </div>
-                <Dialog>
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DialogTrigger asChild>
                         <Button className="w-full md:w-auto gap-2 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20">
                             <Plus className="w-4 h-4" />
@@ -68,20 +96,37 @@ export default function TemplatesPage() {
                         <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Nome do Template</Label>
-                                <Input id="name" placeholder="Ex: Suporte Geral" className="bg-slate-900 border-slate-800" />
+                                <Input
+                                    id="name"
+                                    placeholder="Ex: Suporte Geral"
+                                    className="bg-slate-900 border-slate-800"
+                                    value={newName}
+                                    onChange={e => {
+                                        setNewName(e.target.value);
+                                        if (!newKey) {
+                                            setNewKey(e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''));
+                                        }
+                                    }}
+                                />
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="key">Identificador (Key)</Label>
-                                <Input id="key" placeholder="Ex: suporte_geral" className="bg-slate-900 border-slate-800 font-mono" />
+                                <Input
+                                    id="key"
+                                    placeholder="Ex: suporte_geral"
+                                    className="bg-slate-900 border-slate-800 font-mono"
+                                    value={newKey}
+                                    onChange={e => setNewKey(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                                />
                             </div>
                             <div className="grid gap-2">
                                 <Label>Servidor</Label>
-                                <Select>
+                                <Select value={newServerId} onValueChange={setNewServerId}>
                                     <SelectTrigger className="bg-slate-900 border-slate-800 text-slate-300">
                                         <SelectValue placeholder="Selecione o servidor" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-slate-950 border-slate-800 text-slate-300">
-                                        {servers.map(s => (
+                                        {servers.map((s: any) => (
                                             <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                                         ))}
                                     </SelectContent>
@@ -89,10 +134,13 @@ export default function TemplatesPage() {
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button type="submit" className="bg-violet-600 hover:bg-violet-700" onClick={() => {
-                                toast.success("Template criado com sucesso!");
-                            }}>
-                                Criar Template
+                            <Button
+                                type="submit"
+                                className="bg-violet-600 hover:bg-violet-700"
+                                onClick={handleCreate}
+                                disabled={createTemplate.isPending}
+                            >
+                                {createTemplate.isPending ? 'Criando...' : 'Criar Template'}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -107,7 +155,7 @@ export default function TemplatesPage() {
                         </SelectTrigger>
                         <SelectContent className="bg-slate-950 border-slate-800 text-slate-300">
                             <SelectItem value="all">Todos os Servidores</SelectItem>
-                            {servers.map(s => (
+                            {servers.map((s: any) => (
                                 <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                             ))}
                         </SelectContent>
@@ -135,7 +183,7 @@ export default function TemplatesPage() {
                             <TableRow>
                                 <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">Nenhum template encontrado para os critérios selecionados.</TableCell>
                             </TableRow>
-                        ) : filteredTemplates.map((template) => (
+                        ) : filteredTemplates.map((template: any) => (
                             <TableRow key={template.id} className="group hover:bg-primary/[0.02] transition-colors border-border/5">
                                 <TableCell>
                                     <div className="flex items-center gap-3">
