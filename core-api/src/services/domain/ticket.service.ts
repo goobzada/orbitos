@@ -17,6 +17,26 @@ interface CreateTicketMessageParams {
 }
 
 export class TicketService {
+    private async dispatchDiscordAction(action: string, payload: {
+        serverId: string;
+        userId: string;
+        params: Record<string, unknown>;
+    }) {
+        const job = await addDiscordJob(action, {
+            ...payload,
+            action,
+        });
+
+        if (job) return;
+
+        // Redis is disabled/unavailable: dispatch directly via WS to connected bot.
+        const { communityWSServer } = await import('../ws-server');
+        communityWSServer.broadcastToTarget(payload.serverId, 'DISCORD_ACTION', {
+            ...payload,
+            action,
+        });
+    }
+
     async listTickets(organizationId: string) {
         const tickets = await prisma.ticket.findMany({
             where: {
@@ -82,10 +102,9 @@ export class TicketService {
 
         // 🚀 Enviar para a fila se for via painel (staff) para o Bot processar em background
         if (params.isStaff && params.discordChannelId) {
-            await addDiscordJob('send_message', {
+            await this.dispatchDiscordAction('send_message', {
                 serverId: params.discordGuildId,
                 userId: params.authorId,
-                action: 'send_message',
                 params: {
                     channelId: params.discordChannelId,
                     content: `**[Staff] ${params.authorName}:**\n${params.content}`
@@ -115,10 +134,9 @@ export class TicketService {
 
         // 🚀 Adicionar na fila de processamento do Discord
         if (ticket.channelId) {
-            await addDiscordJob('ticket.close_ticket_flow', {
+            await this.dispatchDiscordAction('ticket.close_ticket_flow', {
                 serverId: ticket.server.discordGuildId,
                 userId: 'SYSTEM',
-                action: 'ticket.close_ticket_flow',
                 params: {
                     channelId: ticket.channelId,
                     staffName: staffName
@@ -156,20 +174,18 @@ export class TicketService {
             };
 
             if (status === TicketStatus.CLOSED) {
-                await addDiscordJob('ticket.close_ticket_flow', {
+                await this.dispatchDiscordAction('ticket.close_ticket_flow', {
                     serverId: ticket.server.discordGuildId,
                     userId: 'SYSTEM',
-                    action: 'ticket.close_ticket_flow',
                     params: {
                         channelId: ticket.channelId,
                         staffName
                     }
                 });
             } else {
-                await addDiscordJob('send_message', {
+                await this.dispatchDiscordAction('send_message', {
                     serverId: ticket.server.discordGuildId,
                     userId: 'SYSTEM',
-                    action: 'send_message',
                     params: {
                         channelId: ticket.channelId,
                         content: `**[Sistema]** O status deste ticket foi alterado para: **${statusLabels[status] || status}**.`
