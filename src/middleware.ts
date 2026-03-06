@@ -4,8 +4,35 @@ import type { NextRequest } from 'next/server';
 /* FIX A: Middleware should ONLY check cookie presence, not decode/verify JWT.
  * Backend is source of truth. Avoids flicker when JWT_SECRET missing on frontend. */
 
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'orbicapp.com';
+const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || `app.${ROOT_DOMAIN}`;
+const STORES_GATEWAY_DOMAIN = process.env.NEXT_PUBLIC_STORES_GATEWAY_DOMAIN || `stores.${ROOT_DOMAIN}`;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+function getHost(request: NextRequest): string {
+    const forwardedHost = request.headers.get('x-forwarded-host');
+    const host = forwardedHost || request.headers.get('host') || '';
+    return host.split(':')[0].trim().toLowerCase();
+}
+
+function isPlatformHost(host: string): boolean {
+    if (!host) return true;
+    if (host === APP_DOMAIN || host === ROOT_DOMAIN || host === STORES_GATEWAY_DOMAIN) return true;
+    if (host === 'localhost' || host === '127.0.0.1') return true;
+    return false;
+}
+
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
+    const host = getHost(request);
+
+    const isStaticAsset =
+        pathname.startsWith('/_next') ||
+        pathname.startsWith('/api') ||
+        pathname === '/favicon.ico' ||
+        pathname === '/robots.txt' ||
+        pathname === '/sitemap.xml';
+
     /* FIX: Support legacy cookie name to avoid false unauth redirects during transition. */
     const token = request.cookies.get('token')?.value || request.cookies.get('orbitos_token')?.value;
 
@@ -14,6 +41,44 @@ export async function middleware(request: NextRequest) {
     const isPlataforma = pathname.startsWith('/plataforma');
     const isLogin = pathname === '/login' || pathname.startsWith('/login/');
     const isProtected = isDashboard || isPlatform;
+
+    // Public storefront host resolver (custom domains and slug.orbicapp.com).
+    if (!isStaticAsset && !pathname.startsWith('/s/') && !isProtected && !isLogin && !isPlatformHost(host)) {
+        try {
+            const params = new URLSearchParams({ host, path: pathname });
+            const resolved = await fetch(`${API_URL}/public/store/resolve?${params.toString()}`, {
+                headers: {
+                    'x-forwarded-host': host,
+                },
+                cache: 'no-store',
+            });
+
+            if (resolved.ok) {
+                const data = await resolved.json();
+                const slug = data?.store?.slug as string | undefined;
+                const canonical = data?.canonicalRedirectTo as string | null;
+
+                if (canonical && canonical !== host) {
+                    const redirectUrl = request.nextUrl.clone();
+                    redirectUrl.hostname = canonical;
+                    redirectUrl.protocol = request.headers.get('x-forwarded-proto') || 'https';
+                    return NextResponse.redirect(redirectUrl, 301);
+                }
+
+                if (slug) {
+                    const rewriteUrl = request.nextUrl.clone();
+                    rewriteUrl.pathname = pathname === '/' ? `/s/${slug}` : `/s/${slug}${pathname}`;
+                    return NextResponse.rewrite(rewriteUrl);
+                }
+            }
+
+            if (resolved.status === 404) {
+                return NextResponse.rewrite(new URL('/404', request.url));
+            }
+        } catch {
+            // If resolver is unavailable, keep request flow alive.
+        }
+    }
 
     // Redireciona /plataforma → /platform (Suporte PT-BR)
     if (isPlataforma) {
@@ -54,11 +119,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    /* FIX A: Exclude static assets to avoid unnecessary middleware runs */
+    // Run for all app pages except API/static files.
     matcher: [
-        '/dashboard/:path*',
-        '/platform/:path*',
-        '/login',
-        '/login/:path*',
+        '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
     ],
 };

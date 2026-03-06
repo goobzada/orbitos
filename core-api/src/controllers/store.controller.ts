@@ -1,7 +1,63 @@
 import { Request, Response } from 'express';
 import { StoreService } from '../services/domain/store.service';
+import { StoreDomainService } from '../services/domain/store-domain.service';
 
 export class StoreController {
+
+    // --- DOMAINS ---
+    static async listDomains(req: Request, res: Response) {
+        try {
+            const organizationId = req.params.organizationId as string;
+            const result = await StoreDomainService.listDomains(organizationId);
+            return res.json(result);
+        } catch (error: any) {
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
+    static async addDomain(req: Request, res: Response) {
+        try {
+            const organizationId = req.params.organizationId as string;
+            const { domain } = req.body;
+            const result = await StoreDomainService.addDomain(organizationId, domain);
+            return res.status(201).json(result);
+        } catch (error: any) {
+            return res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async verifyDomain(req: Request, res: Response) {
+        try {
+            const organizationId = req.params.organizationId as string;
+            const domainId = req.params.domainId as string;
+            const result = await StoreDomainService.verifyDomain(organizationId, domainId);
+            return res.json(result);
+        } catch (error: any) {
+            return res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async setPrimaryDomain(req: Request, res: Response) {
+        try {
+            const organizationId = req.params.organizationId as string;
+            const domainId = req.params.domainId as string;
+            const result = await StoreDomainService.setPrimaryDomain(organizationId, domainId);
+            return res.json(result);
+        } catch (error: any) {
+            return res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async deleteDomain(req: Request, res: Response) {
+        try {
+            const organizationId = req.params.organizationId as string;
+            const domainId = req.params.domainId as string;
+            const result = await StoreDomainService.deleteDomain(organizationId, domainId);
+            return res.json(result);
+        } catch (error: any) {
+            return res.status(400).json({ error: error.message });
+        }
+    }
 
     // --- SETTINGS ---
     static async getSettings(req: Request, res: Response) {
@@ -128,6 +184,47 @@ export class StoreController {
             return res.status(201).json(checkout);
         } catch (error: any) {
             return res.status(500).json({ error: error.message });
+        }
+    }
+
+    static async resolveStoreByHost(req: Request, res: Response) {
+        try {
+            const hostInput = (req.query.host as string) || req.headers.host || '';
+            if (!hostInput) {
+                return res.status(400).json({ error: 'Host obrigatório.' });
+            }
+
+            const result = await StoreDomainService.resolveStoreByHost(hostInput);
+            if (!result) {
+                return res.status(404).json({ error: 'Store não encontrada para host informado.' });
+            }
+
+            const requestedPath = (req.query.path as string) || '/';
+
+            console.log('[STORE_RESOLVE]', {
+                host: hostInput,
+                storeId: result.store.id,
+                tenantId: result.organization.id,
+                path: requestedPath,
+                status: 200,
+            });
+
+            return res.json({
+                store: {
+                    id: result.store.id,
+                    slug: result.store.slug,
+                    name: result.store.name,
+                    primaryDomain: result.store.primaryDomain,
+                },
+                organization: {
+                    id: result.organization.id,
+                    name: result.organization.name,
+                    slug: result.organization.slug,
+                },
+                canonicalRedirectTo: result.canonicalRedirectTo,
+            });
+        } catch (error: any) {
+            return res.status(400).json({ error: error.message });
         }
     }
 }

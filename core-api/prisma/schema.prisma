@@ -53,6 +53,8 @@ model Organization {
   storeOrders          StoreOrder[]
   storeProducts        StoreProduct[]
   storeSettings        StoreSettings?
+  store                Store?
+  storeDomains         StoreDomain[]
   coupons              Coupon[]
   tickets              Ticket[]
   ticketTemplates      TicketTemplate[]
@@ -64,6 +66,45 @@ model Organization {
   communityType        String                @default("general") // game, music, study, business, general, creator, dev
   language             String                @default("pt-BR") // pt-BR, en-US, es-ES
   modules              OrganizationModule[]
+}
+
+model Store {
+  id             String       @id @default(uuid())
+  orgId          String       @unique
+  slug           String       @unique
+  name           String
+  status         String       @default("active")
+  themeId        String?
+  primaryDomain  String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  domains        StoreDomain[]
+
+  @@index([orgId])
+  @@index([slug])
+  @@index([primaryDomain])
+}
+
+model StoreDomain {
+  id                String       @id @default(uuid())
+  orgId             String
+  storeId           String
+  domain            String       @unique
+  type              String       @default("custom") // default, custom
+  status            String       @default("pending") // pending, verified, active, error
+  verificationToken String?
+  isPrimary         Boolean      @default(false)
+  verifiedAt        DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  organization      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  store             Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([storeId])
+  @@index([status])
+  @@index([isPrimary])
 }
 
 model OrganizationMember {

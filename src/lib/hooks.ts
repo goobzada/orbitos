@@ -714,6 +714,69 @@ export const useDeliverOrder = (organizationId: string) => {
     });
 };
 
+export const useStoreDomains = (organizationId: string) => {
+    return useQuery<any>({
+        queryKey: ['store-domains', organizationId],
+        queryFn: async () => {
+            const { data } = await api.get(`/store/${organizationId}/domains`);
+            return data;
+        },
+        enabled: !!organizationId,
+    });
+};
+
+export const useAddStoreDomain = (organizationId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (domain: string) => {
+            const { data } = await api.post(`/store/${organizationId}/domains`, { domain });
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['store-domains', organizationId] });
+        },
+    });
+};
+
+export const useVerifyStoreDomain = (organizationId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (domainId: string) => {
+            const { data } = await api.post(`/store/${organizationId}/domains/${domainId}/verify`);
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['store-domains', organizationId] });
+        },
+    });
+};
+
+export const useSetPrimaryStoreDomain = (organizationId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (domainId: string) => {
+            const { data } = await api.post(`/store/${organizationId}/domains/${domainId}/set-primary`);
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['store-domains', organizationId] });
+        },
+    });
+};
+
+export const useDeleteStoreDomain = (organizationId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (domainId: string) => {
+            const { data } = await api.delete(`/store/${organizationId}/domains/${domainId}`);
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['store-domains', organizationId] });
+        },
+    });
+};
+
 export const useCheckout = (organizationId: string) => {
     return useMutation({
         mutationFn: async (data: any) => {

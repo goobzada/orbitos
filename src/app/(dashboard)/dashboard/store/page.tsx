@@ -2,7 +2,7 @@
 
 import { useOrganizations, useMe, useStoreProducts, useStoreOrders } from "@/lib/hooks";
 import { useActiveOrg } from "@/lib/use-org-store";
-import { Copy, PlusCircle, ShoppingCart, ShoppingBag, Settings2, Package, Tag, ArrowRight, Bot, Sparkles } from 'lucide-react';
+import { Copy, PlusCircle, ShoppingCart, ShoppingBag, Settings2, Package, Tag, ArrowRight, Bot, Sparkles, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslation } from "@/components/providers/language-provider";
 
@@ -89,6 +89,10 @@ export default function StoreOverviewPage() {
                         <Link href="/dashboard/store/settings" className="p-4 rounded-xl border border-border hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group flex flex-col gap-3 col-span-2">
                             <Settings2 className="w-5 h-5 text-muted-foreground group-hover:text-violet-500" />
                             <span className="font-semibold text-sm">{t.dashboard.sidebar.settings} (Pix/Stripe)</span>
+                        </Link>
+                        <Link href="/dashboard/store/domains" className="p-4 rounded-xl border border-border hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group flex flex-col gap-3 col-span-2">
+                            <Globe className="w-5 h-5 text-muted-foreground group-hover:text-violet-500" />
+                            <span className="font-semibold text-sm">Domains (Custom + Default)</span>
                         </Link>
                     </div>
                 </div>
