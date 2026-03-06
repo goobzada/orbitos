@@ -139,7 +139,9 @@ export class TicketService {
                 userId: 'SYSTEM',
                 params: {
                     channelId: ticket.channelId,
-                    staffName: staffName
+                    staffName: staffName,
+                    authorId: ticket.authorId,
+                    ticketId: ticket.id
                 }
             });
         }
@@ -179,7 +181,9 @@ export class TicketService {
                     userId: 'SYSTEM',
                     params: {
                         channelId: ticket.channelId,
-                        staffName
+                        staffName,
+                        authorId: ticket.authorId,
+                        ticketId: ticket.id
                     }
                 });
             } else {

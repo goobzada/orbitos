@@ -404,6 +404,18 @@ export default {
 
             await ticketChannel.send({ content: `<@${user.id}> ${config.staffRoleId ? `<@&${config.staffRoleId}>` : ''}`, embeds: [welcomeEmbed], components: [row] });
 
+            // DM confirmation to the ticket author.
+            try {
+                const dmText = lang === 'pt-BR'
+                    ? `Seu ticket foi aberto com sucesso em **${guild.name}**.\nCanal: #${ticketChannel.name}\nID: ${ticketId}`
+                    : lang === 'es-ES'
+                        ? `Tu ticket fue abierto correctamente en **${guild.name}**.\nCanal: #${ticketChannel.name}\nID: ${ticketId}`
+                        : `Your ticket was opened successfully in **${guild.name}**.\nChannel: #${ticketChannel.name}\nID: ${ticketId}`;
+                await user.send({ content: dmText });
+            } catch {
+                // Ignore when user has DMs disabled.
+            }
+
             return interaction.editReply({ content: ticketStrings.createdSuccess.replace('{channel}', `<#${ticketChannel.id}>`) });
         }
 
@@ -432,6 +444,18 @@ export default {
                 await textChannel.send({
                     embeds: [ticketClosedEmbed(lang === 'pt-BR' ? 'Equipe' : 'Staff', interaction.user.username)]
                 });
+            }
+
+            // DM fallback when ticket is closed directly in Discord.
+            try {
+                const dmText = lang === 'pt-BR'
+                    ? `Seu ticket (${ticketId}) foi fechado em **${interaction.guild?.name || 'OrbitUp'}**.`
+                    : lang === 'es-ES'
+                        ? `Tu ticket (${ticketId}) fue cerrado en **${interaction.guild?.name || 'OrbitUp'}**.`
+                        : `Your ticket (${ticketId}) was closed in **${interaction.guild?.name || 'OrbitUp'}**.`;
+                await interaction.user.send({ content: dmText });
+            } catch {
+                // Ignore when user has DMs disabled.
             }
 
             const deleteMsg = lang === 'pt-BR' ? '🗑️ Canal será excluído em 5 segundos...' : lang === 'es-ES' ? '🗑️ El canal será eliminado en 5 segundos...' : '🗑️ Channel will be deleted in 5 seconds...';

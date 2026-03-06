@@ -21,7 +21,7 @@ const ticket: BaseModule = {
 
     handleAction: async (action: string, params: any) => {
         if (action === 'close_ticket_flow') {
-            const { channelId, staffName } = params;
+            const { channelId, staffName, authorId, ticketId } = params;
             log.info(`[TICKET] 🔐 Finalização iniciada: ${channelId} por ${staffName}`);
 
             try {
@@ -36,6 +36,16 @@ const ticket: BaseModule = {
                     await (channel as any).send({
                         content: `**[Staff] ${staffName}** fechou este ticket pelo Dashboard. Este canal será excluído em 10 segundos.`
                     }).catch(() => { });
+                }
+
+                // Notify ticket author by DM when available.
+                if (authorId) {
+                    const user = await discordClient.users.fetch(String(authorId)).catch(() => null);
+                    if (user) {
+                        await user.send({
+                            content: `Seu ticket${ticketId ? ` (${ticketId})` : ''} foi fechado pela equipe de suporte.`
+                        }).catch(() => { });
+                    }
                 }
 
                 // Deletar após 10s (mais seguro)
