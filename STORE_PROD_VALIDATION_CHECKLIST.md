@@ -10,9 +10,9 @@
 
 ### Checks
 
-- [ ] `pm2 status` shows `orbitos-api`, `orbitos-bot`, `orbitos-web` as `online`
-- [ ] `curl -I https://orbitup.io` returns `HTTP 200`
-- [ ] `curl -I https://orbitup.io/s/demo` returns `HTTP 200`
+- [x] `pm2 status` shows `orbitos-api`, `orbitos-bot`, `orbitos-web` as `online`
+- [x] `curl -I https://orbitup.io` returns `HTTP 200`
+- [x] `curl -I https://orbitup.io/s/demo` returns `HTTP 200`
 
 ### Commands
 
@@ -246,7 +246,13 @@ Approve release only if all below are true:
 - Date / time:
 - Failures found:
 - Actions taken:
+	- Infra baseline validated: PM2 services online (`orbitos-api`, `orbitos-bot`, `orbitos-web`) and public endpoints returning `HTTP 200`.
+	- Rebuild and restart cycle executed successfully on VPS.
+	- Restart command names corrected to PM2 process names (`orbitos-api`, `orbitos-bot`, `orbitos-web`).
+	- Git workspace on VPS cleaned (`git restore .` and `git clean -fd`) after generated artifacts blocked pull/rebase.
 - Retest status:
+	- Item 1 passed.
+	- Monitoring required for recurring non-fatal errors in logs (`invalid signature`, bot WS `401`, giveaway `404`/timeouts, historical Next.js server-action mismatch traces).
 - Release decision:
 
 ---
