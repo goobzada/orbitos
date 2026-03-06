@@ -207,6 +207,9 @@ export default function StoreDomainsPage() {
                                             {statusMeta[domain.status]?.label || domain.status}
                                         </span>
                                         {domain.isPrimary && <span className="text-emerald-500">Primário</span>}
+                                        {domain.verifiedAt && (
+                                            <span>Verificado em: {new Date(domain.verifiedAt).toLocaleDateString('pt-BR')}</span>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 flex-wrap">

@@ -3,6 +3,15 @@ import { auditService } from './audit.service';
 import Stripe from 'stripe';
 
 export class StoreService {
+    private static normalizeProductStatus(status?: string) {
+        if (!status) return 'ACTIVE';
+        const normalized = status.trim().toUpperCase();
+        if (normalized === 'PUBLISHED') return 'ACTIVE';
+        if (normalized === 'ACTIVE' || normalized === 'HIDDEN' || normalized === 'ARCHIVED' || normalized === 'DRAFT') {
+            return normalized;
+        }
+        return 'ACTIVE';
+    }
     /**
      * Valida se a organização pode usar a loja (Gating de Plano).
      */
@@ -128,7 +137,7 @@ export class StoreService {
                 description: data.description,
                 priceCents: data.priceCents,
                 billingCycle: data.billingCycle || 'ONE_TIME',
-                status: data.status || 'ACTIVE',
+                status: this.normalizeProductStatus(data.status),
                 category: data.category,
                 tags: data.tags ? (typeof data.tags === 'string' ? data.tags : JSON.stringify(data.tags)) : undefined,
                 thumbnailUrl: data.thumbnailUrl,
@@ -161,7 +170,7 @@ export class StoreService {
                 description: data.description,
                 priceCents: data.priceCents,
                 billingCycle: data.billingCycle,
-                status: data.status,
+                status: this.normalizeProductStatus(data.status),
                 category: data.category,
                 tags: data.tags ? (typeof data.tags === 'string' ? data.tags : JSON.stringify(data.tags)) : undefined,
                 thumbnailUrl: data.thumbnailUrl,

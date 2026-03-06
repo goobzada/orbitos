@@ -8,6 +8,15 @@
 
 # 1. Executive Summary
 
+## Progress Snapshot (06/03/2026)
+
+- [x] Public store now uses tenant theme tokens from the same source as public portal.
+- [x] Buy CTA in public store now opens real checkout flow.
+- [x] Product visibility pipeline hardened for legacy status values.
+- [x] Domains page upgraded with DNS instructions, status badges, copy actions and verified date.
+- [ ] Admin preview parity with live is still partial (preview iframe model remains hybrid).
+- [ ] Full visual unification of portal/store layouts still has room to evolve.
+
 The current Store module has a **serious product consistency problem**.
 
 The backend has many implemented parts, but the **real user-facing flow is broken or confusing**.
@@ -272,7 +281,7 @@ And optionally TXT verification.
 
 ### Current conclusion
 
-Technically it may exist in backend, but product-wise this page is still MVP/incomplete.
+Domain backend + UI are now operational and significantly improved, but SSL provisioning state and deeper troubleshooting UX are still pending.
 
 ---
 
@@ -566,38 +575,38 @@ Belongs to tenant/store and should point to:
 
 ### Theme audit
 
-- [ ] selected theme persists in DB
+- [x] selected theme persists in DB
 - [ ] preview uses DB-backed theme
-- [ ] public portal uses DB-backed theme
-- [ ] store uses same theme system
+- [x] public portal uses DB-backed theme
+- [x] store uses same theme system
 - [ ] no hardcoded fallback overriding selected theme
 
 ### Product visibility audit
 
-- [ ] product saved with correct orgId/storeId
-- [ ] product status is active/published
+- [x] product saved with correct orgId/storeId
+- [x] product status is active/published
 - [ ] store enabled = true
-- [ ] public endpoint returns products
-- [ ] frontend maps response correctly
-- [ ] empty state only when truly empty
+- [x] public endpoint returns products
+- [x] frontend maps response correctly
+- [x] empty state only when truly empty
 
 ### Domain system audit
 
-- [ ] default domain shown correctly
-- [ ] custom domain add works
-- [ ] DNS instructions visible
-- [ ] verify action works
-- [ ] set primary works
-- [ ] status badges clear
+- [x] default domain shown correctly
+- [x] custom domain add works
+- [x] DNS instructions visible
+- [x] verify action works
+- [x] set primary works
+- [x] status badges clear
 - [ ] canonical behavior explained
 
 ### UX consistency audit
 
-- [ ] portal and store share same theme
+- [x] portal and store share same theme
 - [ ] admin preview matches live
-- [ ] typography consistent
-- [ ] spacing/layout consistent
-- [ ] storefront no longer feels broken
+- [x] typography consistent
+- [x] spacing/layout consistent
+- [x] storefront no longer feels broken
 
 ---
 

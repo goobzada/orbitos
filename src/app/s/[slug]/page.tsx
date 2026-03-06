@@ -30,7 +30,7 @@ export default function PublicCommunityPage() {
 
                 // O layout e o modo de exibição vêm do preset
                 const config: TemplateConfig = {
-                    templateKey: identity.templateKey || preset.key || 'default-classic',
+                    templateKey: identity.templateKey || identity.presetKey || preset.key || 'default-classic',
                     layoutType: preset.config?.layoutType || 'dashboard-sidebar',
                     heroMode: preset.config?.heroMode || 'small',
                     navigation: preset.config?.navigation || 'sidebar',
