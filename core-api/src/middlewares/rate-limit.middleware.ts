@@ -55,6 +55,7 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
     // Keep protection on write-heavy/mutation endpoints.
     const noLimitReadPrefixes = [
         '/health',
+        '/public/store/resolve',
         '/auth/me',
         '/auth/discord/check-credentials',
         '/organizations/me',
