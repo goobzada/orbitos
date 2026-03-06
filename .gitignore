@@ -34,4 +34,5 @@ login-dump.txt
 
 # ─── Misc ────────────────────────────────────────────────────────────────────
 tsconfig.tsbuildinfo
-.DS_Store
+.DS_Storecore-api/dist/
+next-env.d.ts
