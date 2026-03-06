@@ -44,6 +44,8 @@ export default function StoreProductsPage() {
             id: product.id,
             name: product.name,
             slug: product.slug || '',
+            description: product.description || '',
+            thumbnailUrl: product.thumbnailUrl || '',
             priceCents: product.priceCents / 100,
             billingCycle: product.billingCycle || 'ONE_TIME',
             deliveryType: product.deliveryType || 'MANUAL',
@@ -75,6 +77,8 @@ export default function StoreProductsPage() {
     const [newProduct, setNewProduct] = useState({
         name: "",
         slug: "",
+        description: "",
+        thumbnailUrl: "",
         priceCents: 0,
         billingCycle: "ONE_TIME",
         deliveryType: "MANUAL",
@@ -93,6 +97,8 @@ export default function StoreProductsPage() {
             setNewProduct({
                 name: "",
                 slug: "",
+                description: "",
+                thumbnailUrl: "",
                 priceCents: 0,
                 billingCycle: "ONE_TIME",
                 deliveryType: "MANUAL",
@@ -252,6 +258,27 @@ export default function StoreProductsPage() {
                                     />
                                 </div>
                             </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">URL da Imagem (Thumbnail)</Label>
+                                <Input
+                                    placeholder="https://exemplo.com/imagem.png"
+                                    className="bg-background/50 border-border"
+                                    value={newProduct.thumbnailUrl}
+                                    onChange={(e) => setNewProduct({ ...newProduct, thumbnailUrl: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">Descrição</Label>
+                                <textarea
+                                    placeholder="Descreva o produto..."
+                                    rows={3}
+                                    className="w-full rounded-md bg-background/50 border border-border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                                    value={newProduct.description}
+                                    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                                />
+                            </div>
                         </div>
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setIsCreateOpen(false)} className="rounded-xl border-border">{t.common.cancel}</Button>
@@ -355,7 +382,11 @@ export default function StoreProductsPage() {
                                     </div>
                                 </CardContent>
                                 <CardFooter className="px-6 pb-6 pt-0">
-                                    <Button variant="outline" className="w-full rounded-2xl bg-violet-600/5 border-violet-500/10 hover:bg-violet-600/10 text-violet-500 font-bold gap-2">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full rounded-2xl bg-violet-600/5 border-violet-500/10 hover:bg-violet-600/10 text-violet-500 font-bold gap-2"
+                                        onClick={() => window.open(`/s/${org?.slug}`, '_blank')}
+                                    >
                                         <Globe className="w-4 h-4" /> {t.store.view_in_store}
                                     </Button>
                                 </CardFooter>
@@ -451,6 +482,27 @@ export default function StoreProductsPage() {
                                     onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
                                 />
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">URL da Imagem (Thumbnail)</Label>
+                            <Input
+                                placeholder="https://exemplo.com/imagem.png"
+                                className="bg-background/50 border-border"
+                                value={editingProduct.thumbnailUrl}
+                                onChange={(e) => setEditingProduct({ ...editingProduct, thumbnailUrl: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">Descrição</Label>
+                            <textarea
+                                placeholder="Descreva o produto..."
+                                rows={3}
+                                className="w-full rounded-md bg-background/50 border border-border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                                value={editingProduct.description}
+                                onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                            />
                         </div>
                     </div>
                 )}
