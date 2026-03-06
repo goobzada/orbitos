@@ -70,14 +70,22 @@
 
 ## ❌ BUGS & GAPS IDENTIFICADOS
 
-### 🔴 Crítico — Bloqueia vendas reais
+### ✅ Correções já entregues (06/03/2026)
+
+| Item | Status |
+|---|---|
+| Página `/s/[slug]/store/checkout` | ✅ Implementada |
+| Página `/s/[slug]/store/success` | ✅ Implementada |
+| Página `/s/[slug]/store/cancel` | ✅ Implementada |
+| URL do bot `store_buy_*` corrigida para checkout real | ✅ Implementada |
+| Webhook de pagamento para pedidos da loja | ✅ Implementada |
+| Arquitetura de domínios customizados + resolução por Host | ✅ Implementada |
+
+### 🔴 Crítico — Bloqueia vendas reais (itens remanescentes)
 
 | # | Bug | Detalhe |
 |---|---|---|
-| 1 | **Página de checkout não existe** | Bot aponta para `orbitup.io/store/:guildId/buy/:productId` — rota 404 no Next.js |
-| 2 | **Webhook não entrega cargo Discord** | `checkout.session.completed` atualiza pedido no banco mas **não chama bot-engine** para dar role |
-| 3 | **Páginas success/cancel ausentes** | Stripe redireciona para `/store/success` e `/store/cancel` que não existem — 404 pós-pagamento |
-| 4 | **PIX sem implementação** | Campo `pixToken` existe nas Settings mas zero código de integração com Mercado Pago/PagSeguro |
+| 1 | **PIX sem implementação** | Campo `pixToken` existe nas Settings mas zero código de integração com Mercado Pago/PagSeguro |
 
 ### 🟡 Funcionalidades no schema sem API nem UI
 
@@ -109,11 +117,27 @@
 
 | Tarefa | Arquivos afetados |
 |---|---|
-| 1. Criar `/s/[slug]/store/checkout` | `src/app/s/[slug]/store/checkout/page.tsx` (novo) |
-| 2. Criar `/s/[slug]/store/success` | `src/app/s/[slug]/store/success/page.tsx` (novo) |
-| 3. Criar `/s/[slug]/store/cancel` | `src/app/s/[slug]/store/cancel/page.tsx` (novo) |
-| 4. Webhook → entrega de cargo Discord | `core-api/src/controllers/payment.controller.ts` + bot-engine |
-| 5. Corrigir URL do bot (`store_buy_`) | `bot-engine/src/modules/automation/store.ts` |
+| 1. Criar `/s/[slug]/store/checkout` | ✅ Concluído |
+| 2. Criar `/s/[slug]/store/success` | ✅ Concluído |
+| 3. Criar `/s/[slug]/store/cancel` | ✅ Concluído |
+| 4. Webhook de pagamento para store orders | ✅ Concluído |
+| 5. Corrigir URL do bot (`store_buy_`) | ✅ Concluído |
+
+**Status da Fase 1:** ✅ Finalizada
+
+---
+
+### FASE 1.5 — Multi-tenant + Custom Domains *(novo)*
+
+| Tarefa | Status |
+|---|---|
+| Modelos `Store` e `StoreDomain` no Prisma | ✅ Concluído |
+| Migration SQL de domínios | ✅ Concluído |
+| Endpoints admin de domínios (`list/add/verify/set-primary/delete`) | ✅ Concluído |
+| Endpoint público `GET /public/store/resolve` | ✅ Concluído |
+| Resolver por Host + fallback por subdomínio | ✅ Concluído |
+| Redirect canônico para domínio primário | ✅ Concluído |
+| UI Admin `/dashboard/store/domains` | ✅ Concluído |
 
 ---
 
@@ -175,8 +199,9 @@ Discord: /painel                           Loja Pública
                            └→ Pagamento aprovado
                                 └→ Webhook: checkout.session.completed
                                      ├→ StoreOrder status = PAID
-                                     ├→ Bot: dar cargo Discord ao comprador
-                                     ├→ Bot: DM de confirmação
+                ├→ Entrega automática (DeliveryService/drivers)
+                ├→ Bot: fluxo de compra com URL correta
+                ├→ DM de confirmação (pendente)
                                      └→ /s/[slug]/store/success  ← nova página
 ```
 
@@ -204,29 +229,31 @@ MERCADO_PAGO_ACCESS_TOKEN=APP_USR-...
 core-api/src/
   controllers/
     store.controller.ts       ✅ CRUD + público
-    payment.controller.ts     ✅ Webhook Stripe (incompleto — não entrega cargo)
+    payment.controller.ts     ✅ Webhook Stripe (store orders + billing)
   services/domain/
     store.service.ts          ✅ Lógica completa + Stripe checkout
+    store-domain.service.ts   ✅ Domínios customizados + resolução por host
   routes/
     store.routes.ts           ✅ Auth + plan gating
-    public-store.routes.ts    ✅ /public/store/:slug
+    public-store.routes.ts    ✅ /public/store/:slug + /public/store/resolve
     payment.routes.ts         ✅ /payments/webhook/stripe
 
 src/app/
   (dashboard)/dashboard/store/
     page.tsx                  ✅ Overview com stats
+    domains/page.tsx          ✅ Gestão de domínios customizados
     products/page.tsx         ✅ CRUD completo
     orders/page.tsx           ✅ Tabela + entrega manual
     settings/page.tsx         ✅ Stripe/PIX config
   s/[slug]/
     store/page.tsx            ✅ Loja pública
-    store/checkout/page.tsx   ❌ NÃO EXISTE
-    store/success/page.tsx    ❌ NÃO EXISTE
-    store/cancel/page.tsx     ❌ NÃO EXISTE
+    store/checkout/page.tsx   ✅ Implementado
+    store/success/page.tsx    ✅ Implementado
+    store/cancel/page.tsx     ✅ Implementado
 
 bot-engine/src/
   modules/automation/
-    store.ts                  ✅ browse + buy (URL de compra errada)
+    store.ts                  ✅ browse + buy (URL corrigida)
 ```
 
 ---
