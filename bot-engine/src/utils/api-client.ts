@@ -1,7 +1,7 @@
 import axios from 'axios';
-import dotenv from 'dotenv';
+import { loadBotEnv } from './load-env';
 
-dotenv.config();
+loadBotEnv();
 
 function normalizeCoreApiUrl(rawUrl?: string): string {
     const fallback = 'http://localhost:4000';

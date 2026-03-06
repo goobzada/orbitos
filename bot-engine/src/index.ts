@@ -4,12 +4,14 @@ import { loadEvents } from './handlers/event-handler';
 import { loadCommands } from './handlers/command-handler';
 import { log } from './utils/logger';
 import coreApi from './utils/api-client';
+import { loadBotEnv } from './utils/load-env';
 import { communityWSClient } from './services/ws-client';
 import { ModuleLoader } from './modules/ModuleLoader';
 import path from 'path';
 import fs from 'fs';
 
-dotenv.config();
+const loadedEnvFile = loadBotEnv();
+log.info(`[ENV] Loaded bot environment from ${loadedEnvFile}`);
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
