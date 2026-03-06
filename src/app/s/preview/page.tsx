@@ -6,12 +6,7 @@ import { ThemeProvider } from '@/contexts/theme-context';
 import { buildTheme, themeToCSS, ThemeTokens } from '@/lib/theme';
 import { CommunityData } from '@/components/templates/types';
 
-const mockCommunity: CommunityData = {
-    name: "Comunidade Preview",
-    description: "Este é um preview ao vivo de como seu portal ficará público.",
-    avatar: "https://avatar.vercel.sh/preview",
-    modules: []
-};
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 // Precisamos simular o "Preset" na viga base do preview
 // para o theme.ts saber mapear o layoutType, navigation, etc
@@ -28,22 +23,68 @@ const MOCK_PRESETS: Record<string, any> = {
 };
 
 export default function PreviewIframePage() {
+    const [orgId, setOrgId] = useState('');
+
     const [theme, setTheme] = useState<ThemeTokens | null>(null);
+    const [community, setCommunity] = useState<CommunityData>({
+        name: 'Comunidade Preview',
+        description: "Este preview usa os dados reais da organização selecionada.",
+        avatar: "https://avatar.vercel.sh/preview",
+        modules: []
+    });
     const hasReceivedUpdate = useRef(false);
 
     useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const params = new URLSearchParams(window.location.search);
+        const nextOrgId = params.get('orgId') || '';
+        const nextOrgName = params.get('orgName') || 'Comunidade Preview';
+        setOrgId(nextOrgId);
+        setCommunity((prev) => ({ ...prev, name: nextOrgName }));
+    }, []);
+
+    useEffect(() => {
+        async function loadInitialIdentity() {
+            if (!orgId) return;
+            try {
+                const identityRes = await fetch(`${API_URL}/templates/identity/${orgId}`, {
+                    credentials: 'include',
+                });
+
+                if (!identityRes.ok) return;
+
+                const identity = await identityRes.json();
+                const preset = identity?.preset || { config: MOCK_PRESETS['default-classic'] };
+                const initialTheme = buildTheme(identity, preset);
+                setTheme(initialTheme);
+            } catch {
+                // fallback to postMessage flow
+            }
+        }
+
         const handleMessage = (event: MessageEvent) => {
             if (event.data?.type === 'PREVIEW_UPDATE') {
-                const form = event.data.payload;
+                const form = event.data.payload?.form || event.data.payload;
+                const incomingCommunity = event.data.payload?.community;
                 const presetConf = MOCK_PRESETS[form.templateKey] || MOCK_PRESETS['default-classic'];
                 const newTheme = buildTheme(form, { config: presetConf });
 
                 hasReceivedUpdate.current = true;
                 setTheme(newTheme);
+
+                if (incomingCommunity) {
+                    setCommunity((prev) => ({
+                        ...prev,
+                        name: incomingCommunity.name || prev.name,
+                        description: incomingCommunity.description || prev.description,
+                        avatar: incomingCommunity.avatar || prev.avatar,
+                    }));
+                }
             }
         };
 
         window.addEventListener('message', handleMessage);
+        loadInitialIdentity();
 
         // Handshake: envia READY periodicamente até receber o primeiro UPDATE
         const readyInterval = setInterval(() => {
@@ -67,7 +108,7 @@ export default function PreviewIframePage() {
             clearInterval(readyInterval);
             clearTimeout(fallbackTimeout);
         };
-    }, []);
+    }, [orgId]);
 
     if (!theme) {
         return <div className="min-h-screen bg-[#020617] flex items-center justify-center text-white/50 text-sm">Carregando preview...</div>;
@@ -89,7 +130,7 @@ export default function PreviewIframePage() {
             `}} />
             <CommunityPortal
                 config={theme as any} // O Portal usa o ThemeTokens mesclado
-                community={mockCommunity}
+                community={community}
             />
         </ThemeProvider>
     );

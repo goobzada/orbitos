@@ -160,9 +160,20 @@ export default function IdentityEditorPage() {
 
     useEffect(() => {
         if (iframeReady && iframeRef.current?.contentWindow) {
-            iframeRef.current.contentWindow.postMessage({ type: 'PREVIEW_UPDATE', payload: form }, '*');
+            iframeRef.current.contentWindow.postMessage({
+                type: 'PREVIEW_UPDATE',
+                payload: {
+                    form,
+                    community: {
+                        name: selectedOrg?.name || 'Comunidade Preview',
+                        slug: selectedOrg?.slug || 'preview',
+                        avatar: form.logoUrl || "https://avatar.vercel.sh/community",
+                        description: 'Este preview usa a identidade real da organização selecionada.',
+                    }
+                }
+            }, '*');
         }
-    }, [form, iframeReady]);
+    }, [form, iframeReady, selectedOrg]);
 
     const set = (key: keyof FormState, val: any) => setForm(f => ({ ...f, [key]: val }));
 
@@ -535,13 +546,13 @@ export default function IdentityEditorPage() {
                                 <div className="w-3.5 h-3.5 rounded-full bg-emerald-500/40 border border-emerald-500/20" />
                             </div>
                             <div className="ml-6 flex-1 max-w-md h-8 bg-black/60 rounded-lg flex items-center px-4 text-[11px] text-white/30 font-mono tracking-tighter border border-white/5 group-hover:border-amber-500/20 transition-colors">
-                                <Lock className="w-3 h-3 mr-2 text-white/10" /> saasbot.gg/s/preview
+                                <Lock className="w-3 h-3 mr-2 text-white/10" /> {selectedOrg?.slug ? `saasbot.gg/s/${selectedOrg.slug}` : 'saasbot.gg/s/preview'}
                             </div>
                         </div>
 
                         <iframe
                             ref={iframeRef}
-                            src="/s/preview"
+                            src={`/s/preview?orgId=${encodeURIComponent(orgId || '')}&orgName=${encodeURIComponent(selectedOrg?.name || '')}&orgSlug=${encodeURIComponent(selectedOrg?.slug || '')}`}
                             onLoad={() => setIframeReady(true)}
                             className="w-full h-[calc(100%-3rem)] bg-transparent border-0"
                         />
