@@ -1,5 +1,4 @@
 import { Client, GatewayIntentBits, Partials, REST, Routes } from 'discord.js';
-import dotenv from 'dotenv';
 import { loadEvents } from './handlers/event-handler';
 import { loadCommands } from './handlers/command-handler';
 import { log } from './utils/logger';

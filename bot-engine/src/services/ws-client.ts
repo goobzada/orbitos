@@ -1,9 +1,21 @@
 import WebSocket from 'ws';
 import { Client } from 'discord.js';
 import { log } from '../utils/logger';
+import { loadBotEnv } from '../utils/load-env';
 
-const BOT_WS_TOKEN = process.env.BOT_INTERNAL_TOKEN || 'dev-bot-ws-token-123';
-const WS_BASE_URL = process.env.CORE_API_WS_URL || 'ws://localhost:4000/ws/bot';
+loadBotEnv();
+
+function resolveWsBaseUrl(): string {
+    const explicit = (process.env.CORE_API_WS_URL || '').trim();
+    if (explicit) {
+        return explicit.replace(/\/+$/, '');
+    }
+
+    const httpBase = (process.env.CORE_API_URL || 'http://localhost:4000').trim().replace(/\/+$/, '');
+    const withoutApiSuffix = httpBase.replace(/\/api$/i, '');
+    const wsRoot = withoutApiSuffix.replace(/^https:\/\//i, 'wss://').replace(/^http:\/\//i, 'ws://');
+    return `${wsRoot}/ws/bot`;
+}
 
 export class CommunityWSClient {
     private ws: WebSocket | null = null;
@@ -19,7 +31,9 @@ export class CommunityWSClient {
     }
 
     private connect() {
-        const url = `${WS_BASE_URL}?token=${encodeURIComponent(BOT_WS_TOKEN)}`;
+        const botWsToken = process.env.BOT_INTERNAL_TOKEN || 'dev-bot-ws-token-123';
+        const wsBaseUrl = resolveWsBaseUrl();
+        const url = `${wsBaseUrl}?token=${encodeURIComponent(botWsToken)}`;
 
         log.info(`[WS CLIENT] 🔌 Conectando ao Core API...`);
         this.ws = new WebSocket(url);
