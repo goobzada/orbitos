@@ -246,6 +246,20 @@ async function finishQuiz(interaction: ButtonInteraction, userId: string) {
         }
     }
 
+    // DM result to the participant (approval or rejection).
+    try {
+        const dmResult = passed ? '✅ Aprovado' : '❌ Reprovado';
+        const dmText =
+            `**Resultado da Whitelist**\n` +
+            `${dmResult}\n` +
+            `Pontuação: **${percent}%** (${session.score}/${session.questions.length})\n` +
+            `Mínimo exigido: **${session.passPercentage}%**`;
+
+        await interaction.user.send({ content: dmText });
+    } catch {
+        // Ignore when participant has DMs disabled.
+    }
+
     sessions.delete(userId);
 
     // Botão para fechar/limpar a mensagem efêmera
