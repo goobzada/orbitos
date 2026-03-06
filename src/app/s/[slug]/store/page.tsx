@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingBag, Zap, Rocket, CheckCircle } from 'lucide-react';
+import { ThemeProvider } from '@/contexts/theme-context';
+import { buildTheme, themeToCSS, ThemeTokens } from '@/lib/theme';
 
 interface Product {
     id: string;
@@ -28,6 +30,7 @@ export default function PublicStorePage() {
     const [orgAvatar, setOrgAvatar] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [theme, setTheme] = useState<ThemeTokens | null>(null);
 
     useEffect(() => {
         async function load() {
@@ -41,6 +44,12 @@ export default function PublicStorePage() {
                     const portalData = await portalRes.json();
                     setOrgName(portalData.organization?.name || slug);
                     setOrgAvatar(portalData.identity?.logoUrl || '');
+
+                    // Reuse the exact same theme source as /s/[slug]
+                    const identity = portalData.identity || {};
+                    const preset = identity.preset || { config: {} };
+                    const currentTheme = buildTheme(identity, preset);
+                    setTheme(currentTheme);
                 } else {
                     setError('Comunidade não encontrada.');
                     setLoading(false);
@@ -49,7 +58,15 @@ export default function PublicStorePage() {
 
                 if (productsRes.ok) {
                     const data = await productsRes.json();
-                    setProducts(Array.isArray(data) ? data : []);
+                    if (Array.isArray(data)) {
+                        setProducts(data);
+                    } else if (Array.isArray(data?.products)) {
+                        setProducts(data.products);
+                    } else {
+                        setProducts([]);
+                    }
+                } else {
+                    setError('Erro ao carregar produtos da loja.');
                 }
             } catch {
                 setError('Erro ao carregar loja.');
@@ -80,10 +97,31 @@ export default function PublicStorePage() {
         );
     }
 
+    if (!theme) {
+        return (
+            <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center text-white/50">
+                <p>Carregando tema...</p>
+            </div>
+        );
+    }
+
     const categories = [...new Set(products.map(p => p.category || 'Geral').filter(Boolean))];
 
     return (
-        <div className="min-h-screen bg-[#0a0a0f] text-white">
+        <ThemeProvider value={theme}>
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                :root {
+                   ${themeToCSS(theme)}
+                }
+                body {
+                    background-color: var(--color-background);
+                    color: var(--color-text);
+                    font-family: var(--font-family);
+                }
+                ${theme.customCss || ''}
+            `}} />
+        <div className="min-h-screen text-white" style={{ backgroundColor: 'var(--color-background)' }}>
             {/* Header */}
             <div className="border-b border-white/[0.06] bg-[#0a0a0f]/90 backdrop-blur-xl sticky top-0 z-50">
                 <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -197,9 +235,12 @@ export default function PublicStorePage() {
                                                                 {product.billingCycle === 'ONE_TIME' ? 'pagamento único' : product.billingCycle === 'MONTHLY' ? 'por mês' : 'por ano'}
                                                             </p>
                                                         </div>
-                                                        <button className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-xl transition-colors shadow-lg shadow-violet-500/20">
+                                                        <Link
+                                                            href={`/s/${slug}/store/checkout?product=${product.id}`}
+                                                            className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-xl transition-colors shadow-lg shadow-violet-500/20"
+                                                        >
                                                             Comprar
-                                                        </button>
+                                                        </Link>
                                                     </div>
                                                 </div>
                                             </div>
@@ -220,5 +261,6 @@ export default function PublicStorePage() {
                 </div>
             </div>
         </div>
+        </ThemeProvider>
     );
 }

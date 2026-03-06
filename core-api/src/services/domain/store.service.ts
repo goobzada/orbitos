@@ -106,7 +106,9 @@ export class StoreService {
         return prisma.storeProduct.findMany({
             where: {
                 organizationId: org.id,
-                status: 'ACTIVE',
+                status: {
+                    in: ['ACTIVE', 'active', 'PUBLISHED', 'published'],
+                },
             },
             orderBy: { createdAt: 'desc' },
         });

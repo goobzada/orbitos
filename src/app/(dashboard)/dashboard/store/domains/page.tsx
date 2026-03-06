@@ -10,7 +10,7 @@ import {
 } from "@/lib/hooks";
 import { useActiveOrg } from "@/lib/use-org-store";
 import { toast } from "sonner";
-import { Globe, Plus, ShieldCheck, Trash2, CheckCircle2, LinkIcon, AlertCircle } from "lucide-react";
+import { Globe, Plus, ShieldCheck, Trash2, CheckCircle2, LinkIcon, AlertCircle, Copy, CircleHelp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +25,23 @@ export default function StoreDomainsPage() {
     const deleteDomain = useDeleteStoreDomain(activeOrgId || "");
 
     const domains = useMemo(() => (Array.isArray(data?.domains) ? data.domains : []), [data]);
+    const defaultDomain = data?.defaultDomain || (data?.store?.slug ? `${data.store.slug}.orbicapp.com` : null);
+
+    const statusMeta: Record<string, { label: string; className: string }> = {
+        pending: { label: "Pending DNS", className: "text-amber-400 bg-amber-500/10 border-amber-500/30" },
+        verified: { label: "Verified", className: "text-blue-400 bg-blue-500/10 border-blue-500/30" },
+        active: { label: "Active", className: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30" },
+        error: { label: "Error", className: "text-red-400 bg-red-500/10 border-red-500/30" },
+    };
+
+    const copyToClipboard = async (text: string, label = "valor") => {
+        try {
+            await navigator.clipboard.writeText(text);
+            toast.success(`${label} copiado.`);
+        } catch {
+            toast.error(`Não foi possível copiar ${label}.`);
+        }
+    };
 
     const handleAdd = async () => {
         if (!domainInput.trim()) return;
@@ -72,6 +89,10 @@ export default function StoreDomainsPage() {
         return <div className="max-w-5xl mx-auto p-8 text-sm text-muted-foreground">Carregando domínios...</div>;
     }
 
+    if (!activeOrgId) {
+        return <div className="max-w-5xl mx-auto p-8 text-sm text-muted-foreground">Selecione uma organização para gerenciar domínios.</div>;
+    }
+
     return (
         <div className="max-w-5xl mx-auto space-y-8 pb-16">
             <div>
@@ -86,12 +107,18 @@ export default function StoreDomainsPage() {
                     <Globe className="w-4 h-4" />
                     Domínio Padrão
                 </div>
-                <div className="rounded-xl border border-border bg-background px-4 py-3 font-mono text-sm">
-                    {data?.defaultDomain || "-"}
+                <div className="rounded-xl border border-border bg-background px-4 py-3 font-mono text-sm flex items-center justify-between gap-3">
+                    <span>{defaultDomain || "Não disponível"}</span>
+                    {defaultDomain && (
+                        <Button size="sm" variant="outline" className="h-8" onClick={() => copyToClipboard(defaultDomain, "domínio padrão")}> 
+                            <Copy className="w-3.5 h-3.5 mr-1" /> Copiar
+                        </Button>
+                    )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                    Este domínio já nasce ativo e aponta para a sua loja automaticamente.
-                </p>
+                <div className="flex items-center gap-2 text-xs">
+                    <span className="px-2 py-1 rounded-full border text-emerald-400 bg-emerald-500/10 border-emerald-500/30">Active</span>
+                    <p className="text-muted-foreground">Este domínio nasce pronto e sempre aponta para sua loja.</p>
+                </div>
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
@@ -114,22 +141,51 @@ export default function StoreDomainsPage() {
                     </div>
                 </div>
 
-                {addDomain.data?.dnsInstructions && (
-                    <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 space-y-3">
-                        <div className="text-sm font-semibold text-violet-400 flex items-center gap-2">
-                            <ShieldCheck className="w-4 h-4" />
-                            DNS Instructions
-                        </div>
-                        <div className="text-xs text-muted-foreground">CNAME</div>
-                        <div className="font-mono text-xs rounded border border-border bg-background p-2">
-                            {addDomain.data.dnsInstructions.cname.host} → {addDomain.data.dnsInstructions.cname.value}
-                        </div>
-                        <div className="text-xs text-muted-foreground">TXT (opcional)</div>
-                        <div className="font-mono text-xs rounded border border-border bg-background p-2">
-                            {addDomain.data.dnsInstructions.txt.host} = {addDomain.data.dnsInstructions.txt.value}
-                        </div>
+                <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 space-y-3">
+                    <div className="text-sm font-semibold text-violet-400 flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4" />
+                        DNS Instructions
                     </div>
-                )}
+
+                    <div className="text-xs text-muted-foreground">CNAME</div>
+                    <div className="font-mono text-xs rounded border border-border bg-background p-2 flex items-center justify-between gap-3">
+                        <span>
+                            {(addDomain.data?.dnsInstructions?.cname?.host || "www")}
+                            {" → "}
+                            {(addDomain.data?.dnsInstructions?.cname?.value || "stores.orbicapp.com")}
+                        </span>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7"
+                            onClick={() => copyToClipboard(`${addDomain.data?.dnsInstructions?.cname?.host || "www"} -> ${addDomain.data?.dnsInstructions?.cname?.value || "stores.orbicapp.com"}`, "CNAME")}
+                        >
+                            <Copy className="w-3 h-3 mr-1" /> Copiar
+                        </Button>
+                    </div>
+
+                    <div className="text-xs text-muted-foreground">TXT (opcional)</div>
+                    <div className="font-mono text-xs rounded border border-border bg-background p-2 flex items-center justify-between gap-3">
+                        <span>
+                            {(addDomain.data?.dnsInstructions?.txt?.host || "_orbic.seu-dominio.com")}
+                            {" = "}
+                            {(addDomain.data?.dnsInstructions?.txt?.value || "orbic-verify=TOKEN")}
+                        </span>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7"
+                            onClick={() => copyToClipboard(`${addDomain.data?.dnsInstructions?.txt?.host || "_orbic.seu-dominio.com"} = ${addDomain.data?.dnsInstructions?.txt?.value || "orbic-verify=TOKEN"}`, "TXT")}
+                        >
+                            <Copy className="w-3 h-3 mr-1" /> Copiar
+                        </Button>
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                        <CircleHelp className="w-3.5 h-3.5" />
+                        Após configurar DNS, clique em <strong>Verificar</strong> no domínio para atualizar status.
+                    </p>
+                </div>
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
@@ -145,9 +201,11 @@ export default function StoreDomainsPage() {
                             <div className="flex items-start justify-between gap-4 flex-wrap">
                                 <div>
                                     <div className="font-mono text-sm break-all">{domain.domain}</div>
-                                    <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                                    <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
                                         <span>Tipo: {domain.type}</span>
-                                        <span>Status: {domain.status}</span>
+                                        <span className={`px-2 py-0.5 rounded-full border ${statusMeta[domain.status]?.className || "text-white/70 border-white/20"}`}>
+                                            {statusMeta[domain.status]?.label || domain.status}
+                                        </span>
                                         {domain.isPrimary && <span className="text-emerald-500">Primário</span>}
                                     </div>
                                 </div>
@@ -159,12 +217,12 @@ export default function StoreDomainsPage() {
                                     )}
                                     {!domain.isPrimary && isVerified && (
                                         <Button size="sm" onClick={() => handleSetPrimary(domain.id)} disabled={setPrimary.isPending}>
-                                            <CheckCircle2 className="w-4 h-4 mr-1" /> Set Primary
+                                            <CheckCircle2 className="w-4 h-4 mr-1" /> Definir Primário
                                         </Button>
                                     )}
                                     {domain.type === "custom" && (
                                         <Button size="sm" variant="destructive" onClick={() => handleDelete(domain.id)} disabled={deleteDomain.isPending}>
-                                            <Trash2 className="w-4 h-4 mr-1" /> Delete
+                                            <Trash2 className="w-4 h-4 mr-1" /> Remover
                                         </Button>
                                     )}
                                 </div>
@@ -179,6 +237,14 @@ export default function StoreDomainsPage() {
                         </div>
                     );
                 })}
+
+                <div className="rounded-xl border border-border/70 bg-background/40 p-4 text-xs text-muted-foreground space-y-1.5">
+                    <p className="font-semibold text-white/80">Legenda de status</p>
+                    <p><span className="text-amber-400">Pending DNS</span>: aguardando propagação DNS.</p>
+                    <p><span className="text-blue-400">Verified</span>: domínio validado, pronto para ativação primária.</p>
+                    <p><span className="text-emerald-400">Active</span>: domínio ativo para acesso público.</p>
+                    <p><span className="text-red-400">Error</span>: verificação falhou, revise CNAME/TXT.</p>
+                </div>
             </div>
         </div>
     );
