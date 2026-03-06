@@ -56,6 +56,8 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
     const noLimitReadPrefixes = [
         '/health',
         '/public/store/resolve',
+        '/public/portal',
+        '/public/store',
         '/auth/me',
         '/auth/discord/check-credentials',
         '/organizations/me',
