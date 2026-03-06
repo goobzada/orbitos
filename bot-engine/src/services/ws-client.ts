@@ -6,15 +6,29 @@ import { loadBotEnv } from '../utils/load-env';
 loadBotEnv();
 
 function resolveWsBaseUrl(): string {
+    const normalizeBotWsPath = (value: string): string => {
+        let normalized = value.trim().replace(/\/+$/, '');
+
+        // Remove accidental API namespace from WS URLs.
+        normalized = normalized.replace(/\/api$/i, '');
+
+        // If a ws endpoint is provided, force BOT lane.
+        if (/\/ws\//i.test(normalized)) {
+            return normalized.replace(/\/ws\/(bot|agent|dashboard)$/i, '/ws/bot');
+        }
+
+        return `${normalized}/ws/bot`;
+    };
+
     const explicit = (process.env.CORE_API_WS_URL || '').trim();
     if (explicit) {
-        return explicit.replace(/\/+$/, '');
+        return normalizeBotWsPath(explicit);
     }
 
     const httpBase = (process.env.CORE_API_URL || 'http://localhost:4000').trim().replace(/\/+$/, '');
     const withoutApiSuffix = httpBase.replace(/\/api$/i, '');
     const wsRoot = withoutApiSuffix.replace(/^https:\/\//i, 'wss://').replace(/^http:\/\//i, 'ws://');
-    return `${wsRoot}/ws/bot`;
+    return normalizeBotWsPath(wsRoot);
 }
 
 export class CommunityWSClient {
