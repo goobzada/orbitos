@@ -41,7 +41,11 @@ export class StoreService {
 
         if (!settings) {
             settings = await prisma.storeSettings.create({
-                data: { organizationId: orgId },
+                data: {
+                    organizationId: orgId,
+                    // Keep public storefront visible by default for orgs using the store module.
+                    enabled: true,
+                },
             });
         }
 
@@ -128,6 +132,18 @@ export class StoreService {
      */
     static async createProduct(orgId: string, data: any, userId: string) {
         await this.validatePlan(orgId);
+
+        // Ensure storefront is enabled as soon as the tenant starts publishing products.
+        await prisma.storeSettings.upsert({
+            where: { organizationId: orgId },
+            update: { enabled: true },
+            create: {
+                organizationId: orgId,
+                enabled: true,
+                currency: 'BRL',
+                checkoutProvider: 'STRIPE',
+            },
+        });
 
         const product = await prisma.storeProduct.create({
             data: {

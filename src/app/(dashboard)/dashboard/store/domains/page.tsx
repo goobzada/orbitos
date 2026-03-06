@@ -247,6 +247,10 @@ export default function StoreDomainsPage() {
                     <p><span className="text-blue-400">Verified</span>: domínio validado, pronto para ativação primária.</p>
                     <p><span className="text-emerald-400">Active</span>: domínio ativo para acesso público.</p>
                     <p><span className="text-red-400">Error</span>: verificação falhou, revise CNAME/TXT.</p>
+                    <p className="pt-1 border-t border-border/70">
+                        <span className="text-white/80 font-medium">Canônico:</span> ao definir um domínio como <strong>Primário</strong>,
+                        acessos ao subdomínio padrão da plataforma serão redirecionados para ele.
+                    </p>
                 </div>
             </div>
         </div>
