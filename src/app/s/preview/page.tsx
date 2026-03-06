@@ -22,7 +22,9 @@ const MOCK_PRESETS: Record<string, any> = {
     'terminal-dark': { layoutType: 'terminal', navigation: 'sidebar', heroMode: 'none', backgroundPattern: 'scanline', cardShape: 'square', fontPreset: 'mono' },
     'aurora-landing': { layoutType: 'marketing-landing', navigation: 'topnav', heroMode: 'full', backgroundPattern: 'aurora', cardShape: 'rounded' },
     'modular-blocks': { layoutType: 'blocks', navigation: 'sidebar', heroMode: 'small', backgroundPattern: 'none', cardShape: 'block' },
-    'cosmic-ultra': { layoutType: 'dashboard-sidebar', navigation: 'sidebar', heroMode: 'small', backgroundPattern: 'cosmos', cardShape: 'glass-intense', fontPreset: 'modern' }
+    'cosmic-ultra': { layoutType: 'dashboard-sidebar', navigation: 'sidebar', heroMode: 'small', backgroundPattern: 'cosmos', cardShape: 'glass-intense', fontPreset: 'modern' },
+    'obsidian-empire': { layoutType: 'dashboard-sidebar', navigation: 'sidebar', heroMode: 'full', backgroundPattern: 'obsidian-grid', cardShape: 'sharp-gold', fontPreset: 'luxury' },
+    'hologram-pro': { layoutType: 'dashboard-topnav', navigation: 'topnav', heroMode: 'full', backgroundPattern: 'hologram-mesh', cardShape: 'holo-glass', fontPreset: 'tech' },
 };
 
 export default function PreviewIframePage() {

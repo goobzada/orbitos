@@ -1,6 +1,6 @@
 "use client";
 
-import { useOrganizations, useMe } from "@/lib/hooks";
+import { useOrganizations, useMe, useStoreProducts, useStoreOrders } from "@/lib/hooks";
 import { useActiveOrg } from "@/lib/use-org-store";
 import { Copy, PlusCircle, ShoppingCart, ShoppingBag, Settings2, Package, Tag, ArrowRight, Bot, Sparkles } from 'lucide-react';
 import Link from 'next/link';
@@ -12,14 +12,19 @@ export default function StoreOverviewPage() {
     const { activeOrgId } = useActiveOrg();
     const { data: orgs } = useOrganizations();
     const org = orgs?.find(o => o.id === activeOrgId);
-
     const isFree = org?.plan === 'FREE';
 
-    // Mock dados para visualização enquanto não temos a API completa de estatísticas
+    const { data: products } = useStoreProducts(!isFree ? (activeOrgId || "") : "");
+    const { data: orders } = useStoreOrders(!isFree ? (activeOrgId || "") : "");
+
+    const activeProductCount = products?.filter((p: any) => p.status === 'ACTIVE').length ?? 0;
+    const pendingOrderCount = orders?.filter((o: any) => o.status === 'PENDING').length ?? 0;
+    const totalRevenueCents = orders?.filter((o: any) => o.status === 'PAID').reduce((sum: number, o: any) => sum + (o.totalCents || 0), 0) ?? 0;
+
     const stats = [
-        { label: t.store.overview.total_revenue, value: 'R$ 0,00', icon: ShoppingCart, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-        { label: t.store.overview.pending_orders, value: '0', icon: Package, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-        { label: t.store.overview.active_products, value: '0', icon: Tag, color: 'text-violet-500', bg: 'bg-violet-500/10' },
+        { label: t.store.overview.total_revenue, value: (totalRevenueCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: ShoppingCart, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+        { label: t.store.overview.pending_orders, value: String(pendingOrderCount), icon: Package, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+        { label: t.store.overview.active_products, value: String(activeProductCount), icon: Tag, color: 'text-violet-500', bg: 'bg-violet-500/10' },
     ];
 
     if (isFree) {

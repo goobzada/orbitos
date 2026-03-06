@@ -85,27 +85,32 @@ export class StoreService {
     }
 
     /**
-     * Lista produtos (Público) (MOCK ORG BY SLUG)
+     * Lista produtos (Público) — busca por org slug ou UUID
      */
     static async getPublicProducts(slug: string) {
-        // Encontrar organização pelo ID ou futuramente pelo slug
-        const products = await prisma.storeProduct.findMany({
+        // Encontrar organização pelo slug ou UUID
+        const org = await prisma.organization.findFirst({
             where: {
                 OR: [
-                    { organizationId: slug },
-                    { slug: slug }
-                ],
+                    { slug: slug },
+                    { subdomain: slug },
+                    { id: slug },
+                ]
+            },
+            include: { storeSettings: true }
+        });
+
+        if (!org || !org.storeSettings?.enabled) {
+            return [];
+        }
+
+        return prisma.storeProduct.findMany({
+            where: {
+                organizationId: org.id,
                 status: 'ACTIVE',
-                organization: {
-                    storeSettings: {
-                        enabled: true
-                    }
-                }
             },
             orderBy: { createdAt: 'desc' },
         });
-
-        return products;
     }
 
     /**

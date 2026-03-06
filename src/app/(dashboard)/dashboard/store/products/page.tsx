@@ -385,7 +385,7 @@ export default function StoreProductsPage() {
                                     <Button
                                         variant="outline"
                                         className="w-full rounded-2xl bg-violet-600/5 border-violet-500/10 hover:bg-violet-600/10 text-violet-500 font-bold gap-2"
-                                        onClick={() => window.open(`/s/${org?.slug}`, '_blank')}
+                                        onClick={() => window.open(`/s/${org?.slug}/store`, '_blank')}
                                     >
                                         <Globe className="w-4 h-4" /> {t.store.view_in_store}
                                     </Button>
