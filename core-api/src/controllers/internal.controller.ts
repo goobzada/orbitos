@@ -284,6 +284,7 @@ export class InternalController {
 
         return res.json({
             organization: (server as any).organization?.name || server.name,
+            organizationSlug: (server as any).organization?.slug || null,
             products
         });
     }

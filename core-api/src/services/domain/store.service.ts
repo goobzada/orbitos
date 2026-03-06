@@ -254,13 +254,30 @@ export class StoreService {
     /**
      * Checkout de um pedido usando Stripe Real.
      */
-    static async createCheckoutSession(orgId: string, data: any) {
+    static async createCheckoutSession(slugOrId: string, data: any) {
+        // Resolve org from slug or UUID
+        const org = await prisma.organization.findFirst({
+            where: {
+                OR: [
+                    { slug: slugOrId },
+                    { subdomain: slugOrId },
+                    { id: slugOrId },
+                ]
+            },
+        });
+
+        if (!org) throw new Error('Organização não encontrada.');
+
+        const orgId = org.id;
+        const orgSlug = org.slug || slugOrId;
+
         const settings = await this.getStoreSettings(orgId);
         const config = settings.config ? JSON.parse(settings.config) : {};
 
         const stripeSecretKey = config.stripeSecretKey || process.env.STRIPE_SECRET_KEY;
-        const successUrl = config.successUrl || `${process.env.FRONTEND_URL || 'http://localhost:3001'}/store/success?session_id={CHECKOUT_SESSION_ID}`;
-        const cancelUrl = config.cancelUrl || `${process.env.FRONTEND_URL || 'http://localhost:3001'}/store/cancel`;
+        const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3001';
+        const successUrl = config.successUrl || `${frontendBase}/s/${orgSlug}/store/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = config.cancelUrl || `${frontendBase}/s/${orgSlug}/store/cancel`;
 
         if (!stripeSecretKey) {
             throw new Error('CONFIG_REQUIRED:STRIPE_KEY');

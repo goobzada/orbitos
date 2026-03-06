@@ -23,7 +23,7 @@ async function browseStore(interaction: ButtonInteraction) {
 
     try {
         const { data } = await coreApi.get(`/internal/store/products/${interaction.guildId}`);
-        const { products, organization } = data;
+        const { products, organization, organizationSlug } = data;
 
         if (!products || products.length === 0) {
             return interaction.editReply({
@@ -53,7 +53,7 @@ async function browseStore(interaction: ButtonInteraction) {
             });
 
             const buyBtn = new ButtonBuilder()
-                .setCustomId(`store_buy_${product.id}`)
+                .setCustomId(`store_buy_${product.id}|${organizationSlug || interaction.guildId}`)
                 .setLabel(`Comprar #${index + 1}`)
                 .setStyle(ButtonStyle.Success)
                 .setEmoji('🛒');
@@ -98,20 +98,28 @@ const StoreModule: BaseModule = {
         }
 
         if (interaction.customId.startsWith('store_buy_')) {
-            const productId = interaction.customId.replace('store_buy_', '');
+            // customId format: store_buy_{productId}|{slug}
+            const raw = interaction.customId.replace('store_buy_', '');
+            const pipeIdx = raw.lastIndexOf('|');
+            const productId = pipeIdx > -1 ? raw.substring(0, pipeIdx) : raw;
+            const slug = pipeIdx > -1 ? raw.substring(pipeIdx + 1) : interaction.guildId;
+
+            const frontendUrl = process.env.FRONTEND_URL || 'https://orbitup.io';
+            const checkoutUrl = `${frontendUrl}/s/${slug}/store/checkout?product=${productId}`;
 
             const embed = new EmbedBuilder()
                 .setTitle('🛍️  Quase lá!')
                 .setDescription(
                     `Você selecionou um item da nossa loja.\n\n` +
-                    `Para garantir a entrega automática e segura, as compras são processadas em nosso portal oficial.`
+                    `Para garantir a entrega automática e segura, as compras são processadas em nosso portal oficial.\n\n` +
+                    `Você precisará do seu **ID do Discord** para receber o benefício — ele é preenchido automaticamente se estiver logado.`
                 )
                 .addFields({
                     name: '🔗 Link de Checkout',
-                    value: `[Clique aqui para finalizar seu pedido](https://orbitup.io/store/${interaction.guildId}/buy/${productId})`
+                    value: `[Clique aqui para finalizar seu pedido](${checkoutUrl})`
                 })
                 .setColor(0x5865F2)
-                .setFooter({ text: 'Segurança garantida por OrbitUp.io' });
+                .setFooter({ text: 'Segurança garantida por OrbitOS • Powered by Stripe' });
 
             await interaction.reply({
                 embeds: [embed],
