@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 /* FIX A: Middleware should ONLY check cookie presence, not decode/verify JWT.
  * Backend is source of truth. Avoids flicker when JWT_SECRET missing on frontend. */
 
-const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'orbicapp.com';
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'orbitup.io';
 const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || `app.${ROOT_DOMAIN}`;
 const STORES_GATEWAY_DOMAIN = process.env.NEXT_PUBLIC_STORES_GATEWAY_DOMAIN || `stores.${ROOT_DOMAIN}`;
 /*

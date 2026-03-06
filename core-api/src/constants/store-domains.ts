@@ -1,4 +1,4 @@
-export const ROOT_DOMAIN = process.env.ROOT_DOMAIN || 'orbicapp.com';
+export const ROOT_DOMAIN = process.env.ROOT_DOMAIN || 'orbitup.io';
 export const APP_DOMAIN = process.env.APP_DOMAIN || `app.${ROOT_DOMAIN}`;
 export const STORES_GATEWAY_DOMAIN = process.env.STORES_GATEWAY_DOMAIN || `stores.${ROOT_DOMAIN}`;
 

@@ -152,13 +152,13 @@ export default function StoreDomainsPage() {
                         <span>
                             {(addDomain.data?.dnsInstructions?.cname?.host || "www")}
                             {" → "}
-                            {(addDomain.data?.dnsInstructions?.cname?.value || "stores.orbicapp.com")}
+                            {(addDomain.data?.dnsInstructions?.cname?.value || "stores.orbitup.io")}
                         </span>
                         <Button
                             size="sm"
                             variant="outline"
                             className="h-7"
-                            onClick={() => copyToClipboard(`${addDomain.data?.dnsInstructions?.cname?.host || "www"} -> ${addDomain.data?.dnsInstructions?.cname?.value || "stores.orbicapp.com"}`, "CNAME")}
+                            onClick={() => copyToClipboard(`${addDomain.data?.dnsInstructions?.cname?.host || "www"} -> ${addDomain.data?.dnsInstructions?.cname?.value || "stores.orbitup.io"}`, "CNAME")}
                         >
                             <Copy className="w-3 h-3 mr-1" /> Copiar
                         </Button>
