@@ -97,6 +97,15 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
         }
     }, [module]);
 
+    useEffect(() => {
+        if (!isOpen || module?.key !== 'whitelist_quiz') return;
+
+        const hasQuestions = Array.isArray(config?.questions) && config.questions.length > 0;
+        if (hasQuestions) return;
+
+        setConfig((prev: any) => withWhitelistQuizDefaults('whitelist_quiz', prev || {}));
+    }, [isOpen, module?.key, config?.questions]);
+
     const handleSave = async () => {
         try {
             await updateConfig.mutateAsync({
