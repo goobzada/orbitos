@@ -204,14 +204,15 @@ export class OrgController {
     }
 
     async getPublicPortalData(req: Request, res: Response) {
-        const slug = req.params.slug as string;
+        const slugOrId = req.params.slug as string;
 
         try {
             const org = await prisma.organization.findFirst({
                 where: {
                     OR: [
-                        { slug: slug },
-                        { subdomain: slug }
+                        { slug: slugOrId },
+                        { subdomain: slugOrId },
+                        { id: slugOrId }
                     ]
                 }
             }) as any;
