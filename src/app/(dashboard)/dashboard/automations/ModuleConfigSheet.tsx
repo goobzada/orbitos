@@ -27,6 +27,63 @@ interface ModuleConfigSheetProps {
     organizationId: string;
 }
 
+const DEFAULT_WHITELIST_QUIZ_QUESTIONS = [
+    {
+        id: 'quiz-default-1',
+        text: 'RDM (matar sem motivo) e permitido?',
+        options: ['Nao, e proibido', 'Sim, sempre', 'Somente com admin online'],
+        correctAnswer: 0,
+    },
+    {
+        id: 'quiz-default-2',
+        text: 'O que fazer antes de entrar em acao policial?',
+        options: ['Abrir chamada e comunicar no RP', 'Atirar primeiro', 'Ignorar as regras'],
+        correctAnswer: 0,
+    },
+    {
+        id: 'quiz-default-3',
+        text: 'Metagaming significa:',
+        options: ['Usar informacoes de fora do jogo no RP', 'Dirigir devagar', 'Abrir ticket no Discord'],
+        correctAnswer: 0,
+    },
+    {
+        id: 'quiz-default-4',
+        text: 'Em caso de duvida sobre regra, qual o correto?',
+        options: ['Consultar staff/abrir ticket', 'Inventar regra na hora', 'Sair do servidor'],
+        correctAnswer: 0,
+    },
+    {
+        id: 'quiz-default-5',
+        text: 'Powergaming e:',
+        options: ['Forcar acoes impossiveis sem chance de reacao', 'Jogar em equipe', 'Respeitar cooldown'],
+        correctAnswer: 0,
+    },
+];
+
+function withWhitelistQuizDefaults(moduleKey: string, incoming: any) {
+    if (moduleKey !== 'whitelist_quiz') return incoming || {};
+
+    const next = { ...(incoming || {}) };
+    const hasQuestions = Array.isArray(next.questions) && next.questions.length > 0;
+
+    if (!hasQuestions) {
+        next.questions = DEFAULT_WHITELIST_QUIZ_QUESTIONS.map((q) => ({
+            ...q,
+            options: [...q.options],
+        }));
+    }
+
+    if (typeof next.passPercentage !== 'number' || Number.isNaN(next.passPercentage)) {
+        next.passPercentage = 80;
+    }
+
+    if (typeof next.autoApprove !== 'boolean') {
+        next.autoApprove = true;
+    }
+
+    return next;
+}
+
 export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: ModuleConfigSheetProps) {
     const updateConfig = useUpdateModuleConfig(organizationId);
     const resetConfig = useResetModuleConfig(organizationId);
@@ -34,9 +91,9 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
 
     useEffect(() => {
         if (module?.config) {
-            setConfig(module.config);
+            setConfig(withWhitelistQuizDefaults(module?.key, module.config));
         } else {
-            setConfig({});
+            setConfig(withWhitelistQuizDefaults(module?.key, {}));
         }
     }, [module]);
 
@@ -57,7 +114,7 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
         try {
             const data = await resetConfig.mutateAsync(module.key);
             // O backend retorna o objeto OrganizationModule atualizado
-            setConfig(data.config || {});
+            setConfig(withWhitelistQuizDefaults(module?.key, data.config || {}));
             toast.success('Configuração restaurada para o padrão da comunidade!');
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Este módulo não possui predefinições para sua comunidade.');
