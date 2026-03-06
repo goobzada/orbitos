@@ -20,10 +20,11 @@ export default {
             let mode: 'quiz' | 'simple' | null = null;
             let finalConfig: any = null;
 
-            // Regra principal: /wl deve abrir o Quiz sempre que ele estiver configurado.
-            if (quizWlConfig && quizWlConfig.questions && quizWlConfig.questions.length > 0) {
+            // Regra principal: /wl deve abrir o Quiz sempre que o módulo estiver ativo.
+            // O próprio módulo de quiz já possui perguntas padrão internas quando config vier vazia.
+            if (quizWlConfig !== null) {
                 mode = 'quiz';
-                finalConfig = quizWlConfig;
+                finalConfig = quizWlConfig || {};
             }
 
             // Fallback: usa o whitelist simples apenas quando o Quiz não estiver pronto.
