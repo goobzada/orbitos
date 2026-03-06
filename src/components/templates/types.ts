@@ -1,4 +1,4 @@
-export type LayoutType = "dashboard-sidebar" | "dashboard-topnav" | "marketing-landing" | "terminal" | "blocks";
+export type LayoutType = "dashboard-sidebar" | "dashboard-topnav" | "marketing-landing" | "terminal" | "blocks" | "obsidian-empire" | "hologram-pro" | "cosmic-ultra";
 
 export interface TemplateConfig {
     layoutType: LayoutType;

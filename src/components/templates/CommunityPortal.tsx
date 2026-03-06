@@ -5,6 +5,9 @@ import { TopNavGlassLayout } from './layouts/TopNavGlassLayout';
 import { TerminalLayout } from './layouts/TerminalLayout';
 import { LandingAuroraLayout } from './layouts/LandingAuroraLayout';
 import { BlocksLayout } from './layouts/BlocksLayout';
+import { ObsidianEmpireLayout } from './layouts/ObsidianEmpireLayout';
+import { HologramProLayout } from './layouts/HologramProLayout';
+import { CosmicUltraLayout } from './layouts/CosmicUltraLayout';
 
 interface Props {
     config: TemplateConfig;
@@ -30,6 +33,16 @@ export function CommunityPortal({ config, community }: Props) {
 
         case 'blocks':
             return <BlocksLayout config={config} community={community} />;
+
+        // ─── MAX TIER ── layouts exclusivos com design completamente único
+        case 'obsidian-empire':
+            return <ObsidianEmpireLayout config={config} community={community} />;
+
+        case 'hologram-pro':
+            return <HologramProLayout config={config} community={community} />;
+
+        case 'cosmic-ultra':
+            return <CosmicUltraLayout config={config} community={community} />;
 
         default:
             // Fallback para o modo Free 'default-classic'

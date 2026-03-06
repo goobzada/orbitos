@@ -22,9 +22,9 @@ const MOCK_PRESETS: Record<string, any> = {
     'terminal-dark': { layoutType: 'terminal', navigation: 'sidebar', heroMode: 'none', backgroundPattern: 'scanline', cardShape: 'square', fontPreset: 'mono' },
     'aurora-landing': { layoutType: 'marketing-landing', navigation: 'topnav', heroMode: 'full', backgroundPattern: 'aurora', cardShape: 'rounded' },
     'modular-blocks': { layoutType: 'blocks', navigation: 'sidebar', heroMode: 'small', backgroundPattern: 'none', cardShape: 'block' },
-    'cosmic-ultra': { layoutType: 'dashboard-sidebar', navigation: 'sidebar', heroMode: 'small', backgroundPattern: 'cosmos', cardShape: 'glass-intense', fontPreset: 'modern' },
-    'obsidian-empire': { layoutType: 'dashboard-sidebar', navigation: 'sidebar', heroMode: 'full', backgroundPattern: 'obsidian-grid', cardShape: 'sharp-gold', fontPreset: 'luxury' },
-    'hologram-pro': { layoutType: 'dashboard-topnav', navigation: 'topnav', heroMode: 'full', backgroundPattern: 'hologram-mesh', cardShape: 'holo-glass', fontPreset: 'tech' },
+    'cosmic-ultra': { layoutType: 'cosmic-ultra', navigation: 'sidebar', heroMode: 'small', backgroundPattern: 'cosmos', cardShape: 'glass-intense', fontPreset: 'modern', templateKey: 'cosmic-ultra' },
+    'obsidian-empire': { layoutType: 'obsidian-empire', navigation: 'none', heroMode: 'full', backgroundPattern: 'none', cardShape: 'square', fontPreset: 'luxury', templateKey: 'obsidian-empire', primaryColor: '#C9A84C', backgroundColor: '#050505' },
+    'hologram-pro': { layoutType: 'hologram-pro', navigation: 'topnav', heroMode: 'full', backgroundPattern: 'none', cardShape: 'square', fontPreset: 'mono', templateKey: 'hologram-pro', primaryColor: '#00F5FF', backgroundColor: '#01040D' },
 };
 
 export default function PreviewIframePage() {
