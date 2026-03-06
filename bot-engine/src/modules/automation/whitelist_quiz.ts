@@ -248,14 +248,36 @@ async function finishQuiz(interaction: ButtonInteraction, userId: string) {
 
     // DM result to the participant (approval or rejection).
     try {
-        const dmResult = passed ? '✅ Aprovado' : '❌ Reprovado';
-        const dmText =
-            `**Resultado da Whitelist**\n` +
-            `${dmResult}\n` +
-            `Pontuação: **${percent}%** (${session.score}/${session.questions.length})\n` +
-            `Mínimo exigido: **${session.passPercentage}%**`;
+        const statusLabel = passed ? 'Aprovado' : 'Reprovado';
+        const statusEmoji = passed ? '🏆' : '🛑';
+        const scoreBar = progressBar(session.score, session.questions.length, 12);
 
-        await interaction.user.send({ content: dmText });
+        const dmEmbed = new EmbedBuilder()
+            .setColor(passed ? 0x57F287 : 0xED4245)
+            .setTitle(`${statusEmoji} Resultado da Whitelist`)
+            .setDescription(
+                passed
+                    ? 'Parabens! Voce foi aprovado no teste e ja pode continuar sua jornada no servidor.'
+                    : 'Voce nao atingiu a pontuacao minima desta vez. Revise as regras e tente novamente.'
+            )
+            .addFields(
+                { name: 'Status', value: `**${statusLabel}**`, inline: true },
+                { name: 'Pontuacao', value: `**${percent}%**`, inline: true },
+                { name: 'Minimo Exigido', value: `**${session.passPercentage}%**`, inline: true },
+                { name: 'Acertos', value: `**${session.score}** de **${session.questions.length}**`, inline: true },
+                { name: 'Desempenho', value: `\`${scoreBar}\``, inline: true },
+                {
+                    name: 'Proximo Passo',
+                    value: passed
+                        ? 'Seja bem-vindo! Caso tenha duvidas, abra um ticket com a staff.'
+                        : 'Use `/wl` novamente no servidor para refazer o quiz quando estiver pronto.',
+                    inline: false,
+                }
+            )
+            .setFooter({ text: 'OrbitUp Whitelist Engine' })
+            .setTimestamp();
+
+        await interaction.user.send({ embeds: [dmEmbed] });
     } catch {
         // Ignore when participant has DMs disabled.
     }
