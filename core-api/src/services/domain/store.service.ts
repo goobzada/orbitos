@@ -97,10 +97,9 @@ export class StoreService {
                     { id: slug },
                 ]
             },
-            include: { storeSettings: true }
         });
 
-        if (!org || !org.storeSettings?.enabled) {
+        if (!org) {
             return [];
         }
 
