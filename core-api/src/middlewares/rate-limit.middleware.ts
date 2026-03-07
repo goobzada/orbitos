@@ -118,6 +118,12 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         return next();
     }
 
+    // Template/identity portal routes are low-frequency, controlled dashboard actions.
+    // GET to fetch current settings, PUT to save — neither should be blocked by shared-IP bursts.
+    if (req.path.startsWith('/templates/')) {
+        return next();
+    }
+
     const usingFallback = !REDIS_ENABLED || !redisConnection || !isRedisConnected();
 
     const authHeader = req.headers.authorization;
@@ -187,9 +193,18 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
 
         next();
     } catch (rejRes: any) {
-        res.status(429).json({
-            error: 'Muitas requisições. Por favor, aguarde.',
-            retryAfter: Math.round(rejRes.msBeforeNext / 1000) || 1
-        });
+        // rate-limiter-flexible throws RateLimiterRes (has msBeforeNextReset) on genuine rate limit.
+        // Redis/IO errors throw plain Error objects — fail open to avoid false 429s.
+        const msBeforeReset = rejRes?.msBeforeNextReset ?? rejRes?.msBeforeNext;
+        if (typeof msBeforeReset === 'number') {
+            res.status(429).json({
+                error: 'Muitas requisições. Por favor, aguarde.',
+                retryAfter: Math.round(msBeforeReset / 1000) || 1
+            });
+        } else {
+            // Unexpected error (Redis connection issue, etc.) — fail open
+            console.warn('[RATE LIMIT] consume() error (non-rate-limit):', rejRes?.message || String(rejRes));
+            return next();
+        }
     }
 };
