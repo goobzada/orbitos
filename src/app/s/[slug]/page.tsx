@@ -38,7 +38,7 @@ export default function PublicCommunityPage() {
                     'neon-grid': { layoutType: 'dashboard-topnav', heroMode: 'small', navigation: 'topnav', backgroundPattern: 'grid-neon', cardShape: 'glass', fontPreset: 'modern' },
                     'minimal-glass': { layoutType: 'dashboard-sidebar', heroMode: 'none', navigation: 'sidebar', backgroundPattern: 'none', cardShape: 'glass', fontPreset: 'minimal' },
                     'terminal-dark': { layoutType: 'terminal', heroMode: 'none', navigation: 'sidebar', backgroundPattern: 'scanline', cardShape: 'square', fontPreset: 'mono' },
-                    'aurora-landing': { layoutType: 'marketing-landing', heroMode: 'full', navigation: 'topnav', backgroundPattern: 'aurora', cardShape: 'elevated', fontPreset: 'default' },
+                    'aurora-landing': { layoutType: 'marketing-landing', heroMode: 'full', navigation: 'topnav', backgroundPattern: 'aurora', cardShape: 'rounded', fontPreset: 'default' },
                     'modular-blocks': { layoutType: 'blocks', heroMode: 'small', navigation: 'sidebar', backgroundPattern: 'none', cardShape: 'block', fontPreset: 'default' },
                     'cosmic-ultra': { layoutType: 'dashboard-sidebar', heroMode: 'small', navigation: 'sidebar', backgroundPattern: 'cosmos', cardShape: 'glass-intense', fontPreset: 'modern' },
                     'obsidian-empire': { layoutType: 'obsidian-empire', heroMode: 'full', navigation: 'none', backgroundPattern: 'none', cardShape: 'square', fontPreset: 'luxury' },
