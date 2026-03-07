@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Palette, Type, Layout, Image as ImageIcon, Settings2, Save, Crown,
-    Check, RotateCcw, MonitorPlay, X, ArrowRight, Trash2, Move, Code2, Droplet,
+    Check, RotateCcw, MonitorPlay, X, ArrowRight, Trash2, Move, Code2, Droplet, ExternalLink,
     Type as TypographyIcon, Highlighter, MousePointer2, ChevronRight, Sparkles, Lock
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -262,9 +262,22 @@ export default function IdentityEditorPage() {
                             onClick={handleReset}
                             disabled={!isDirty}
                             className="p-3 border border-border bg-card hover:bg-accent rounded-lg text-muted-foreground disabled:opacity-50 transition-colors"
+                            title="Resetar alterações"
                         >
                             <RotateCcw className="w-5 h-5" />
                         </button>
+
+                        {selectedOrg?.slug && (
+                            <a
+                                href={`${process.env.NEXT_PUBLIC_APP_URL || 'https://orbitup.io'}/s/${selectedOrg.slug}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-3 border border-border bg-card hover:bg-accent rounded-lg text-muted-foreground transition-colors"
+                                title="Ver site público"
+                            >
+                                <ExternalLink className="w-5 h-5" />
+                            </a>
+                        )}
                     </div>
                 </div>
 

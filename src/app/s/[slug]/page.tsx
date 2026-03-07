@@ -28,15 +28,31 @@ export default function PublicCommunityPage() {
                 const org = data.organization;
                 const preset = identity.preset || { config: {} };
 
-                // O layout e o modo de exibição vêm do preset
+                // Fallback map: when preset is not seeded in DB, derive layoutType from templateKey
+                const TEMPLATE_LAYOUT_MAP: Record<string, Partial<TemplateConfig>> = {
+                    'default-classic': { layoutType: 'dashboard-sidebar', heroMode: 'small', navigation: 'sidebar', backgroundPattern: 'none', cardShape: 'rounded', fontPreset: 'default' },
+                    'neon-grid': { layoutType: 'dashboard-topnav', heroMode: 'small', navigation: 'topnav', backgroundPattern: 'grid-neon', cardShape: 'glass', fontPreset: 'modern' },
+                    'minimal-glass': { layoutType: 'dashboard-sidebar', heroMode: 'none', navigation: 'sidebar', backgroundPattern: 'none', cardShape: 'glass', fontPreset: 'minimal' },
+                    'terminal-dark': { layoutType: 'terminal', heroMode: 'none', navigation: 'sidebar', backgroundPattern: 'scanline', cardShape: 'square', fontPreset: 'mono' },
+                    'aurora-landing': { layoutType: 'marketing-landing', heroMode: 'full', navigation: 'topnav', backgroundPattern: 'aurora', cardShape: 'elevated', fontPreset: 'default' },
+                    'modular-blocks': { layoutType: 'blocks', heroMode: 'small', navigation: 'sidebar', backgroundPattern: 'none', cardShape: 'block', fontPreset: 'default' },
+                    'cosmic-ultra': { layoutType: 'dashboard-sidebar', heroMode: 'small', navigation: 'sidebar', backgroundPattern: 'cosmos', cardShape: 'glass-intense', fontPreset: 'modern' },
+                    'obsidian-empire': { layoutType: 'obsidian-empire', heroMode: 'full', navigation: 'none', backgroundPattern: 'none', cardShape: 'square', fontPreset: 'luxury' },
+                    'hologram-pro': { layoutType: 'hologram-pro', heroMode: 'full', navigation: 'topnav', backgroundPattern: 'none', cardShape: 'square', fontPreset: 'mono' },
+                };
+
+                const resolvedKey = identity.templateKey || identity.presetKey || preset.key || 'default-classic';
+                const fallback = TEMPLATE_LAYOUT_MAP[resolvedKey] || TEMPLATE_LAYOUT_MAP['default-classic'];
+
+                // O layout e o modo de exibição vêm do preset (com fallback estático se preset não estiver no DB)
                 const config: TemplateConfig = {
-                    templateKey: identity.templateKey || identity.presetKey || preset.key || 'default-classic',
-                    layoutType: preset.config?.layoutType || 'dashboard-sidebar',
-                    heroMode: preset.config?.heroMode || 'small',
-                    navigation: preset.config?.navigation || 'sidebar',
-                    backgroundPattern: preset.config?.backgroundPattern || 'none',
-                    cardShape: preset.config?.cardShape || 'rounded',
-                    fontPreset: preset.config?.fontPreset || 'default'
+                    templateKey: resolvedKey,
+                    layoutType: preset.config?.layoutType || fallback.layoutType || 'dashboard-sidebar',
+                    heroMode: preset.config?.heroMode || fallback.heroMode || 'small',
+                    navigation: preset.config?.navigation || fallback.navigation || 'sidebar',
+                    backgroundPattern: preset.config?.backgroundPattern || fallback.backgroundPattern || 'none',
+                    cardShape: preset.config?.cardShape || fallback.cardShape || 'rounded',
+                    fontPreset: preset.config?.fontPreset || fallback.fontPreset || 'default'
                 };
 
                 const comm: CommunityData = {
