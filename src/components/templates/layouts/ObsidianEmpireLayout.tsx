@@ -14,6 +14,17 @@ const GOLD = '#C9A84C';
 const GOLD_LIGHT = '#E8C96A';
 const GOLD_DIM = '#C9A84C44';
 
+/** Returns a store path that works on both custom domains and the platform domain.
+ *  On a custom domain (URL doesn't start with /s/), the path is relative so the
+ *  browser URL stays clean (e.g. 9ineone.com/store/checkout) and middleware handles
+ *  the internal rewrite. On the platform (URL starts with /s/), we include the slug. */
+function storeHref(slug: string, path: string): string {
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/s/')) {
+        return path;
+    }
+    return `/s/${slug}${path}`;
+}
+
 export function ObsidianEmpireLayout({ config, community }: Props) {
     const params = useParams();
     const router = useRouter();
@@ -399,7 +410,7 @@ export function ObsidianEmpireLayout({ config, community }: Props) {
                                                         {price}
                                                     </span>
                                                     <a
-                                                        href={`/s/${slug}/store/checkout?product=${p.id}`}
+                                                        href={storeHref(slug, `/store/checkout?product=${p.id}`)}
                                                         className="px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all group-hover:bg-amber-500 inline-block"
                                                         style={{ background: GOLD, color: '#050505', fontFamily: 'sans-serif' }}
                                                     >

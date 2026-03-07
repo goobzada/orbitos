@@ -4,6 +4,15 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingBag, ArrowLeft, Loader2, AlertCircle, CreditCard, Zap, Shield } from 'lucide-react';
+import { buildTheme, themeToCSS, ThemeTokens } from '@/lib/theme';
+
+/** Same custom-domain-aware path helper used in layout components. */
+function storeHref(slug: string, path: string): string {
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/s/')) {
+        return path;
+    }
+    return `/s/${slug}${path}`;
+}
 
 interface Product {
     id: string;
@@ -28,6 +37,8 @@ export default function StoreCheckoutPage() {
     const [product, setProduct] = useState<Product | null>(null);
     const [orgName, setOrgName] = useState('');
     const [discordId, setDiscordId] = useState('');
+    const [discordFocused, setDiscordFocused] = useState(false);
+    const [theme, setTheme] = useState<ThemeTokens | null>(null);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState('');
@@ -35,7 +46,7 @@ export default function StoreCheckoutPage() {
     useEffect(() => {
         async function load() {
             if (!productId) {
-                router.replace(`/s/${slug}/store`);
+                router.replace(storeHref(slug, '/store'));
                 return;
             }
             try {
@@ -53,11 +64,16 @@ export default function StoreCheckoutPage() {
                 const portalData = await portalRes.json();
                 setOrgName(portalData.organization?.name || slug);
 
+                // Build and apply community theme
+                const identity = portalData.identity || {};
+                const preset = identity.preset || { config: {} };
+                setTheme(buildTheme(identity, preset));
+
                 if (productsRes.ok) {
                     const products: Product[] = await productsRes.json();
                     const found = products.find(p => p.id === productId);
                     if (!found) {
-                        router.replace(`/s/${slug}/store`);
+                        router.replace(storeHref(slug, '/store'));
                         return;
                     }
                     setProduct(found);
@@ -140,7 +156,7 @@ export default function StoreCheckoutPage() {
                 <div className="text-center text-white/60">
                     <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
                     <p>{error}</p>
-                    <Link href={`/s/${slug}/store`} className="mt-4 inline-block text-violet-400 hover:text-violet-300 text-sm underline">
+                    <Link href={storeHref(slug, '/store')} className="mt-4 inline-block text-sm underline" style={{ color: 'var(--color-primary, #7c3aed)' }}>
                         Voltar à loja
                     </Link>
                 </div>
@@ -149,12 +165,14 @@ export default function StoreCheckoutPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0a0f] text-white">
+        <>
+            {theme && <style dangerouslySetInnerHTML={{ __html: `:root { ${themeToCSS(theme)} }` }} />}
+            <div className="min-h-screen text-white" style={{ background: 'var(--color-background, #0a0a0f)' }}>
             {/* Header */}
-            <header className="border-b border-white/5 bg-[#0d0d18]">
+            <header className="border-b border-white/5" style={{ background: 'var(--color-nav-bg, #0d0d18)' }}>
                 <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
                     <Link
-                        href={`/s/${slug}/store`}
+                        href={storeHref(slug, '/store')}
                         className="flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors"
                     >
                         <ArrowLeft size={14} />
@@ -174,7 +192,7 @@ export default function StoreCheckoutPage() {
                     {/* Left: Product summary */}
                     <div className="md:col-span-3 space-y-6">
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-2">Finalizar Compra</p>
+                            <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--color-primary, #7c3aed)' }}>Finalizar Compra</p>
                             <h1 className="text-3xl font-black tracking-tight">{product?.name}</h1>
                             {product?.description && (
                                 <p className="text-white/50 mt-3 leading-relaxed text-sm">{product.description}</p>
@@ -200,7 +218,7 @@ export default function StoreCheckoutPage() {
                                 { icon: CreditCard, text: 'Aceitamos cartão de crédito, débito e boleto' },
                             ].map((item, i) => (
                                 <div key={i} className="flex items-start gap-3 text-sm text-white/40">
-                                    <item.icon size={14} className="mt-0.5 shrink-0 text-violet-400" />
+                                    <item.icon size={14} className="mt-0.5 shrink-0" style={{ color: 'var(--color-primary, #7c3aed)' }} />
                                     <span>{item.text}</span>
                                 </div>
                             ))}
@@ -213,7 +231,7 @@ export default function StoreCheckoutPage() {
                             {/* Price */}
                             <div>
                                 <p className="text-xs uppercase tracking-widest text-white/30 mb-1">Total</p>
-                                <p className="text-4xl font-black text-violet-400">
+                                <p className="text-4xl font-black" style={{ color: 'var(--color-primary, #7c3aed)' }}>
                                     {product ? formatPrice(product.priceCents, product.billingCycle) : '—'}
                                 </p>
                                 {product?.billingCycle !== 'ONE_TIME' && (
@@ -233,8 +251,11 @@ export default function StoreCheckoutPage() {
                                     placeholder="Ex: 123456789012345678"
                                     value={discordId}
                                     onChange={e => setDiscordId(e.target.value.replace(/\D/g, ''))}
+                                    onFocus={() => setDiscordFocused(true)}
+                                    onBlur={() => setDiscordFocused(false)}
                                     maxLength={20}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.06] transition-all"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none transition-all"
+                                    style={discordFocused ? { borderColor: 'var(--color-primary, #7c3aed)', background: 'rgba(255,255,255,0.06)' } : undefined}
                                 />
                                 <p className="text-[11px] text-white/25 leading-relaxed">
                                     Necessário para entrega automática do cargo/benefício no servidor Discord.
@@ -242,7 +263,8 @@ export default function StoreCheckoutPage() {
                                         href="https://support.discord.com/hc/pt-br/articles/206346498"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-violet-400 hover:underline"
+                                        className="hover:underline"
+                                        style={{ color: 'var(--color-primary, #7c3aed)' }}
                                     >
                                         Como encontrar meu ID?
                                     </a>
@@ -261,11 +283,12 @@ export default function StoreCheckoutPage() {
                             <button
                                 onClick={handleCheckout}
                                 disabled={processing || !discordId.trim()}
-                                className="w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all
-                                    bg-violet-600 hover:bg-violet-500 text-white
-                                    disabled:opacity-40 disabled:cursor-not-allowed
-                                    flex items-center justify-center gap-2
-                                    shadow-lg shadow-violet-500/20"
+                                className="w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                style={{
+                                    background: 'var(--color-primary, #7c3aed)',
+                                    color: 'var(--color-btn-text, #fff)',
+                                    boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                                }}
                             >
                                 {processing ? (
                                     <>
@@ -293,10 +316,11 @@ export default function StoreCheckoutPage() {
             {/* Footer */}
             <footer className="border-t border-white/5 mt-16">
                 <div className="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between text-xs text-white/20">
-                    <span>Powered by <a href="https://orbitup.io" className="text-violet-400 hover:underline">OrbitOS</a></span>
+                    <span>Powered by <a href="https://orbitup.io" className="hover:underline" style={{ color: 'var(--color-primary, #7c3aed)' }}>OrbitOS</a></span>
                     <span>© {orgName}</span>
                 </div>
             </footer>
         </div>
+        </>
     );
 }
