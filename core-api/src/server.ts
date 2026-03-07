@@ -7,6 +7,8 @@ import cookieParser from 'cookie-parser'; // ⬅️ NOVO
 
 dotenv.config();
 
+import prisma from './lib/prisma';
+
 import authRoutes from './routes/auth.routes';
 import orgRoutes from './routes/org.routes';
 import serverRoutes from './routes/server.routes';
@@ -44,30 +46,51 @@ const PORT = process.env.PORT || 4000;
 app.set('trust proxy', true);
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
-// IMPORTANTE: garanta que o .env tenha ALLOWED_ORIGINS com orbitup.io
-// Exemplo:
-// ALLOWED_ORIGINS=https://orbitup.io,https://www.orbitup.io,http://localhost:3000,http://localhost:3001
-const ALLOWED_ORIGINS = (
+const STATIC_ALLOWED_ORIGINS = (
   process.env.ALLOWED_ORIGINS ||
   'https://orbitup.io,https://www.orbitup.io,http://localhost:3000,http://localhost:3001'
 )
   .split(',')
   .map((o) => o.trim());
 
+// Cache de domínios customizados verificados (evita query ao banco em cada request)
+const customDomainCache = new Map<string, { allowed: boolean; expiresAt: number }>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+
+async function isCustomStoreDomain(origin: string): Promise<boolean> {
+  const cached = customDomainCache.get(origin);
+  if (cached && cached.expiresAt > Date.now()) return cached.allowed;
+
+  try {
+    const hostname = new URL(origin).hostname;
+    const found = await (prisma as any).storeDomain.findFirst({
+      where: { domain: hostname, status: 'active' },
+      select: { id: true },
+    });
+    const allowed = !!found;
+    customDomainCache.set(origin, { allowed, expiresAt: Date.now() + CACHE_TTL_MS });
+    return allowed;
+  } catch {
+    return false;
+  }
+}
+
 app.use(cors({
-  origin: (origin, callback) => {
-    // Permite requisições locais ou explícitas e sem origin
-    /* FIX C4: lista explícita de portas dev — não aceitar localhost:qualquer-porta */
+  origin: async (origin, callback) => {
     const DEV_LOCALHOST_PORTS = [3000, 3001, 4000];
     const isLocalhost = DEV_LOCALHOST_PORTS.some(
       p => origin === `http://localhost:${p}` || origin === `http://127.0.0.1:${p}`
     );
-    if (!origin || ALLOWED_ORIGINS.includes(origin) || isLocalhost) {
-      callback(null, true);
-    } else {
-      console.warn(`[CORS] Origem bloqueada: ${origin}`);
-      callback(new Error(`Origem não permitida pelo CORS: ${origin}`));
+    if (!origin || STATIC_ALLOWED_ORIGINS.includes(origin) || isLocalhost) {
+      return callback(null, true);
     }
+    // Verifica dinamicamente se é um domínio de loja verificado
+    const isStore = await isCustomStoreDomain(origin);
+    if (isStore) {
+      return callback(null, true);
+    }
+    console.warn(`[CORS] Origem bloqueada: ${origin}`);
+    callback(new Error(`Origem não permitida pelo CORS: ${origin}`));
   },
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'x-internal-service-key'],

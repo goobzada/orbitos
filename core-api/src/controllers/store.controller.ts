@@ -199,8 +199,13 @@ export class StoreController {
             return res.status(400).end();
         }
         try {
+            // Verifica o domínio exato ou a variante www (para apex domains)
+            const wwwVariant = domain.startsWith('www.') ? domain : `www.${domain}`;
             const found = await (prisma as any).storeDomain.findFirst({
-                where: { domain, status: 'active' },
+                where: {
+                    domain: { in: [domain, wwwVariant] },
+                    status: 'active',
+                },
                 select: { id: true },
             });
             return found ? res.status(200).end() : res.status(404).end();
