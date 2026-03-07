@@ -48,7 +48,7 @@ export default function StoreCancelPage() {
                         className="flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors"
                     >
                         <ArrowLeft size={14} />
-                        Voltar Ã  loja
+                        Voltar à loja
                     </Link>
                 </div>
             </header>
@@ -64,7 +64,7 @@ export default function StoreCancelPage() {
                     <div className="space-y-3">
                         <h1 className="text-4xl font-black tracking-tight">Compra cancelada</h1>
                         <p className="text-white/40 leading-relaxed text-sm">
-                            Nenhuma cobranÃ§a foi realizada. VocÃª pode retornar Ã  loja e tentar novamente quando quiser.
+                            Nenhuma cobrança foi realizada. Você pode retornar à loja e tentar novamente quando quiser.
                         </p>
                     </div>
 

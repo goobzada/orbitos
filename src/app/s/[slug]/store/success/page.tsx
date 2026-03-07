@@ -75,7 +75,7 @@ export default function StoreSuccessPage() {
                         <h1 className="text-4xl font-black tracking-tight">Compra realizada!</h1>
                         <p className="text-white/50 leading-relaxed">
                             Seu pagamento foi confirmado com sucesso.
-                            A entrega do seu benefÃ­cio no Discord serÃ¡ processada automaticamente em breve.
+                            A entrega do seu benefício no Discord será processada automaticamente em breve.
                         </p>
                     </div>
 
@@ -85,21 +85,21 @@ export default function StoreSuccessPage() {
                         <ul className="space-y-2 text-white/40 text-[13px]">
                             <li className="flex items-start gap-2">
                                 <span className="mt-0.5" style={{ color: 'var(--color-primary)' }}>1.</span>
-                                <span>Nosso sistema estÃ¡ verificando o pagamento junto ao Stripe.</span>
+                                <span>Nosso sistema está verificando o pagamento junto ao Stripe.</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="mt-0.5" style={{ color: 'var(--color-primary)' }}>2.</span>
-                                <span>ApÃ³s confirmaÃ§Ã£o, o cargo/acesso serÃ¡ entregue automaticamente no Discord.</span>
+                                <span>Após confirmação, o cargo/acesso será entregue automaticamente no Discord.</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="mt-0.5" style={{ color: 'var(--color-primary)' }}>3.</span>
-                                <span>VocÃª receberÃ¡ uma notificaÃ§Ã£o no Discord quando a entrega for concluÃ­da.</span>
+                                <span>Você receberá uma notificação no Discord quando a entrega for concluída.</span>
                             </li>
                         </ul>
                         {sessionId && (
                             <div className="pt-2 border-t border-white/5">
                                 <p className="text-[11px] text-white/20 font-mono break-all">
-                                    ReferÃªncia: {sessionId}
+                                    Referência: {sessionId}
                                 </p>
                             </div>
                         )}
@@ -113,7 +113,7 @@ export default function StoreSuccessPage() {
                             style={{ background: 'var(--color-primary)', color: 'var(--color-btn-text, #fff)' }}
                         >
                             <ExternalLink size={14} />
-                            Voltar Ã  loja
+                            Voltar à loja
                         </Link>
                         <Link
                             href={storeHref(slug, '')}
