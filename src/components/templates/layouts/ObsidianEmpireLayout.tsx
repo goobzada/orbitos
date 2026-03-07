@@ -24,6 +24,8 @@ export function ObsidianEmpireLayout({ config, community }: Props) {
 
     // Produtos reais vindos do portal (community.modules = store products)
     const storeProducts = community.modules || [];
+
+    const navItems = [
         { key: 'home', label: 'Império' },
         { key: 'store', label: 'Loja VIP' },
         { key: 'tickets', label: 'Suporte' },
