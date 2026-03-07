@@ -20,7 +20,11 @@ export default function PublicCommunityPage() {
     useEffect(() => {
         async function fetchCommunityData() {
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/public/portal/${slug}`);
+                const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+                const [response, productsRes] = await Promise.all([
+                    fetch(`${API}/public/portal/${slug}`),
+                    fetch(`${API}/public/store/${slug}/products`).catch(() => null),
+                ]);
                 if (!response.ok) throw new Error('Comunidade não encontrada.');
 
                 const data = await response.json();
@@ -55,11 +59,17 @@ export default function PublicCommunityPage() {
                     fontPreset: preset.config?.fontPreset || fallback.fontPreset || 'default'
                 };
 
+                let storeProducts: any[] = [];
+                if (productsRes?.ok) {
+                    const pd = await productsRes.json();
+                    storeProducts = Array.isArray(pd) ? pd : (pd?.products || []);
+                }
+
                 const comm: CommunityData = {
                     name: org.name,
                     description: "Seja bem vindo à nossa comunidade. Adquira VIPs na loja e solicite suporte.",
                     avatar: identity.logoUrl || "https://avatar.vercel.sh/community",
-                    modules: []
+                    modules: storeProducts
                 };
 
                 // O buildTheme processa os tokens de identidade (cores, fontes, etc)

@@ -22,7 +22,8 @@ export function ObsidianEmpireLayout({ config, community }: Props) {
         return () => clearInterval(t);
     }, []);
 
-    const navItems = [
+    // Produtos reais vindos do portal (community.modules = store products)
+    const storeProducts = community.modules || [];
         { key: 'home', label: 'Império' },
         { key: 'store', label: 'Loja VIP' },
         { key: 'tickets', label: 'Suporte' },
@@ -32,14 +33,8 @@ export function ObsidianEmpireLayout({ config, community }: Props) {
     const stats = [
         { label: 'Membros Elite', value: '4.200', icon: Crown },
         { label: 'Operações Ativas', value: '38', icon: Zap },
-        { label: 'Itens na Loja', value: '127', icon: ShoppingCart },
+        { label: 'Itens na Loja', value: String(storeProducts.length || '—'), icon: ShoppingCart },
         { label: 'Tickets Resolvidos', value: '99%', icon: Shield },
-    ];
-
-    const products = [
-        { name: 'RANK ELITE', price: 'R$ 49', badge: 'MAIS VENDIDO' },
-        { name: 'VIP OBSIDIAN', price: 'R$ 89', badge: 'EXCLUSIVO' },
-        { name: 'EMPIRE PASS', price: 'R$ 149', badge: 'PREMIUM' },
     ];
 
     return (
@@ -355,44 +350,59 @@ export function ObsidianEmpireLayout({ config, community }: Props) {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-6">
-                            {products.map((p, i) => (
-                                <div
-                                    key={i}
-                                    className="group cursor-pointer transition-all hover:-translate-y-1"
-                                    style={{ border: `1px solid ${GOLD_DIM}`, background: 'rgba(201,168,76,0.02)' }}
-                                >
-                                    <div
-                                        className="h-48 flex items-center justify-center"
-                                        style={{ background: `linear-gradient(135deg, rgba(201,168,76,0.1), rgba(5,5,5,0.8))`, borderBottom: `1px solid ${GOLD_DIM}` }}
-                                    >
-                                        <Crown size={40} style={{ color: GOLD, opacity: 0.5 }} />
-                                    </div>
-                                    <div className="p-6">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className="text-[9px] font-black uppercase tracking-[0.4em]" style={{ color: GOLD, fontFamily: 'sans-serif' }}>
-                                                {p.badge}
-                                            </span>
-                                            <Star size={10} style={{ color: GOLD }} />
-                                        </div>
-                                        <h3 className="text-lg font-black uppercase tracking-wider mb-4" style={{ fontFamily: "'Georgia', serif" }}>
-                                            {p.name}
-                                        </h3>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-2xl font-black" style={{ color: GOLD }}>
-                                                {p.price}
-                                            </span>
-                                            <button
-                                                className="px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all group-hover:bg-amber-500"
-                                                style={{ background: GOLD, color: '#050505', fontFamily: 'sans-serif' }}
+                        {storeProducts.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20 gap-4" style={{ border: `1px solid ${GOLD_DIM}` }}>
+                                <ShoppingCart size={40} style={{ color: GOLD, opacity: 0.3 }} />
+                                <p className="text-sm uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)', fontFamily: 'sans-serif' }}>Nenhum produto disponível</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-3 gap-6">
+                                {storeProducts.map((p: any, i: number) => {
+                                    const price = p.priceCents ? `R$ ${(p.priceCents / 100).toFixed(2).replace('.', ',')}` : '—';
+                                    const slug = window.location.pathname.split('/')[2];
+                                    return (
+                                        <div
+                                            key={p.id || i}
+                                            className="group cursor-pointer transition-all hover:-translate-y-1"
+                                            style={{ border: `1px solid ${GOLD_DIM}`, background: 'rgba(201,168,76,0.02)' }}
+                                        >
+                                            <div
+                                                className="h-48 flex items-center justify-center overflow-hidden"
+                                                style={{ background: `linear-gradient(135deg, rgba(201,168,76,0.1), rgba(5,5,5,0.8))`, borderBottom: `1px solid ${GOLD_DIM}` }}
                                             >
-                                                Comprar
-                                            </button>
+                                                {p.thumbnailUrl
+                                                    ? <img src={p.thumbnailUrl} alt={p.name} className="w-full h-full object-cover" />
+                                                    : <Crown size={40} style={{ color: GOLD, opacity: 0.5 }} />
+                                                }
+                                            </div>
+                                            <div className="p-6">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <span className="text-[9px] font-black uppercase tracking-[0.4em]" style={{ color: GOLD, fontFamily: 'sans-serif' }}>
+                                                        {p.category || 'VIP'}
+                                                    </span>
+                                                    <Star size={10} style={{ color: GOLD }} />
+                                                </div>
+                                                <h3 className="text-lg font-black uppercase tracking-wider mb-4" style={{ fontFamily: "'Georgia', serif" }}>
+                                                    {p.name}
+                                                </h3>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-2xl font-black" style={{ color: GOLD }}>
+                                                        {price}
+                                                    </span>
+                                                    <a
+                                                        href={`/s/${slug}/store`}
+                                                        className="px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all group-hover:bg-amber-500 inline-block"
+                                                        style={{ background: GOLD, color: '#050505', fontFamily: 'sans-serif' }}
+                                                    >
+                                                        Comprar
+                                                    </a>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </section>
                 )}
 
