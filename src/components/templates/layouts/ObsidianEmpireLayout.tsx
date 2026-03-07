@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { TemplateConfig, CommunityData } from '../types';
 import { Ticket, ShoppingCart, Users, Crown, Shield, Zap, ChevronRight, Star } from 'lucide-react';
 
@@ -14,6 +15,12 @@ const GOLD_LIGHT = '#E8C96A';
 const GOLD_DIM = '#C9A84C44';
 
 export function ObsidianEmpireLayout({ config, community }: Props) {
+    const params = useParams();
+    const router = useRouter();
+    // useParams() returns the rewritten route params even on custom domains,
+    // because Next.js middleware rewrites / → /s/[slug] before routing.
+    const slug = (params?.slug as string) || '';
+
     const [activeSection, setActiveSection] = useState<'home' | 'store' | 'tickets' | 'community'>('home');
     const [tick, setTick] = useState(0);
 
@@ -104,6 +111,7 @@ export function ObsidianEmpireLayout({ config, community }: Props) {
 
                 {/* Right: CTA */}
                 <button
+                    onClick={() => router.push('/login')}
                     className="flex items-center gap-2 px-5 py-2 text-[10px] font-bold uppercase tracking-widest transition-all hover:scale-105"
                     style={{
                         background: GOLD,
@@ -361,7 +369,6 @@ export function ObsidianEmpireLayout({ config, community }: Props) {
                             <div className="grid grid-cols-3 gap-6">
                                 {storeProducts.map((p: any, i: number) => {
                                     const price = p.priceCents ? `R$ ${(p.priceCents / 100).toFixed(2).replace('.', ',')}` : '—';
-                                    const slug = window.location.pathname.split('/')[2];
                                     return (
                                         <div
                                             key={p.id || i}
@@ -392,7 +399,7 @@ export function ObsidianEmpireLayout({ config, community }: Props) {
                                                         {price}
                                                     </span>
                                                     <a
-                                                        href={`/s/${slug}/store`}
+                                                        href={`/s/${slug}/store/checkout?product=${p.id}`}
                                                         className="px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all group-hover:bg-amber-500 inline-block"
                                                         style={{ background: GOLD, color: '#050505', fontFamily: 'sans-serif' }}
                                                     >
