@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { paymentController } from '../controllers/payment.controller';
 
 const router = Router();
 
-router.post('/webhook/stripe', paymentController.stripeWebhook);
+// Stripe webhook is handled by WebhookController at /webhook/stripe (with idempotency checks).
+// No additional payment routes currently.
 
 export default router;

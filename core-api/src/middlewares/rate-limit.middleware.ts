@@ -26,11 +26,9 @@ const internalLimiter = REDIS_ENABLED && redisConnection ? new RateLimiterRedis(
 }) : null;
 
 // In-memory fallback limiters (when Redis is down)
-// Degraded mode is more bursty in production dashboards; keep limits higher to
-// avoid blocking legitimate UI polling when Redis is unavailable.
-const fallbackGlobalLimiter = new InMemoryRateLimiter(2000, 1);
-const fallbackOrgLimiter = new InMemoryRateLimiter(500, 1);
-const fallbackInternalLimiter = new InMemoryRateLimiter(500, 1);
+const fallbackGlobalLimiter = new InMemoryRateLimiter(200, 1);
+const fallbackOrgLimiter = new InMemoryRateLimiter(100, 1);
+const fallbackInternalLimiter = new InMemoryRateLimiter(200, 1);
 
 let redisDownWarningLogged = false;
 
@@ -56,7 +54,6 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
     const noLimitReadPrefixes = [
         '/health',
         '/public/store/resolve',
-        '/public/store/domain/verify',
         '/public/portal',
         '/public/store',
         '/auth/me',

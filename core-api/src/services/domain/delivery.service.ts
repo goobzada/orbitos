@@ -51,11 +51,15 @@ export class DeliveryService {
                 if (!config.roleId || !order.externalCustomerId) {
                     throw new Error('Configuração de Discord Role incompleta.');
                 }
+                const discordServerId = config.serverId || order.organization.servers?.[0]?.id;
+                if (!discordServerId) {
+                    throw new Error('Discord Role delivery requer um servidor configurado no produto ou na organização.');
+                }
                 result = await driverManager.executeAction({
                     driver: 'discord',
                     action: 'ADD_ROLE',
                     organizationId: order.organizationId,
-                    serverId: config.serverId || order.organization.servers?.[0]?.id,
+                    serverId: discordServerId,
                     data: {
                         userId: order.externalCustomerId,
                         roleId: config.roleId

@@ -8,6 +8,7 @@ import {
     STORES_GATEWAY_DOMAIN,
 } from '../../constants/store-domains';
 import { extractSlugFromHost, normalizeDomain } from '../../utils/domain.utils';
+import { DomainProvisionService } from './domain-provision.service';
 
 const db = prisma as any;
 
@@ -179,9 +180,23 @@ export class StoreDomainService {
             },
         });
 
+        // Auto-provision nginx + SSL when DNS is verified (fire-and-forget; don't block response)
+        let provisionResult: { success: boolean; error?: string } = { success: false, error: 'Not triggered' };
+        if (verified) {
+            provisionResult = await DomainProvisionService.provision(domain.domain);
+            if (provisionResult.success) {
+                await db.storeDomain.update({
+                    where: { id: domain.id },
+                    data: { status: 'active' },
+                });
+                updated.status = 'active';
+            }
+        }
+
         return {
             domain: updated,
             verification: { cnameOk, txtOk, verified },
+            provisioning: verified ? provisionResult : undefined,
         };
     }
 
@@ -249,6 +264,13 @@ export class StoreDomainService {
                 }
             }
         });
+
+        // Remove nginx config for custom domains that had been provisioned
+        if (domain.type === 'custom' && domain.status === 'active') {
+            DomainProvisionService.deprovision(domain.domain).catch((err) => {
+                console.error(`[DOMAIN] Failed to deprovision nginx for ${domain.domain}:`, err.message);
+            });
+        }
 
         return { success: true };
     }
