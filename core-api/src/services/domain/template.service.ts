@@ -55,7 +55,24 @@ export class TemplateService {
         if (!org) return null;
 
         const templateKey = org.template?.templateKey ?? 'default-classic';
-        const preset = await prisma.templatePreset.findUnique({ where: { key: templateKey } });
+        let preset = await prisma.templatePreset.findUnique({ where: { key: templateKey } });
+
+        // Fallback estático quando o preset não está semeado na DB (evita layout errado no portal)
+        if (!preset) {
+            const PRESET_DEFAULTS: Record<string, any> = {
+                'default-classic': { layoutType: 'dashboard-sidebar', navigation: 'sidebar', heroMode: 'small', backgroundPattern: 'none', cardShape: 'rounded', fontPreset: 'default' },
+                'neon-grid':       { layoutType: 'dashboard-topnav',  navigation: 'topnav',  heroMode: 'small', backgroundPattern: 'grid-neon', cardShape: 'glass', fontPreset: 'modern' },
+                'minimal-glass':   { layoutType: 'dashboard-sidebar', navigation: 'sidebar', heroMode: 'none',  backgroundPattern: 'none', cardShape: 'glass', fontPreset: 'minimal' },
+                'terminal-dark':   { layoutType: 'terminal',          navigation: 'sidebar', heroMode: 'none',  backgroundPattern: 'scanline', cardShape: 'square', fontPreset: 'mono' },
+                'aurora-landing':  { layoutType: 'marketing-landing', navigation: 'topnav',  heroMode: 'full',  backgroundPattern: 'aurora', cardShape: 'elevated', fontPreset: 'default' },
+                'modular-blocks':  { layoutType: 'blocks',            navigation: 'sidebar', heroMode: 'small', backgroundPattern: 'none', cardShape: 'block', fontPreset: 'default' },
+                'cosmic-ultra':    { layoutType: 'dashboard-sidebar', navigation: 'sidebar', heroMode: 'small', backgroundPattern: 'cosmos', cardShape: 'glass-intense', fontPreset: 'modern' },
+                'obsidian-empire': { layoutType: 'obsidian-empire',   navigation: 'none',    heroMode: 'full',  backgroundPattern: 'none', cardShape: 'square', fontPreset: 'luxury' },
+                'hologram-pro':    { layoutType: 'hologram-pro',      navigation: 'topnav',  heroMode: 'full',  backgroundPattern: 'none', cardShape: 'square', fontPreset: 'mono' },
+            };
+            const fallbackConfig = PRESET_DEFAULTS[templateKey] || PRESET_DEFAULTS['default-classic'];
+            preset = { key: templateKey, config: fallbackConfig } as any;
+        }
 
         // Retornamos um objeto achatado para o frontend, priorizando valores customizados (org.template)
         // e usando o preset como fallback.
