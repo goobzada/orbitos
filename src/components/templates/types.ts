@@ -4,8 +4,8 @@ export interface TemplateConfig {
     layoutType: LayoutType;
     heroMode: "small" | "full" | "none";
     navigation: "sidebar" | "topnav" | "none";
-    cardShape: "rounded" | "square" | "glass" | "block" | "glass-intense";
-    fontPreset: "default" | "minimal" | "modern" | "mono";
+    cardShape: "rounded" | "square" | "glass" | "block" | "glass-intense" | "elevated";
+    fontPreset: "default" | "minimal" | "modern" | "mono" | "luxury";
     backgroundPattern: "none" | "grid-neon" | "aurora" | "terminal" | "scanline" | "cosmos";
     primaryColor?: string;
     secondaryColor?: string;
