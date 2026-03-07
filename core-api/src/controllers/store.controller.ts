@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { StoreService } from '../services/domain/store.service';
 import { StoreDomainService } from '../services/domain/store-domain.service';
+import prisma from '../lib/prisma';
 
 export class StoreController {
 
@@ -184,6 +185,27 @@ export class StoreController {
             return res.status(201).json(checkout);
         } catch (error: any) {
             return res.status(500).json({ error: error.message });
+        }
+    }
+
+    /**
+     * Endpoint de verificação para o Caddy on-demand TLS.
+     * Caddy chama GET /public/store/domain/verify?domain=loja.cliente.com antes de emitir o certificado.
+     * Retorna 200 se o domínio está cadastrado e ativo, 404 caso contrário.
+     */
+    static async verifyDomainForCaddy(req: Request, res: Response) {
+        const domain = (req.query.domain as string || '').toLowerCase().trim();
+        if (!domain) {
+            return res.status(400).end();
+        }
+        try {
+            const found = await (prisma as any).storeDomain.findFirst({
+                where: { domain, status: 'active' },
+                select: { id: true },
+            });
+            return found ? res.status(200).end() : res.status(404).end();
+        } catch {
+            return res.status(500).end();
         }
     }
 
