@@ -7,6 +7,16 @@ import { ShoppingBag, Zap, Rocket, CheckCircle } from 'lucide-react';
 import { ThemeProvider } from '@/contexts/theme-context';
 import { buildTheme, themeToCSS, ThemeTokens } from '@/lib/theme';
 
+/** Returns a store-relative path that keeps custom domains clean.
+ *  On custom domains (path doesn't start with /s/) uses relative paths.
+ *  On the platform domain includes the full /s/[slug] prefix. */
+function storeHref(slug: string, path: string): string {
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/s/')) {
+        return path || '/';
+    }
+    return `/s/${slug}${path}`;
+}
+
 interface Product {
     id: string;
     name: string;
@@ -82,7 +92,7 @@ export default function PublicStorePage() {
         return (
             <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4 text-white/40">
-                    <div className="w-10 h-10 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+                    <div className="w-10 h-10 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
                     <p className="text-sm">Carregando loja...</p>
                 </div>
             </div>
@@ -129,8 +139,8 @@ export default function PublicStorePage() {
                         {orgAvatar ? (
                             <img src={orgAvatar} alt={orgName} className="w-10 h-10 rounded-xl object-cover" />
                         ) : (
-                            <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                                <ShoppingBag className="w-5 h-5 text-violet-400" />
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-primary) 20%, transparent)' }}>
+                                <ShoppingBag className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
                             </div>
                         )}
                         <div>
@@ -139,7 +149,7 @@ export default function PublicStorePage() {
                         </div>
                     </div>
                     <Link
-                        href={`/s/${slug}`}
+                        href={storeHref(slug, '')}
                         className="text-xs text-white/30 hover:text-white/70 transition-colors flex items-center gap-1.5"
                     >
                         ← Portal
@@ -149,7 +159,7 @@ export default function PublicStorePage() {
 
             {/* Hero */}
             <div className="max-w-6xl mx-auto px-6 pt-14 pb-10">
-                <div className="mb-2 text-violet-400 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                <div className="mb-2 text-xs font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: 'var(--color-primary)' }}>
                     <ShoppingBag className="w-3.5 h-3.5" /> Produtos
                 </div>
                 <h2 className="text-4xl font-extrabold tracking-tight">
@@ -220,7 +230,7 @@ export default function PublicStorePage() {
                                                 {/* Info */}
                                                 <div className="p-5 flex flex-col flex-1 justify-between gap-4">
                                                     <div>
-                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400 mb-1">{product.category || 'Geral'}</p>
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--color-primary)' }}>{product.category || 'Geral'}</p>
                                                         <h4 className="font-bold text-base leading-snug">{product.name}</h4>
                                                         <p className="text-sm text-white/40 mt-1.5 line-clamp-2 leading-relaxed">
                                                             {product.description || 'Produto exclusivo da comunidade.'}
@@ -236,8 +246,9 @@ export default function PublicStorePage() {
                                                             </p>
                                                         </div>
                                                         <Link
-                                                            href={`/s/${slug}/store/checkout?product=${product.id}`}
-                                                            className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-xl transition-colors shadow-lg shadow-violet-500/20"
+                                                            href={storeHref(slug, `/store/checkout?product=${product.id}`)}
+                                                            className="px-4 py-2 text-sm font-bold rounded-xl transition-opacity hover:opacity-80"
+                                                            style={{ background: 'var(--color-primary)', color: 'var(--color-btn-text, #fff)' }}
                                                         >
                                                             Comprar
                                                         </Link>
@@ -256,7 +267,7 @@ export default function PublicStorePage() {
             {/* Footer */}
             <div className="border-t border-white/[0.04]">
                 <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between text-[11px] text-white/15">
-                    <span>Powered by <span className="text-violet-400/50">OrbitOS</span></span>
+                    <span>Powered by <span style={{ color: 'var(--color-primary, #7c3aed)', opacity: 0.6 }}>OrbitOS</span></span>
                     <span>© {orgName}</span>
                 </div>
             </div>

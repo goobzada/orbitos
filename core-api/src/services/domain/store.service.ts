@@ -303,8 +303,20 @@ export class StoreService {
 
         const stripeSecretKey = config.stripeSecretKey || process.env.STRIPE_SECRET_KEY;
         const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3001';
-        const successUrl = config.successUrl || `${frontendBase}/s/${orgSlug}/store/success?session_id={CHECKOUT_SESSION_ID}`;
-        const cancelUrl = config.cancelUrl || `${frontendBase}/s/${orgSlug}/store/cancel`;
+
+        // Prefer the store's custom primary domain for Stripe redirect URLs so that
+        // after checkout the customer lands on 9ineone.com/store/success instead of
+        // the internal /s/goobzada/store/success path.
+        const store = await (prisma as any).store.findFirst({
+            where: { orgId },
+            select: { primaryDomain: true, slug: true },
+        });
+        const customBase = store?.primaryDomain
+            ? `https://${store.primaryDomain}`
+            : `${frontendBase}/s/${orgSlug}`;
+
+        const successUrl = config.successUrl || `${customBase}/store/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = config.cancelUrl || `${customBase}/store/cancel`;
 
         if (!stripeSecretKey) {
             throw new Error('CONFIG_REQUIRED:STRIPE_KEY');
