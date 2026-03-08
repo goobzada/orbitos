@@ -49,7 +49,7 @@ export default function AutomationsPage() {
     const organizationId = currentOrg?.id;
 
     const { data: modulesData, isLoading } = useModules(organizationId || '');
-    const { data: servers } = useServers();
+    const { data: servers, isLoading: serverLoading } = useServers();
     const toggleModule = useToggleModule(organizationId || '');
 
     const [search, setSearch] = useState('');
@@ -235,7 +235,7 @@ export default function AutomationsPage() {
             </div>
 
             {/* Bot Offline Warning */}
-            {!isBotOnline && !isLoading && (
+            {!isBotOnline && !isLoading && !serverLoading && (
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex items-start gap-4">
                         <div className="h-10 w-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
