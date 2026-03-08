@@ -1,6 +1,5 @@
 import prisma from '../../lib/prisma';
 import { eventBus } from '../event-bus';
-import { addDiscordJob } from '../../lib/queue';
 import { TicketStatus } from '@prisma/client';
 
 interface CreateTicketMessageParams {
@@ -22,14 +21,8 @@ export class TicketService {
         userId: string;
         params: Record<string, unknown>;
     }) {
-        const job = await addDiscordJob(action, {
-            ...payload,
-            action,
-        });
-
-        if (job) return;
-
-        // Redis is disabled/unavailable: dispatch directly via WS to connected bot.
+        // The bot-engine communicates exclusively via WebSocket (no BullMQ consumer exists).
+        // Broadcast directly to any connected BOT clients — this is the only reliable path.
         const { communityWSServer } = await import('../ws-server');
         communityWSServer.broadcastToTarget(payload.serverId, 'DISCORD_ACTION', {
             ...payload,
