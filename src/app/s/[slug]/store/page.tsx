@@ -129,6 +129,7 @@ export default function PublicStorePage() {
                     color: var(--color-text);
                     font-family: var(--font-family);
                 }
+                .product-card:hover { border-color: color-mix(in srgb, var(--color-primary) 40%, transparent); }
                 ${theme.customCss || ''}
             `}} />
         <div className="min-h-screen text-white" style={{ backgroundColor: 'var(--color-background)' }}>
@@ -194,7 +195,7 @@ export default function PublicStorePage() {
                                         {categoryProducts.map((product) => (
                                             <div
                                                 key={product.id}
-                                                className="group relative rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur overflow-hidden hover:border-violet-500/40 hover:bg-white/[0.05] transition-all duration-300 flex flex-col"
+                                                className="product-card group relative rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur overflow-hidden hover:bg-white/[0.05] transition-all duration-300 flex flex-col"
                                             >
                                                 {/* Thumbnail */}
                                                 <div className="h-44 bg-white/[0.03] flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -215,7 +216,7 @@ export default function PublicStorePage() {
                                                             {product.billingCycle === 'ONE_TIME'
                                                                 ? <><Zap className="w-3 h-3 text-amber-400" /> Único</>
                                                                 : product.billingCycle === 'MONTHLY'
-                                                                    ? <><Rocket className="w-3 h-3 text-violet-400" /> Mensal</>
+                                                                    ? <><Rocket className="w-3 h-3" style={{ color: 'var(--color-primary)' }} /> Mensal</>
                                                                     : <><Rocket className="w-3 h-3 text-cyan-400" /> Anual</>}
                                                         </span>
                                                     </div>
