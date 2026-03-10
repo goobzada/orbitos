@@ -49,6 +49,33 @@ export default {
             return;
         }
 
+        // ── VERIFICAÇÃO SIMPLES (customId: verification_verify) ───────────────────
+        if (interaction.isButton() && interaction.customId === 'verification_verify') {
+            if (!interaction.guildId) return;
+            try {
+                const { data: guildData } = await coreApi.get(`/internal/guilds/${interaction.guildId}/modules`);
+                const verificationModule = (guildData.modules || []).find((m: any) => m.key === 'verification');
+                const roleId = verificationModule?.config?.roleId;
+                if (!roleId) {
+                    return interaction.reply({ content: '❌ Papel de verificação não configurado. Contate um administrador.', ephemeral: true });
+                }
+                const member = await interaction.guild?.members.fetch(interaction.user.id);
+                if (!member) return interaction.reply({ content: '❌ Não foi possível encontrar seu perfil no servidor.', ephemeral: true });
+                if (member.roles.cache.has(roleId)) {
+                    return interaction.reply({ content: '✅ Você já está verificado!', ephemeral: true });
+                }
+                await member.roles.add(roleId);
+                return interaction.reply({ content: '✅ Verificação concluída! Bem-vindo ao servidor.', ephemeral: true });
+            } catch (e: any) {
+                const isMissingPerms = e.message?.includes('Missing Permissions');
+                log.error('[VERIFICATION] Erro ao verificar membro: ' + e.message);
+                const errMsg = isMissingPerms
+                    ? '❌ Bot sem permissão para atribuir cargos. Verifique se o bot tem a permissão **Gerenciar Cargos** e se o cargo de verificação está abaixo do cargo do bot na hierarquia.'
+                    : '❌ Erro ao processar verificação. Tente novamente.';
+                return interaction.reply({ content: errMsg, ephemeral: true });
+            }
+        }
+
         // ── SLASH COMMANDS ────────────────────────────────────────────
         if (interaction.isChatInputCommand()) {
             log.event(`Slash Command: /${interaction.commandName} por ${interaction.user.tag}`);
@@ -226,6 +253,35 @@ export default {
                             components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
                                 new ButtonBuilder().setCustomId('application_start').setLabel('📝 Preencher Formulário').setStyle(ButtonStyle.Primary)
                             ));
+                        } else if (value === 'verification') {
+                            const verificationModule = modulesConfig.find((m: any) => m.key === 'verification');
+                            const verConfig = verificationModule?.config || {};
+                            // Override embed with custom message if configured
+                            if (verConfig.message) {
+                                embed.setDescription(verConfig.message);
+                            }
+                            const btnLabel = lang === 'pt-BR' ? '✅ Verificar' : lang === 'es-ES' ? '✅ Verificar' : '✅ Verify';
+                            components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
+                                new ButtonBuilder().setCustomId('verification_verify').setLabel(btnLabel).setStyle(ButtonStyle.Success)
+                            ));
+                        } else if (value === 'advanced_verification') {
+                            const advModule = modulesConfig.find((m: any) => m.key === 'advanced_verification');
+                            const advConfig = advModule?.config || {};
+                            if (advConfig.message) {
+                                embed.setDescription(advConfig.message);
+                            }
+                            const btnLabel = lang === 'pt-BR' ? '🔐 Verificar Conta' : lang === 'es-ES' ? '🔐 Verificar Cuenta' : '🔐 Verify Account';
+                            // If an external URL is configured, use a Link button; otherwise use role-assign button
+                            const externalUrl = advConfig.url || advConfig.verificationUrl || '';
+                            if (externalUrl) {
+                                components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
+                                    new ButtonBuilder().setLabel(btnLabel).setStyle(ButtonStyle.Link).setURL(externalUrl)
+                                ));
+                            } else {
+                                components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
+                                    new ButtonBuilder().setCustomId('verification_verify').setLabel(btnLabel).setStyle(ButtonStyle.Success)
+                                ));
+                            }
                         }
 
                         const channelToSend = interaction.channel;

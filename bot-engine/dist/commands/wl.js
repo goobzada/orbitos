@@ -17,15 +17,14 @@ exports.default = {
             // Determina qual usar baseado na configuração existente:
             let mode = null;
             let finalConfig = null;
-            // Se tem perguntas configuradas no quiz e não tem no simples (ou o simples tá vazio) -> usa quiz
-            if (quizWlConfig && quizWlConfig.questions && quizWlConfig.questions.length > 0) {
+            // Regra principal: /wl deve abrir o Quiz sempre que o módulo estiver ativo.
+            // O próprio módulo de quiz já possui perguntas padrão internas quando config vier vazia.
+            if (quizWlConfig !== null) {
                 mode = 'quiz';
-                finalConfig = quizWlConfig;
+                finalConfig = quizWlConfig || {};
             }
-            // Mas se ele explicitamente ativou/configurou o "whitelist" simples, a gente dá prioridade a ele
-            // Vamos assumir que se o dono configurou um roleId ou channelId no simples, ele quer usar o simples.
-            // OU se o tipo de verificação for definido
-            if (simpleWlConfig && (simpleWlConfig.roleId || simpleWlConfig.channelId || simpleWlConfig.verificationType)) {
+            // Fallback: usa o whitelist simples apenas quando o Quiz não estiver pronto.
+            if (!mode && simpleWlConfig && (simpleWlConfig.roleId || simpleWlConfig.channelId || simpleWlConfig.verificationType || (simpleWlConfig.questions && simpleWlConfig.questions.length > 0))) {
                 mode = 'simple';
                 finalConfig = simpleWlConfig;
             }

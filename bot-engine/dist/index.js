@@ -5,14 +5,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.moduleLoader = exports.client = void 0;
 const discord_js_1 = require("discord.js");
-const dotenv_1 = __importDefault(require("dotenv"));
 const event_handler_1 = require("./handlers/event-handler");
 const command_handler_1 = require("./handlers/command-handler");
 const logger_1 = require("./utils/logger");
 const api_client_1 = __importDefault(require("./utils/api-client"));
+const load_env_1 = require("./utils/load-env");
 const ws_client_1 = require("./services/ws-client");
 const ModuleLoader_1 = require("./modules/ModuleLoader");
-dotenv_1.default.config();
+const loadedEnvFile = (0, load_env_1.loadBotEnv)();
+logger_1.log.info(`[ENV] Loaded bot environment from ${loadedEnvFile}`);
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 if (!DISCORD_TOKEN || DISCORD_TOKEN === 'sua_chave_secreta_do_bot_aqui') {

@@ -191,6 +191,31 @@ async function finishQuiz(interaction, userId) {
             embed.setFooter({ text: '\u26a0\ufe0f Erro ao aplicar cargo. Verifique as permiss\u00f5es do bot.' });
         }
     }
+    // DM result to the participant (approval or rejection).
+    try {
+        const statusLabel = passed ? 'Aprovado' : 'Reprovado';
+        const statusEmoji = passed ? '🏆' : '🛑';
+        const scoreBar = progressBar(session.score, session.questions.length, 12);
+        const dmEmbed = new discord_js_1.EmbedBuilder()
+            .setColor(passed ? 0x57F287 : 0xED4245)
+            .setTitle(`${statusEmoji} Resultado da Whitelist`)
+            .setDescription(passed
+            ? 'Parabens! Voce foi aprovado no teste e ja pode continuar sua jornada no servidor.'
+            : 'Voce nao atingiu a pontuacao minima desta vez. Revise as regras e tente novamente.')
+            .addFields({ name: 'Status', value: `**${statusLabel}**`, inline: true }, { name: 'Pontuacao', value: `**${percent}%**`, inline: true }, { name: 'Minimo Exigido', value: `**${session.passPercentage}%**`, inline: true }, { name: 'Acertos', value: `**${session.score}** de **${session.questions.length}**`, inline: true }, { name: 'Desempenho', value: `\`${scoreBar}\``, inline: true }, {
+            name: 'Proximo Passo',
+            value: passed
+                ? 'Seja bem-vindo! Caso tenha duvidas, abra um ticket com a staff.'
+                : 'Use `/wl` novamente no servidor para refazer o quiz quando estiver pronto.',
+            inline: false,
+        })
+            .setFooter({ text: 'OrbitUp Whitelist Engine' })
+            .setTimestamp();
+        await interaction.user.send({ embeds: [dmEmbed] });
+    }
+    catch {
+        // Ignore when participant has DMs disabled.
+    }
     sessions.delete(userId);
     // Botão para fechar/limpar a mensagem efêmera
     const row = new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.ButtonBuilder()

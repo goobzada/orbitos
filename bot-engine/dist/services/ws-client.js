@@ -6,8 +6,28 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.communityWSClient = exports.CommunityWSClient = void 0;
 const ws_1 = __importDefault(require("ws"));
 const logger_1 = require("../utils/logger");
-const BOT_WS_TOKEN = process.env.BOT_INTERNAL_TOKEN || 'dev-bot-ws-token-123';
-const WS_BASE_URL = process.env.CORE_API_WS_URL || 'ws://localhost:4000/ws/bot';
+const load_env_1 = require("../utils/load-env");
+(0, load_env_1.loadBotEnv)();
+function resolveWsBaseUrl() {
+    const normalizeBotWsPath = (value) => {
+        let normalized = value.trim().replace(/\/+$/, '');
+        // Remove accidental API namespace from WS URLs.
+        normalized = normalized.replace(/\/api$/i, '');
+        // If a ws endpoint is provided, force BOT lane.
+        if (/\/ws\//i.test(normalized)) {
+            return normalized.replace(/\/ws\/(bot|agent|dashboard)$/i, '/ws/bot');
+        }
+        return `${normalized}/ws/bot`;
+    };
+    const explicit = (process.env.CORE_API_WS_URL || '').trim();
+    if (explicit) {
+        return normalizeBotWsPath(explicit);
+    }
+    const httpBase = (process.env.CORE_API_URL || 'http://localhost:4000').trim().replace(/\/+$/, '');
+    const withoutApiSuffix = httpBase.replace(/\/api$/i, '');
+    const wsRoot = withoutApiSuffix.replace(/^https:\/\//i, 'wss://').replace(/^http:\/\//i, 'ws://');
+    return normalizeBotWsPath(wsRoot);
+}
 class CommunityWSClient {
     ws = null;
     discordClient = null;
@@ -20,7 +40,9 @@ class CommunityWSClient {
         this.connect();
     }
     connect() {
-        const url = `${WS_BASE_URL}?token=${encodeURIComponent(BOT_WS_TOKEN)}`;
+        const botWsToken = process.env.BOT_INTERNAL_TOKEN || 'dev-bot-ws-token-123';
+        const wsBaseUrl = resolveWsBaseUrl();
+        const url = `${wsBaseUrl}?token=${encodeURIComponent(botWsToken)}`;
         logger_1.log.info(`[WS CLIENT] 🔌 Conectando ao Core API...`);
         this.ws = new ws_1.default(url);
         this.ws.on('open', () => {

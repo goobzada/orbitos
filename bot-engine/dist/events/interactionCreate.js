@@ -66,6 +66,35 @@ exports.default = {
             await (0, simple_whitelist_1.handleSimpleWhitelist)(interaction);
             return;
         }
+        // ── VERIFICAÇÃO SIMPLES (customId: verification_verify) ───────────────────
+        if (interaction.isButton() && interaction.customId === 'verification_verify') {
+            if (!interaction.guildId)
+                return;
+            try {
+                const { data: guildData } = await api_client_1.default.get(`/internal/guilds/${interaction.guildId}/modules`);
+                const verificationModule = (guildData.modules || []).find((m) => m.key === 'verification');
+                const roleId = verificationModule?.config?.roleId;
+                if (!roleId) {
+                    return interaction.reply({ content: '❌ Papel de verificação não configurado. Contate um administrador.', ephemeral: true });
+                }
+                const member = await interaction.guild?.members.fetch(interaction.user.id);
+                if (!member)
+                    return interaction.reply({ content: '❌ Não foi possível encontrar seu perfil no servidor.', ephemeral: true });
+                if (member.roles.cache.has(roleId)) {
+                    return interaction.reply({ content: '✅ Você já está verificado!', ephemeral: true });
+                }
+                await member.roles.add(roleId);
+                return interaction.reply({ content: '✅ Verificação concluída! Bem-vindo ao servidor.', ephemeral: true });
+            }
+            catch (e) {
+                const isMissingPerms = e.message?.includes('Missing Permissions');
+                logger_1.log.error('[VERIFICATION] Erro ao verificar membro: ' + e.message);
+                const errMsg = isMissingPerms
+                    ? '❌ Bot sem permissão para atribuir cargos. Verifique se o bot tem a permissão **Gerenciar Cargos** e se o cargo de verificação está abaixo do cargo do bot na hierarquia.'
+                    : '❌ Erro ao processar verificação. Tente novamente.';
+                return interaction.reply({ content: errMsg, ephemeral: true });
+            }
+        }
         // ── SLASH COMMANDS ────────────────────────────────────────────
         if (interaction.isChatInputCommand()) {
             logger_1.log.event(`Slash Command: /${interaction.commandName} por ${interaction.user.tag}`);
@@ -212,6 +241,32 @@ exports.default = {
                         }
                         else if (value === 'application') {
                             components.push(new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.ButtonBuilder().setCustomId('application_start').setLabel('📝 Preencher Formulário').setStyle(discord_js_1.ButtonStyle.Primary)));
+                        }
+                        else if (value === 'verification') {
+                            const verificationModule = modulesConfig.find((m) => m.key === 'verification');
+                            const verConfig = verificationModule?.config || {};
+                            // Override embed with custom message if configured
+                            if (verConfig.message) {
+                                embed.setDescription(verConfig.message);
+                            }
+                            const btnLabel = lang === 'pt-BR' ? '✅ Verificar' : lang === 'es-ES' ? '✅ Verificar' : '✅ Verify';
+                            components.push(new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.ButtonBuilder().setCustomId('verification_verify').setLabel(btnLabel).setStyle(discord_js_1.ButtonStyle.Success)));
+                        }
+                        else if (value === 'advanced_verification') {
+                            const advModule = modulesConfig.find((m) => m.key === 'advanced_verification');
+                            const advConfig = advModule?.config || {};
+                            if (advConfig.message) {
+                                embed.setDescription(advConfig.message);
+                            }
+                            const btnLabel = lang === 'pt-BR' ? '🔐 Verificar Conta' : lang === 'es-ES' ? '🔐 Verificar Cuenta' : '🔐 Verify Account';
+                            // If an external URL is configured, use a Link button; otherwise use role-assign button
+                            const externalUrl = advConfig.url || advConfig.verificationUrl || '';
+                            if (externalUrl) {
+                                components.push(new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.ButtonBuilder().setLabel(btnLabel).setStyle(discord_js_1.ButtonStyle.Link).setURL(externalUrl)));
+                            }
+                            else {
+                                components.push(new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.ButtonBuilder().setCustomId('verification_verify').setLabel(btnLabel).setStyle(discord_js_1.ButtonStyle.Success)));
+                            }
                         }
                         const channelToSend = interaction.channel;
                         if (channelToSend && 'send' in channelToSend) {
@@ -362,6 +417,18 @@ exports.default = {
                 .setEmoji('🔒');
             const row = new discord_js_1.ActionRowBuilder().addComponents(closeBtn);
             await ticketChannel.send({ content: `<@${user.id}> ${config.staffRoleId ? `<@&${config.staffRoleId}>` : ''}`, embeds: [welcomeEmbed], components: [row] });
+            // DM confirmation to the ticket author.
+            try {
+                const dmText = lang === 'pt-BR'
+                    ? `Seu ticket foi aberto com sucesso em **${guild.name}**.\nCanal: #${ticketChannel.name}\nID: ${ticketId}`
+                    : lang === 'es-ES'
+                        ? `Tu ticket fue abierto correctamente en **${guild.name}**.\nCanal: #${ticketChannel.name}\nID: ${ticketId}`
+                        : `Your ticket was opened successfully in **${guild.name}**.\nChannel: #${ticketChannel.name}\nID: ${ticketId}`;
+                await user.send({ content: dmText });
+            }
+            catch {
+                // Ignore when user has DMs disabled.
+            }
             return interaction.editReply({ content: ticketStrings.createdSuccess.replace('{channel}', `<#${ticketChannel.id}>`) });
         }
         // ── BOTÃO: Fechar Ticket ───────────────────────────────────────
@@ -387,6 +454,18 @@ exports.default = {
                 await textChannel.send({
                     embeds: [(0, embeds_1.ticketClosedEmbed)(lang === 'pt-BR' ? 'Equipe' : 'Staff', interaction.user.username)]
                 });
+            }
+            // DM fallback when ticket is closed directly in Discord.
+            try {
+                const dmText = lang === 'pt-BR'
+                    ? `Seu ticket (${ticketId}) foi fechado em **${interaction.guild?.name || 'OrbitUp'}**.`
+                    : lang === 'es-ES'
+                        ? `Tu ticket (${ticketId}) fue cerrado en **${interaction.guild?.name || 'OrbitUp'}**.`
+                        : `Your ticket (${ticketId}) was closed in **${interaction.guild?.name || 'OrbitUp'}**.`;
+                await interaction.user.send({ content: dmText });
+            }
+            catch {
+                // Ignore when user has DMs disabled.
             }
             const deleteMsg = lang === 'pt-BR' ? '🗑️ Canal será excluído em 5 segundos...' : lang === 'es-ES' ? '🗑️ El canal será eliminado en 5 segundos...' : '🗑️ Channel will be deleted in 5 seconds...';
             setTimeout(() => interaction.channel?.delete().catch(() => null), 5000);
