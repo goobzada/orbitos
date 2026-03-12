@@ -2,10 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import dotenv from 'dotenv';
+import path from 'path';
 import 'express-async-errors';
 import cookieParser from 'cookie-parser'; // ⬅️ NOVO
 
-dotenv.config();
+// Load .env.production when NODE_ENV=production, otherwise .env
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+dotenv.config({ path: path.resolve(process.cwd(), envFile) });
+// Fallback to .env if specific file doesn't have a key
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 import prisma from './lib/prisma';
 
