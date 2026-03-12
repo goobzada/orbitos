@@ -8,7 +8,8 @@ import cookieParser from 'cookie-parser'; // ⬅️ NOVO
 
 // Load .env.production when NODE_ENV=production, otherwise .env
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
-dotenv.config({ path: path.resolve(process.cwd(), envFile) });
+// Ensure file-based env values win over stale process manager env vars.
+dotenv.config({ path: path.resolve(process.cwd(), envFile), override: true });
 // Fallback to .env if specific file doesn't have a key
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 

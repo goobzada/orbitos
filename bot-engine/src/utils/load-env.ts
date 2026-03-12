@@ -14,7 +14,7 @@ export function loadBotEnv(): string {
 
     // Always load default .env first when available.
     if (fs.existsSync(devEnvPath)) {
-        dotenv.config({ path: devEnvPath });
+        dotenv.config({ path: devEnvPath, override: true });
         loadedFrom = '.env';
     }
 
@@ -26,7 +26,7 @@ export function loadBotEnv(): string {
 
     // Fallback if nothing loaded yet.
     if (!loadedFrom) {
-        dotenv.config();
+        dotenv.config({ override: true });
         loadedFrom = '.env';
     }
 
