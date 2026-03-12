@@ -76,21 +76,23 @@ async function isCustomStoreDomain(origin: string): Promise<boolean> {
 }
 
 app.use(cors({
-  origin: async (origin, callback) => {
-    const DEV_LOCALHOST_PORTS = [3000, 3001, 4000];
-    const isLocalhost = DEV_LOCALHOST_PORTS.some(
-      p => origin === `http://localhost:${p}` || origin === `http://127.0.0.1:${p}`
-    );
-    if (!origin || STATIC_ALLOWED_ORIGINS.includes(origin) || isLocalhost) {
-      return callback(null, true);
+  origin: function (origin, callback) {
+    // Permitir requisições sem origin (como mobile apps ou curl)
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
+    const isAllowed = allowedOrigins.some(allowed => {
+      const cleanAllowed = allowed.trim().toLowerCase();
+      const cleanOrigin = origin.toLowerCase();
+      return cleanOrigin === cleanAllowed || cleanOrigin.endsWith(`.${cleanAllowed.replace('https://', '').replace('http://', '')}`);
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Bloqueado: ${origin} não pertence ao ecossistema OrbitOS.`);
+      callback(new Error('Origem não permitida pelo CORS'));
     }
-    // Verifica dinamicamente se é um domínio de loja verificado
-    const isStore = await isCustomStoreDomain(origin);
-    if (isStore) {
-      return callback(null, true);
-    }
-    console.warn(`[CORS] Origem bloqueada: ${origin}`);
-    callback(new Error(`Origem não permitida pelo CORS: ${origin}`));
   },
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'x-internal-service-key'],
@@ -114,26 +116,32 @@ app.use('/webhook/stripe', express.raw({ type: 'application/json' }), WebhookCon
 // Demais rotas usam JSON
 app.use(express.json());
 
-// ── Mounting REST Routes ─────────────────────────────────
-app.use('/auth', authRoutes);
-app.use('/organizations', orgRoutes);
-app.use('/organizations', moduleRoutes);
-app.use('/servers', serverRoutes);
-app.use('/internal', internalRoutes); // Bot Engine only (x-internal-service-key)
-app.use('/tickets', ticketRoutes);
-app.use('/staff', staffRoutes);
-app.use('/stats', statsRoutes);
-app.use('/ticket-portals', ticketPortalRoutes);
-app.use('/ticket-templates', ticketTemplateRoutes);
-app.use('/payments', paymentRoutes);
-app.use('/platform', platformRoutes);
-app.use('/templates', templateRoutes);
-app.use('/store', storeRoutes);
-app.use('/public/store', publicStoreRoutes);
-app.use('/public/portal', publicPortalRoutes);
-app.use('/support', supportRoutes);
-app.use('/billing', billingRoutes);
-app.use('/automations', automationRoutes);
+// ── Mounting Routes (Supporting both / and /api prefix) ──────────
+const apiRouter = express.Router();
+
+apiRouter.use('/auth', authRoutes);
+apiRouter.use('/organizations', orgRoutes);
+apiRouter.use('/organizations', moduleRoutes);
+apiRouter.use('/servers', serverRoutes);
+apiRouter.use('/internal', internalRoutes);
+apiRouter.use('/tickets', ticketRoutes);
+apiRouter.use('/staff', staffRoutes);
+apiRouter.use('/stats', statsRoutes);
+apiRouter.use('/ticket-portals', ticketPortalRoutes);
+apiRouter.use('/ticket-templates', ticketTemplateRoutes);
+apiRouter.use('/payments', paymentRoutes);
+apiRouter.use('/platform', platformRoutes);
+apiRouter.use('/templates', templateRoutes);
+apiRouter.use('/store', storeRoutes);
+apiRouter.use('/public/store', publicStoreRoutes);
+apiRouter.use('/public/portal', publicPortalRoutes);
+apiRouter.use('/support', supportRoutes);
+apiRouter.use('/billing', billingRoutes);
+apiRouter.use('/automations', automationRoutes);
+
+// Mount with both prefixes for maximum reliability in production/dev
+app.use('/api', apiRouter);
+app.use('/', apiRouter);
 
 // ── API Documentation (Swagger UI) ──────────────────────
 app.use('/docs', docsRoutes);

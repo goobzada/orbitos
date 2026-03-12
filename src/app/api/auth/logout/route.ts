@@ -16,8 +16,8 @@ function clearCookies(response: NextResponse) {
             maxAge: 0,
             expires: new Date(0),
             httpOnly: name === 'token', // Only 'token' is httpOnly
-            sameSite: isProduction ? 'none' : 'lax',
-            secure: isProduction,
+            sameSite: 'lax',
+            secure: isProduction || !!cookieDomain,
             ...(cookieDomain ? { domain: cookieDomain } : {}),
         });
     });

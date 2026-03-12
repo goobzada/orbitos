@@ -24,7 +24,12 @@ function getHost(request: NextRequest): string {
 
 function isPlatformHost(host: string): boolean {
     if (!host) return true;
-    if (host === APP_DOMAIN || host === ROOT_DOMAIN || host === STORES_GATEWAY_DOMAIN) return true;
+    // Normaliza o host removendo www. para comparação
+    const normalizedHost = host.replace(/^www\./, '');
+    const normalizedRoot = ROOT_DOMAIN.replace(/^www\./, '');
+    const normalizedApp = APP_DOMAIN.replace(/^www\./, '');
+
+    if (normalizedHost === normalizedRoot || normalizedHost === normalizedApp || host === STORES_GATEWAY_DOMAIN) return true;
     if (host === 'localhost' || host === '127.0.0.1') return true;
     return false;
 }

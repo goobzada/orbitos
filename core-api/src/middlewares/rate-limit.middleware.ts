@@ -165,18 +165,28 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
             : `ip:${realClientIp || forwardedIp || req.ip || 'unknown'}`;
 
         // 1. Apply global rate limit per IP
-        if (usingFallback) {
-            await fallbackGlobalLimiter.consume(identityKey);
-        } else if (globalLimiter) {
-            await globalLimiter.consume(identityKey);
+        try {
+            if (usingFallback) {
+                await fallbackGlobalLimiter.consume(identityKey);
+            } else if (globalLimiter) {
+                await globalLimiter.consume(identityKey);
+            }
+        } catch (e: any) {
+            if (e?.msBeforeNextReset) throw e; // É um 429 real, deixa o catch de baixo lidar
+            console.warn('[RATE LIMIT] Global limiter fail-open:', e.message);
         }
 
         // 2. Internal routes - apply service rate limit
         if (req.path.startsWith('/internal')) {
-            if (usingFallback) {
-                await fallbackInternalLimiter.consume('bot-engine');
-            } else if (internalLimiter) {
-                await internalLimiter.consume('bot-engine');
+            try {
+                if (usingFallback) {
+                    await fallbackInternalLimiter.consume('bot-engine');
+                } else if (internalLimiter) {
+                    await internalLimiter.consume('bot-engine');
+                }
+            } catch (e: any) {
+                if (e?.msBeforeNextReset) throw e;
+                console.warn('[RATE LIMIT] Internal limiter fail-open:', e.message);
             }
             return next();
         }
@@ -184,10 +194,15 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         // 3. Organization-specific rate limit
         const orgId = req.params.orgId || req.body.organizationId || req.query.orgId;
         if (orgId) {
-            if (usingFallback) {
-                await fallbackOrgLimiter.consume(String(orgId));
-            } else if (orgLimiter) {
-                await orgLimiter.consume(String(orgId));
+            try {
+                if (usingFallback) {
+                    await fallbackOrgLimiter.consume(String(orgId));
+                } else if (orgLimiter) {
+                    await orgLimiter.consume(String(orgId));
+                }
+            } catch (e: any) {
+                if (e?.msBeforeNextReset) throw e;
+                console.warn('[RATE LIMIT] Org limiter fail-open:', e.message);
             }
         }
 

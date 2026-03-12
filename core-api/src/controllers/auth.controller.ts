@@ -15,8 +15,9 @@ function getCookieConfig() {
     const cookieDomain = process.env.COOKIE_DOMAIN || '';
     return {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'none' as const : 'lax' as const,
+        // Se houver domínio ou for produção, deve ser secure para funcionar em HTTPS na VPS
+        secure: isProduction || !!cookieDomain,
+        sameSite: 'lax' as const,
         path: '/',
         ...(cookieDomain ? { domain: cookieDomain } : {}),
     };
