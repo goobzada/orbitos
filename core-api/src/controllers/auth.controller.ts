@@ -359,8 +359,17 @@ export class AuthController {
             // 6️⃣ Retorna JSON pro frontend também salvar em localStorage como fallback
             return res.json({ token, user, organization: org });
         } catch (error: any) {
-            console.error('[AUTH_CALLBACK_DISCORD_ERROR]', error.response?.data || error.message || error);
-            return res.status(500).json({ error: 'Falha interna durante callback do Discord', details: error.response?.data });
+            const discordErrData = error.response?.data;
+            console.error('[AUTH_CALLBACK_DISCORD_ERROR]', discordErrData || error.message || error);
+            // Se o Discord retornou erro OAuth, expor diretamente para o frontend detectar
+            if (discordErrData?.error) {
+                return res.status(400).json({
+                    error: discordErrData.error,
+                    error_description: discordErrData.error_description || '',
+                    details: discordErrData,
+                });
+            }
+            return res.status(500).json({ error: 'Falha interna durante callback do Discord', details: discordErrData || error.message });
         }
     }
 

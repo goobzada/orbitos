@@ -72,17 +72,21 @@ function CallbackContent() {
                 }
             } catch (error: any) {
                 const status = error?.response?.status;
-                const discordError = error?.response?.data?.details?.error;
+                const discordError = error?.response?.data?.details?.error
+                    || error?.response?.data?.details?.error_description
+                    || (typeof error?.response?.data?.details === 'string' ? error?.response?.data?.details : null);
                 const apiError = error?.response?.data?.error;
+                const isNetworkError = !error?.response && !!error?.request;
                 const detail = discordError || apiError || error?.message || 'Erro desconhecido';
 
                 console.error('[CALLBACK] ❌ Falha na troca do code:', { status, detail, discordError, apiError });
-                console.error('[CALLBACK] ❌ Erro bruto:', error);
 
-                // Mensagem amigável para erros conhecidos do Discord
+                // Mensagem amigável para erros conhecidos
                 let friendlyMsg = `Falha na autenticação (${status || 'rede'}): ${detail}`;
-                if (discordError === 'invalid_client') {
-                    friendlyMsg = '❌ Discord recusou as credenciais da aplicação (invalid_client). O Client Secret no servidor está desatualizado. Contate o administrador.';
+                if (isNetworkError) {
+                    friendlyMsg = '❌ API do servidor está offline ou inacessível. Tente novamente em instantes.';
+                } else if (discordError === 'invalid_client' || apiError?.includes?.('invalid_client')) {
+                    friendlyMsg = '❌ Discord recusou as credenciais (invalid_client). O Client Secret no servidor está desatualizado. Contate o administrador.';
                 } else if (discordError === 'invalid_grant') {
                     friendlyMsg = '❌ Código de autorização expirado ou já usado. Tente fazer login novamente.';
                 } else if (discordError === 'redirect_uri_mismatch') {
@@ -90,8 +94,8 @@ function CallbackContent() {
                 }
 
                 setErrorMsg(friendlyMsg);
-                // Não redireciona automaticamente para não esconder o erro do usuário
-                setTimeout(() => router.push(`/login?error=auth_failed&detail=${encodeURIComponent(detail)}`), 6000);
+                // Aguarda 8s e volta para /login — NÃO em loop automático
+                setTimeout(() => router.replace('/login'), 8000);
             }
         };
 
@@ -104,7 +108,8 @@ function CallbackContent() {
                 <AlertCircle className="w-12 h-12 text-destructive mb-2" />
                 <h2 className="text-xl font-semibold text-destructive">Falha na autenticação</h2>
                 <p className="text-muted-foreground text-sm max-w-sm text-center">{errorMsg}</p>
-                <p className="text-xs text-muted-foreground">Redirecionando para o login...</p>
+                <p className="text-xs text-muted-foreground">Redirecionando para o login em 8 segundos...</p>
+                <a href="/login" className="mt-2 text-sm text-violet-400 hover:underline">Voltar agora</a>
             </div>
         );
     }
