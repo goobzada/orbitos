@@ -199,7 +199,7 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         }
 
         // 3. Organization-specific rate limit
-        const orgId = req.params.orgId || req.body.organizationId || req.query.orgId;
+        const orgId = req.params.orgId || req.body?.organizationId || req.query.orgId;
         if (orgId) {
             try {
                 if (usingFallback) {

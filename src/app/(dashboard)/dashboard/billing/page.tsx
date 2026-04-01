@@ -497,7 +497,7 @@ export default function BillingPage() {
                                     <span className="text-muted-foreground">{t.billing.usage_servers}</span>
                                     <span className="font-medium">{usageServers} / {current.limits.servers === -1 ? t.billing.unlimited : current.limits.servers}</span>
                                 </div>
-                                <Progress value={current.limits.servers === -1 ? 100 : Math.min((usageServers / current.limits.servers) * 100, 100)} className="h-1.5" />
+                                <Progress value={current.limits.servers === -1 ? 0 : Math.min((usageServers / current.limits.servers) * 100, 100)} className="h-1.5" />
                             </div>
                             <div>
                                 <div className="flex items-center justify-between text-sm mb-1.5">

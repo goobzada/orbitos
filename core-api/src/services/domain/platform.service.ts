@@ -41,6 +41,7 @@ export class PlatformService {
         const freeOrgs = await prisma.organization.count({ where: { plan: 'FREE' } });
         const proOrgs = await prisma.organization.count({ where: { plan: 'PRO' } });
         const enterpriseOrgs = await prisma.organization.count({ where: { plan: 'ENTERPRISE' } });
+        const maxOrgs = await prisma.organization.count({ where: { plan: 'MAX' } });
 
         return {
             totals: {
@@ -62,7 +63,8 @@ export class PlatformService {
             orgDistribution: {
                 FREE: freeOrgs,
                 PRO: proOrgs,
-                ENTERPRISE: enterpriseOrgs
+                ENTERPRISE: enterpriseOrgs,
+                MAX: maxOrgs
             }
         };
     }

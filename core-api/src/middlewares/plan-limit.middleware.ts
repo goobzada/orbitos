@@ -24,12 +24,19 @@ const DEFAULT_LIMITS: Record<string, Record<LimitKey, number>> = {
         maxGiveaways: 1000,
         maxTickets: 100000,
         maxProducts: 10000
+    },
+    MAX: {
+        maxServers: 999999,
+        maxStaff: 999999,
+        maxGiveaways: 999999,
+        maxTickets: 999999,
+        maxProducts: 999999
     }
 };
 
 export const checkPlanLimit = (key: LimitKey) => {
     return async (req: Request, res: Response, next: NextFunction) => {
-        let organizationId = req.params.organizationId || req.body.organizationId || req.query.organizationId;
+        let organizationId = req.params.organizationId || req.body?.organizationId || req.query.organizationId;
         const discordGuildId = req.body.discordGuildId || req.params.guildId || req.query.discordGuildId;
 
         // Se não temos orgId mas temos discordGuildId, buscamos a org vinculada ao servidor
@@ -58,12 +65,13 @@ export const checkPlanLimit = (key: LimitKey) => {
             }
 
             const plan = org.plan || 'FREE';
+            // MAX plan is always unlimited — skip limit check entirely
+            if (plan === 'MAX') return next();
             const limits = (org.planLimits as any) || DEFAULT_LIMITS[plan] || DEFAULT_LIMITS.FREE;
             const limitValue = limits[key];
 
-            if (limitValue === undefined) {
-                // Se o limite não está definido no plano, permitimos por padrão ou barramos? 
-                // Vamos permitir para não quebrar fluxos não planejados.
+            if (limitValue === undefined || limitValue === -1 || limitValue >= 999999) {
+                // Undefined or special unlimited markers — allow through
                 return next();
             }
 
