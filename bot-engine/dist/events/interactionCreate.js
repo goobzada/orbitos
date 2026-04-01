@@ -66,7 +66,7 @@ exports.default = {
             await (0, simple_whitelist_1.handleSimpleWhitelist)(interaction);
             return;
         }
-        // ── VERIFICAÇÂO SIMPLES (customId: verification_verify) ───────────────────
+        // ── VERIFICAÇÃO SIMPLES (customId: verification_verify) ───────────────────
         if (interaction.isButton() && interaction.customId === 'verification_verify') {
             if (!interaction.guildId)
                 return;
@@ -131,7 +131,7 @@ exports.default = {
             catch (e) { /* usa padrão */ }
             const { tickets: ticketStrings } = (0, translations_1.getTranslation)(lang);
             if (categories.length === 0) {
-                // Sem categorias configuradas ΓåÆ abre modal direto (fluxo simples)
+                // Sem categorias configuradas → abre modal direto (fluxo simples)
                 const modal = new discord_js_1.ModalBuilder()
                     .setCustomId('ticket_modal_Z2VyYWw=') // base64 de "geral"
                     .setTitle(lang === 'pt-BR' ? 'Abrir Ticket' : 'Open Ticket');
@@ -150,7 +150,7 @@ exports.default = {
                     .setMaxLength(800)));
                 return interaction.showModal(modal);
             }
-            // Com categorias ΓåÆ mostra select menu
+            // Com categorias → mostra select menu
             const selectMenu = new discord_js_1.StringSelectMenuBuilder()
                 .setCustomId('ticket_select_category')
                 .setPlaceholder(ticketStrings.selectCategory)
@@ -161,11 +161,11 @@ exports.default = {
                     label: name,
                     value: `cat_${Buffer.from(name).toString('base64').slice(0, 50)}`,
                     description: isStr ? ticketStrings.modalTitle : (cat.description || ticketStrings.modalTitle),
-                    emoji: isStr ? '≡ƒÄ½' : (cat.emoji || '≡ƒÄ½'),
+                    emoji: isStr ? '🎫' : (cat.emoji || '🎫'),
                 };
             }));
             const row = new discord_js_1.ActionRowBuilder().addComponents(selectMenu);
-            return interaction.reply({ content: lang === 'pt-BR' ? '≡ƒôé Selecione a categoria do seu ticket:' : '≡ƒôé Select your ticket category:', components: [row], ephemeral: true });
+            return interaction.reply({ content: lang === 'pt-BR' ? '📂 Selecione a categoria do seu ticket:' : '📂 Select your ticket category:', components: [row], ephemeral: true });
         }
         // ── SELECT MENU: /painel deploy panel ────────────────────────
         if (interaction.isStringSelectMenu() && interaction.customId === 'painel_select_module') {
@@ -274,7 +274,7 @@ exports.default = {
                             if (advConfig.message) {
                                 embed.setDescription(advConfig.message);
                             }
-                            const btnLabel = lang === 'pt-BR' ? '≡ƒöÉ Verificar Conta' : lang === 'es-ES' ? '≡ƒöÉ Verificar Cuenta' : '≡ƒöÉ Verify Account';
+                            const btnLabel = lang === 'pt-BR' ? '🔐 Verificar Conta' : lang === 'es-ES' ? '🔐 Verificar Cuenta' : '🔐 Verify Account';
                             // If an external URL is configured, use a Link button; otherwise use role-assign button
                             const externalUrl = advConfig.url || advConfig.verificationUrl || '';
                             if (externalUrl) {
@@ -302,7 +302,7 @@ exports.default = {
                 }
                 else {
                     return interaction.followUp({
-                        content: `ΓÜá∩╕Å The module \`${value}\` is not mapped in \`${lang}\` yet.`,
+                        content: `⚠️ The module \`${value}\` is not mapped in \`${lang}\` yet.`,
                         ephemeral: true,
                     });
                 }
@@ -321,18 +321,18 @@ exports.default = {
             await GiveawayModule?.handleInteraction?.(interaction);
             return;
         }
-        // ── APPLICATION / FORMULÃRIO (customIds: application_*, app_*) ────────
+        // ── APPLICATION / FORMULÁRIO (customIds: application_*, app_*) ────────
         if ('customId' in interaction && typeof interaction.customId === 'string' && (interaction.customId === 'application_start' ||
             interaction.customId.startsWith('app_'))) {
             const { default: ApplicationModule } = await Promise.resolve().then(() => __importStar(require('../modules/automation/application')));
             await ApplicationModule?.handleInteraction?.(interaction);
             return;
         }
-        // ── BOTÔES: Modulos ainda não implementados ──────────────────────────────
+        // ── BOTÕES: Modulos ainda não implementados ──────────────────────────────
         // Evita timeout silencioso (This interaction failed)
         if (interaction.isButton()) {
             if (interaction.customId === 'giveaway_join') {
-                await interaction.reply({ content: '≡ƒÄë Use o comando `/giveaway start` para criar um sorteio real!', ephemeral: true });
+                await interaction.reply({ content: '🎉 Use o comando `/giveaway start` para criar um sorteio real!', ephemeral: true });
                 return;
             }
             if (interaction.customId === 'application_start') {
