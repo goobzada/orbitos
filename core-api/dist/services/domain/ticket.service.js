@@ -1,13 +1,54 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ticketService = exports.TicketService = void 0;
 const prisma_1 = __importDefault(require("../../lib/prisma"));
-const queue_1 = require("../../lib/queue");
 const client_1 = require("@prisma/client");
 class TicketService {
+    async dispatchDiscordAction(action, payload) {
+        // The bot-engine communicates exclusively via WebSocket (no BullMQ consumer exists).
+        // Broadcast directly to any connected BOT clients — this is the only reliable path.
+        const { communityWSServer } = await Promise.resolve().then(() => __importStar(require('../ws-server')));
+        communityWSServer.broadcastToTarget(payload.serverId, 'DISCORD_ACTION', {
+            ...payload,
+            action,
+        });
+    }
     async listTickets(organizationId) {
         const tickets = await prisma_1.default.ticket.findMany({
             where: {
@@ -69,10 +110,9 @@ class TicketService {
         });
         // 🚀 Enviar para a fila se for via painel (staff) para o Bot processar em background
         if (params.isStaff && params.discordChannelId) {
-            await (0, queue_1.addDiscordJob)('send_message', {
+            await this.dispatchDiscordAction('send_message', {
                 serverId: params.discordGuildId,
                 userId: params.authorId,
-                action: 'send_message',
                 params: {
                     channelId: params.discordChannelId,
                     content: `**[Staff] ${params.authorName}:**\n${params.content}`
@@ -98,13 +138,14 @@ class TicketService {
         });
         // 🚀 Adicionar na fila de processamento do Discord
         if (ticket.channelId) {
-            await (0, queue_1.addDiscordJob)('ticket.close_ticket_flow', {
+            await this.dispatchDiscordAction('ticket.close_ticket_flow', {
                 serverId: ticket.server.discordGuildId,
                 userId: 'SYSTEM',
-                action: 'ticket.close_ticket_flow',
                 params: {
                     channelId: ticket.channelId,
-                    staffName: staffName
+                    staffName: staffName,
+                    authorId: ticket.authorId,
+                    ticketId: ticket.id
                 }
             });
         }
@@ -134,21 +175,21 @@ class TicketService {
                 RESOLVED: 'Resolvido'
             };
             if (status === client_1.TicketStatus.CLOSED) {
-                await (0, queue_1.addDiscordJob)('ticket.close_ticket_flow', {
+                await this.dispatchDiscordAction('ticket.close_ticket_flow', {
                     serverId: ticket.server.discordGuildId,
                     userId: 'SYSTEM',
-                    action: 'ticket.close_ticket_flow',
                     params: {
                         channelId: ticket.channelId,
-                        staffName
+                        staffName,
+                        authorId: ticket.authorId,
+                        ticketId: ticket.id
                     }
                 });
             }
             else {
-                await (0, queue_1.addDiscordJob)('send_message', {
+                await this.dispatchDiscordAction('send_message', {
                     serverId: ticket.server.discordGuildId,
                     userId: 'SYSTEM',
-                    action: 'send_message',
                     params: {
                         channelId: ticket.channelId,
                         content: `**[Sistema]** O status deste ticket foi alterado para: **${statusLabels[status] || status}**.`

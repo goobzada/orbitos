@@ -8,6 +8,17 @@ const prisma_1 = __importDefault(require("../../lib/prisma"));
 const audit_service_1 = require("./audit.service");
 const stripe_1 = __importDefault(require("stripe"));
 class StoreService {
+    static normalizeProductStatus(status) {
+        if (!status)
+            return 'ACTIVE';
+        const normalized = status.trim().toUpperCase();
+        if (normalized === 'PUBLISHED')
+            return 'ACTIVE';
+        if (normalized === 'ACTIVE' || normalized === 'HIDDEN' || normalized === 'ARCHIVED' || normalized === 'DRAFT') {
+            return normalized;
+        }
+        return 'ACTIVE';
+    }
     /**
      * Valida se a organização pode usar a loja (Gating de Plano).
      */
@@ -33,7 +44,11 @@ class StoreService {
         });
         if (!settings) {
             settings = await prisma_1.default.storeSettings.create({
-                data: { organizationId: orgId },
+                data: {
+                    organizationId: orgId,
+                    // Keep public storefront visible by default for orgs using the store module.
+                    enabled: true,
+                },
             });
         }
         return settings;
@@ -79,32 +94,48 @@ class StoreService {
         });
     }
     /**
-     * Lista produtos (Público) (MOCK ORG BY SLUG)
+     * Lista produtos (Público) — busca por org slug ou UUID
      */
     static async getPublicProducts(slug) {
-        // Encontrar organização pelo ID ou futuramente pelo slug
-        const products = await prisma_1.default.storeProduct.findMany({
+        // Encontrar organização pelo slug ou UUID
+        const org = await prisma_1.default.organization.findFirst({
             where: {
                 OR: [
-                    { organizationId: slug },
-                    { slug: slug }
-                ],
-                status: 'ACTIVE',
-                organization: {
-                    storeSettings: {
-                        enabled: true
-                    }
-                }
+                    { slug: slug },
+                    { subdomain: slug },
+                    { id: slug },
+                ]
+            },
+        });
+        if (!org) {
+            return [];
+        }
+        return prisma_1.default.storeProduct.findMany({
+            where: {
+                organizationId: org.id,
+                status: {
+                    in: ['ACTIVE', 'active', 'PUBLISHED', 'published'],
+                },
             },
             orderBy: { createdAt: 'desc' },
         });
-        return products;
     }
     /**
      * Cria produto
      */
     static async createProduct(orgId, data, userId) {
         await this.validatePlan(orgId);
+        // Ensure storefront is enabled as soon as the tenant starts publishing products.
+        await prisma_1.default.storeSettings.upsert({
+            where: { organizationId: orgId },
+            update: { enabled: true },
+            create: {
+                organizationId: orgId,
+                enabled: true,
+                currency: 'BRL',
+                checkoutProvider: 'STRIPE',
+            },
+        });
         const product = await prisma_1.default.storeProduct.create({
             data: {
                 organizationId: orgId,
@@ -113,7 +144,7 @@ class StoreService {
                 description: data.description,
                 priceCents: data.priceCents,
                 billingCycle: data.billingCycle || 'ONE_TIME',
-                status: data.status || 'ACTIVE',
+                status: this.normalizeProductStatus(data.status),
                 category: data.category,
                 tags: data.tags ? (typeof data.tags === 'string' ? data.tags : JSON.stringify(data.tags)) : undefined,
                 thumbnailUrl: data.thumbnailUrl,
@@ -142,7 +173,7 @@ class StoreService {
                 description: data.description,
                 priceCents: data.priceCents,
                 billingCycle: data.billingCycle,
-                status: data.status,
+                status: this.normalizeProductStatus(data.status),
                 category: data.category,
                 tags: data.tags ? (typeof data.tags === 'string' ? data.tags : JSON.stringify(data.tags)) : undefined,
                 thumbnailUrl: data.thumbnailUrl,
@@ -187,14 +218,73 @@ class StoreService {
         });
     }
     /**
+     * Marca itens de um pedido manual como entregues.
+     */
+    static async deliverOrder(orgId, orderId, userId) {
+        await this.validatePlan(orgId);
+        const order = await prisma_1.default.storeOrder.findFirst({
+            where: { id: orderId, organizationId: orgId },
+            include: { items: true }
+        });
+        if (!order)
+            throw new Error('Pedido n\u00e3o encontrado.');
+        await prisma_1.default.storeOrderItem.updateMany({
+            where: { orderId },
+            data: {
+                deliveryStatus: 'DELIVERED',
+                deliveryLog: `Entregue manualmente em ${new Date().toISOString()}`,
+            }
+        });
+        if (order.status !== 'PAID') {
+            await prisma_1.default.storeOrder.update({
+                where: { id: orderId },
+                data: { status: 'PAID', paidAt: new Date() }
+            });
+        }
+        await audit_service_1.auditService.log({
+            organizationId: orgId,
+            userId,
+            action: 'ORDER_DELIVERED',
+            resourceType: 'StoreOrder',
+            resourceId: orderId,
+            metadata: { manual: true },
+        });
+        return { success: true, orderId };
+    }
+    /**
      * Checkout de um pedido usando Stripe Real.
      */
-    static async createCheckoutSession(orgId, data) {
+    static async createCheckoutSession(slugOrId, data) {
+        // Resolve org from slug or UUID
+        const org = await prisma_1.default.organization.findFirst({
+            where: {
+                OR: [
+                    { slug: slugOrId },
+                    { subdomain: slugOrId },
+                    { id: slugOrId },
+                ]
+            },
+        });
+        if (!org)
+            throw new Error('Organização não encontrada.');
+        const orgId = org.id;
+        const orgSlug = org.slug || slugOrId;
         const settings = await this.getStoreSettings(orgId);
         const config = settings.config ? JSON.parse(settings.config) : {};
         const stripeSecretKey = config.stripeSecretKey || process.env.STRIPE_SECRET_KEY;
-        const successUrl = config.successUrl || `${process.env.FRONTEND_URL || 'http://localhost:3001'}/store/success?session_id={CHECKOUT_SESSION_ID}`;
-        const cancelUrl = config.cancelUrl || `${process.env.FRONTEND_URL || 'http://localhost:3001'}/store/cancel`;
+        const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3001';
+        // Prefer the store's custom primary domain for Stripe redirect URLs so that
+        // after checkout the customer lands on 9ineone.com/store/success instead of
+        // the internal /s/goobzada/store/success path.
+        const store = await prisma_1.default.store.findFirst({
+            where: { orgId },
+            select: { primaryDomain: true, slug: true },
+        });
+        const customBase = store?.primaryDomain
+            ? `https://${store.primaryDomain}`
+            : `${frontendBase}/s/${orgSlug}`;
+        const successUrl = config.successUrl || `${customBase}/store/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = config.cancelUrl || `${customBase}/store/cancel`;
         if (!stripeSecretKey) {
             throw new Error('CONFIG_REQUIRED:STRIPE_KEY');
         }

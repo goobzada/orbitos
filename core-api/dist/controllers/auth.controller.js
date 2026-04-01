@@ -18,8 +18,9 @@ function getCookieConfig() {
     const cookieDomain = process.env.COOKIE_DOMAIN || '';
     return {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax',
+        // Se houver domínio ou for produção, deve ser secure para funcionar em HTTPS na VPS
+        secure: isProduction || !!cookieDomain,
+        sameSite: 'lax',
         path: '/',
         ...(cookieDomain ? { domain: cookieDomain } : {}),
     };
@@ -197,9 +198,21 @@ class AuthController {
     // ─── NOVO: Rota de Callback Real do Discord ─────────────────────
     async discordCallback(req, res) {
         try {
-            const { code } = req.body;
+            const code = (req.method === 'GET'
+                ? req.query.code
+                : req.body?.code);
+            const redirectWithError = (error, detail) => {
+                const query = new URLSearchParams({ error });
+                if (detail) {
+                    query.set('detail', detail);
+                }
+                return res.redirect(302, `/login?${query.toString()}`);
+            };
             if (!code) {
                 console.error('[AUTH_CALLBACK_DISCORD_ERROR] Código ausente');
+                if (req.method === 'GET') {
+                    return redirectWithError('no_token', 'Código de autorização é obrigatório');
+                }
                 return res.status(400).json({ error: 'Código de autorização é obrigatório' });
             }
             // 1️⃣ Troca "code" por access_token no Discord
@@ -289,12 +302,40 @@ class AuthController {
                 maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
             });
             console.log(`[AUTH] ✅ Discord callback OK — user: ${user.username} (${user.id})`);
+            if (req.method === 'GET') {
+                return res.redirect(302, '/dashboard');
+            }
             // 6️⃣ Retorna JSON pro frontend também salvar em localStorage como fallback
             return res.json({ token, user, organization: org });
         }
         catch (error) {
-            console.error('[AUTH_CALLBACK_DISCORD_ERROR]', error.response?.data || error.message || error);
-            return res.status(500).json({ error: 'Falha interna durante callback do Discord', details: error.response?.data });
+            const discordErrData = error.response?.data;
+            console.error('[AUTH_CALLBACK_DISCORD_ERROR]', discordErrData || error.message || error);
+            // Se o Discord retornou erro OAuth, expor diretamente para o frontend detectar
+            if (discordErrData?.error) {
+                if (req.method === 'GET') {
+                    const detail = discordErrData.error_description || discordErrData.error;
+                    const query = new URLSearchParams({
+                        error: 'discord_callback_failed',
+                        detail,
+                    });
+                    return res.redirect(302, `/login?${query.toString()}`);
+                }
+                return res.status(400).json({
+                    error: discordErrData.error,
+                    error_description: discordErrData.error_description || '',
+                    details: discordErrData,
+                });
+            }
+            if (req.method === 'GET') {
+                const detail = discordErrData || error.message || 'Falha interna durante callback do Discord';
+                const query = new URLSearchParams({
+                    error: 'discord_callback_failed',
+                    detail: typeof detail === 'string' ? detail : JSON.stringify(detail),
+                });
+                return res.redirect(302, `/login?${query.toString()}`);
+            }
+            return res.status(500).json({ error: 'Falha interna durante callback do Discord', details: discordErrData || error.message });
         }
     }
     // Rota para o FrontEnd pedir suas próprias informações após injetar o header
@@ -323,6 +364,10 @@ class AuthController {
             expires: new Date(0),
         });
         console.log('[AUTH] ✅ Logout — cookie cleared');
+        // Browser-driven GET logout should return user to login page.
+        if (req.method === 'GET') {
+            return res.redirect(302, '/login');
+        }
         return res.json({ ok: true });
     }
 }

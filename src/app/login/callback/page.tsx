@@ -2,7 +2,6 @@
 
 import { useEffect, Suspense, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import api from '@/lib/api';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 /* FIX: In dev StrictMode, component can unmount/remount and re-run callback.
@@ -47,59 +46,8 @@ function CallbackContent() {
         hasProcessedRef.current = true;
         processedOAuthCodes.add(code);
 
-        const handleCallback = async () => {
-            try {
-                console.log('[CALLBACK] Trocando code por JWT...');
-
-                const { data } = await api.post('/auth/discord/callback', { code });
-
-                console.log('[CALLBACK] Resposta da API:', {
-                    hasToken: !!data.token,
-                    hasUser: !!data.user,
-                    username: data.user?.username,
-                });
-
-                if (data.token && data.user) {
-                    console.log('[CALLBACK] ✅ Authenticated. Cookie set server-side.');
-                    
-                    // Server already set HttpOnly cookie via Set-Cookie header.
-                    // Redirect immediately — middleware will pick up the cookie.
-                    window.location.replace('/dashboard');
-                } else {
-                    console.error('[CALLBACK] ❌ API respondeu sem token:', data);
-                    setErrorMsg('Servidor não retornou o token de autenticação.');
-                    setTimeout(() => router.push('/login?error=no_token'), 3000);
-                }
-            } catch (error: any) {
-                const status = error?.response?.status;
-                const discordError = error?.response?.data?.details?.error
-                    || error?.response?.data?.details?.error_description
-                    || (typeof error?.response?.data?.details === 'string' ? error?.response?.data?.details : null);
-                const apiError = error?.response?.data?.error;
-                const isNetworkError = !error?.response && !!error?.request;
-                const detail = discordError || apiError || error?.message || 'Erro desconhecido';
-
-                console.error('[CALLBACK] ❌ Falha na troca do code:', { status, detail, discordError, apiError });
-
-                // Mensagem amigável para erros conhecidos
-                let friendlyMsg = `Falha na autenticação (${status || 'rede'}): ${detail}`;
-                if (isNetworkError) {
-                    friendlyMsg = '❌ API do servidor está offline ou inacessível. Tente novamente em instantes.';
-                } else if (discordError === 'invalid_client' || apiError?.includes?.('invalid_client')) {
-                    friendlyMsg = '❌ Discord recusou as credenciais (invalid_client). O Client Secret no servidor está desatualizado. Contate o administrador.';
-                } else if (discordError === 'invalid_grant') {
-                    friendlyMsg = '❌ Código de autorização expirado ou já usado. Tente fazer login novamente.';
-                } else if (discordError === 'redirect_uri_mismatch') {
-                    friendlyMsg = '❌ Redirect URI não cadastrada no Discord Developer Portal.';
-                }
-
-                setErrorMsg(friendlyMsg);
-                // Aguarda 8s e volta para /login — NÃO em loop automático
-                setTimeout(() => router.replace('/login'), 8000);
-            }
-        };
-
-        handleCallback();
+        const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').replace(/\/+$/, '');
+        window.location.replace(`${apiBase}/auth/discord/callback?code=${encodeURIComponent(code)}`);
     }, [code, errorParam, router]);
 
     if (errorMsg) {

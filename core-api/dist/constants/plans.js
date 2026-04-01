@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PLAN_CONFIG = exports.ENTERPRISE_MODULES = exports.PRO_MODULES = exports.FREE_MODULES = void 0;
+exports.PLAN_CONFIG = exports.MAX_MODULES = exports.ENTERPRISE_MODULES = exports.PRO_MODULES = exports.FREE_MODULES = void 0;
 exports.isModuleAvailable = isModuleAvailable;
 exports.getTicketFeatures = getTicketFeatures;
 // Modules available per plan
@@ -31,6 +31,23 @@ exports.ENTERPRISE_MODULES = [
     'engagement_stats',
     'revenue_stats',
     'activity_stats',
+];
+exports.MAX_MODULES = [
+    ...exports.ENTERPRISE_MODULES,
+    'faction_system',
+    'judicial_system',
+    'conditional_workflow',
+    'trigger_system',
+    'advanced_verification',
+    'payment_logs',
+    'subscription',
+    'mod_logs',
+    'staff_logs',
+    'in_game_logs',
+    'ranking',
+    'poll',
+    'flash_sale',
+    'server_status',
 ];
 exports.PLAN_CONFIG = {
     FREE: {
@@ -102,6 +119,33 @@ exports.PLAN_CONFIG = {
             'Integrações customizadas',
             'API pública + Webhooks',
             'Suporte 24/7',
+        ]
+    },
+    MAX: {
+        maxServers: 999,
+        maxStaff: 999,
+        maxTicketsPerDay: 999999,
+        availableModules: ['*'],
+        ticketFeatures: {
+            branding: true,
+            bannerImage: true,
+            dmOnOpen: true,
+            customCategories: true,
+            transcripts: true,
+        },
+        features: [
+            'Tudo do plano Enterprise',
+            'Sistema de Facções (FiveM)',
+            'Sistema Judicial integrado',
+            'Automação condicional avançada',
+            'Triggers personalizados ilimitados',
+            'Logs de jogo + Staff + Moderação',
+            'Flash Sale + Assinaturas recorrentes',
+            'Ranking de membros permanente',
+            'Votações avançadas (Polls)',
+            'Templates MAX exclusivos',
+            'SLA premium 99.99%',
+            'Suporte dedicado 24/7 + onboarding',
         ]
     }
 };

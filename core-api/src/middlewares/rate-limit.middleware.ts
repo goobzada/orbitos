@@ -44,8 +44,15 @@ export const rateLimitMiddleware = async (req: Request, res: Response, next: Nex
         return next();
     }
 
-    // OAuth endpoints can trigger multiple rapid redirects; avoid blocking login flow.
-    if (req.path === '/auth/discord' || req.path === '/auth/callback' || req.path === '/auth/discord/callback') {
+    // Auth endpoints can trigger rapid redirects/retries; avoid blocking login flow.
+    if (
+        req.path === '/auth/discord' ||
+        req.path === '/auth/callback' ||
+        req.path === '/auth/discord/callback' ||
+        req.path === '/auth/login' ||
+        req.path === '/auth/oauth-login' ||
+        req.path === '/auth/logout'
+    ) {
         return next();
     }
 

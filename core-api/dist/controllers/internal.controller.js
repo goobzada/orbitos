@@ -101,6 +101,13 @@ class InternalController {
     async closeTicket(req, res) {
         const { id } = req.params;
         try {
+            const existing = await prisma_1.default.ticket.findUnique({
+                where: { id },
+                include: { server: true }
+            });
+            if (!existing) {
+                return res.status(404).json({ error: 'Ticket não encontrado.' });
+            }
             const ticket = await prisma_1.default.ticket.update({
                 where: { id },
                 data: { status: client_1.TicketStatus.CLOSED, closedAt: new Date() },
@@ -138,7 +145,7 @@ class InternalController {
             });
             if (ticket) {
                 console.log(`[TICKET LINK] 🔗 Vinculando canal ${channelId} ao ticket ${ticket.id} automaticamente.`);
-                await prisma_1.default.ticket.update({
+                await prisma_1.default.ticket.updateMany({
                     where: { id: ticket.id },
                     data: { channelId }
                 });
@@ -158,7 +165,7 @@ class InternalController {
                 content
             }
         });
-        await prisma_1.default.ticket.update({
+        await prisma_1.default.ticket.updateMany({
             where: { id: ticket.id },
             data: { updatedAt: new Date() }
         });
@@ -262,6 +269,7 @@ class InternalController {
         });
         return res.json({
             organization: server.organization?.name || server.name,
+            organizationSlug: server.organization?.slug || null,
             products
         });
     }

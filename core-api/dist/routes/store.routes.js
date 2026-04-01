@@ -19,4 +19,11 @@ router.put('/:organizationId/products/:id', store_controller_1.StoreController.u
 router.delete('/:organizationId/products/:id', store_controller_1.StoreController.deleteProduct);
 // --- ORDERS ---
 router.get('/:organizationId/orders', store_controller_1.StoreController.listOrders);
+router.put('/:organizationId/orders/:id/deliver', store_controller_1.StoreController.deliverOrder);
+// --- DOMAINS ---
+router.get('/:organizationId/domains', store_controller_1.StoreController.listDomains);
+router.post('/:organizationId/domains', store_controller_1.StoreController.addDomain);
+router.post('/:organizationId/domains/:domainId/verify', store_controller_1.StoreController.verifyDomain);
+router.post('/:organizationId/domains/:domainId/set-primary', store_controller_1.StoreController.setPrimaryDomain);
+router.delete('/:organizationId/domains/:domainId', store_controller_1.StoreController.deleteDomain);
 exports.default = router;

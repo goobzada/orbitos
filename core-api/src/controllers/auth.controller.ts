@@ -234,10 +234,23 @@ export class AuthController {
     // ─── NOVO: Rota de Callback Real do Discord ─────────────────────
     async discordCallback(req: Request, res: Response) {
         try {
-            const { code } = req.body;
+            const code = (req.method === 'GET'
+                ? req.query.code
+                : req.body?.code) as string | undefined;
+
+            const redirectWithError = (error: string, detail?: string) => {
+                const query = new URLSearchParams({ error });
+                if (detail) {
+                    query.set('detail', detail);
+                }
+                return res.redirect(302, `/login?${query.toString()}`);
+            };
 
             if (!code) {
                 console.error('[AUTH_CALLBACK_DISCORD_ERROR] Código ausente');
+                if (req.method === 'GET') {
+                    return redirectWithError('no_token', 'Código de autorização é obrigatório');
+                }
                 return res.status(400).json({ error: 'Código de autorização é obrigatório' });
             }
 
@@ -356,6 +369,10 @@ export class AuthController {
 
             console.log(`[AUTH] ✅ Discord callback OK — user: ${user.username} (${user.id})`);
 
+            if (req.method === 'GET') {
+                return res.redirect(302, '/dashboard');
+            }
+
             // 6️⃣ Retorna JSON pro frontend também salvar em localStorage como fallback
             return res.json({ token, user, organization: org });
         } catch (error: any) {
@@ -363,12 +380,30 @@ export class AuthController {
             console.error('[AUTH_CALLBACK_DISCORD_ERROR]', discordErrData || error.message || error);
             // Se o Discord retornou erro OAuth, expor diretamente para o frontend detectar
             if (discordErrData?.error) {
+                if (req.method === 'GET') {
+                    const detail = discordErrData.error_description || discordErrData.error;
+                    const query = new URLSearchParams({
+                        error: 'discord_callback_failed',
+                        detail,
+                    });
+                    return res.redirect(302, `/login?${query.toString()}`);
+                }
                 return res.status(400).json({
                     error: discordErrData.error,
                     error_description: discordErrData.error_description || '',
                     details: discordErrData,
                 });
             }
+
+            if (req.method === 'GET') {
+                const detail = discordErrData || error.message || 'Falha interna durante callback do Discord';
+                const query = new URLSearchParams({
+                    error: 'discord_callback_failed',
+                    detail: typeof detail === 'string' ? detail : JSON.stringify(detail),
+                });
+                return res.redirect(302, `/login?${query.toString()}`);
+            }
+
             return res.status(500).json({ error: 'Falha interna durante callback do Discord', details: discordErrData || error.message });
         }
     }

@@ -40,9 +40,16 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const http_1 = __importDefault(require("http"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const path_1 = __importDefault(require("path"));
 require("express-async-errors");
 const cookie_parser_1 = __importDefault(require("cookie-parser")); // ⬅️ NOVO
-dotenv_1.default.config();
+// Load .env.production when NODE_ENV=production, otherwise .env
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+// Ensure file-based env values win over stale process manager env vars.
+dotenv_1.default.config({ path: path_1.default.resolve(process.cwd(), envFile), override: true });
+// Fallback to .env if specific file doesn't have a key
+dotenv_1.default.config({ path: path_1.default.resolve(process.cwd(), '.env') });
+const prisma_1 = __importDefault(require("./lib/prisma"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const org_routes_1 = __importDefault(require("./routes/org.routes"));
 const server_routes_1 = __importDefault(require("./routes/server.routes"));
@@ -71,25 +78,48 @@ const PORT = process.env.PORT || 4000;
 // Respect reverse proxy headers (Nginx/Cloudflare) so req.ip is the real client IP.
 app.set('trust proxy', true);
 // ── CORS ─────────────────────────────────────────────────────────────────────
-// IMPORTANTE: garanta que o .env tenha ALLOWED_ORIGINS com orbitup.io
-// Exemplo:
-// ALLOWED_ORIGINS=https://orbitup.io,https://www.orbitup.io,http://localhost:3000,http://localhost:3001
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ||
+const STATIC_ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ||
     'https://orbitup.io,https://www.orbitup.io,http://localhost:3000,http://localhost:3001')
     .split(',')
     .map((o) => o.trim());
+// Cache de domínios customizados verificados (evita query ao banco em cada request)
+const customDomainCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+async function isCustomStoreDomain(origin) {
+    const cached = customDomainCache.get(origin);
+    if (cached && cached.expiresAt > Date.now())
+        return cached.allowed;
+    try {
+        const hostname = new URL(origin).hostname;
+        const found = await prisma_1.default.storeDomain.findFirst({
+            where: { domain: hostname, status: 'active' },
+            select: { id: true },
+        });
+        const allowed = !!found;
+        customDomainCache.set(origin, { allowed, expiresAt: Date.now() + CACHE_TTL_MS });
+        return allowed;
+    }
+    catch {
+        return false;
+    }
+}
 app.use((0, cors_1.default)({
-    origin: (origin, callback) => {
-        // Permite requisições locais ou explícitas e sem origin
-        /* FIX C4: lista explícita de portas dev — não aceitar localhost:qualquer-porta */
-        const DEV_LOCALHOST_PORTS = [3000, 3001, 4000];
-        const isLocalhost = DEV_LOCALHOST_PORTS.some(p => origin === `http://localhost:${p}` || origin === `http://127.0.0.1:${p}`);
-        if (!origin || ALLOWED_ORIGINS.includes(origin) || isLocalhost) {
+    origin: function (origin, callback) {
+        // Permitir requisições sem origin (como mobile apps ou curl)
+        if (!origin)
+            return callback(null, true);
+        const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
+        const isAllowed = allowedOrigins.some(allowed => {
+            const cleanAllowed = allowed.trim().toLowerCase();
+            const cleanOrigin = origin.toLowerCase();
+            return cleanOrigin === cleanAllowed || cleanOrigin.endsWith(`.${cleanAllowed.replace('https://', '').replace('http://', '')}`);
+        });
+        if (isAllowed) {
             callback(null, true);
         }
         else {
-            console.warn(`[CORS] Origem bloqueada: ${origin}`);
-            callback(new Error(`Origem não permitida pelo CORS: ${origin}`));
+            console.warn(`[CORS] Bloqueado: ${origin} não pertence ao ecossistema OrbitOS.`);
+            callback(new Error('Origem não permitida pelo CORS'));
         }
     },
     credentials: true,
@@ -108,26 +138,30 @@ app.use(rate_limit_middleware_1.rateLimitMiddleware);
 app.use('/webhook/stripe', express_1.default.raw({ type: 'application/json' }), webhook_controller_1.WebhookController.handleStripe);
 // Demais rotas usam JSON
 app.use(express_1.default.json());
-// ── Mounting REST Routes ─────────────────────────────────
-app.use('/auth', auth_routes_1.default);
-app.use('/organizations', org_routes_1.default);
-app.use('/organizations', module_routes_1.default);
-app.use('/servers', server_routes_1.default);
-app.use('/internal', internal_routes_1.default); // Bot Engine only (x-internal-service-key)
-app.use('/tickets', ticket_routes_1.default);
-app.use('/staff', staff_routes_1.default);
-app.use('/stats', stats_routes_1.default);
-app.use('/ticket-portals', ticket_portal_routes_1.default);
-app.use('/ticket-templates', ticket_template_routes_1.default);
-app.use('/payments', payment_routes_1.default);
-app.use('/platform', platform_routes_1.default);
-app.use('/templates', template_routes_1.default);
-app.use('/store', store_routes_1.default);
-app.use('/public/store', public_store_routes_1.default);
-app.use('/public/portal', public_portal_routes_1.default);
-app.use('/support', support_routes_1.default);
-app.use('/billing', billing_routes_1.default);
-app.use('/automations', automation_routes_1.default);
+// ── Mounting Routes (Supporting both / and /api prefix) ──────────
+const apiRouter = express_1.default.Router();
+apiRouter.use('/auth', auth_routes_1.default);
+apiRouter.use('/organizations', org_routes_1.default);
+apiRouter.use('/organizations', module_routes_1.default);
+apiRouter.use('/servers', server_routes_1.default);
+apiRouter.use('/internal', internal_routes_1.default);
+apiRouter.use('/tickets', ticket_routes_1.default);
+apiRouter.use('/staff', staff_routes_1.default);
+apiRouter.use('/stats', stats_routes_1.default);
+apiRouter.use('/ticket-portals', ticket_portal_routes_1.default);
+apiRouter.use('/ticket-templates', ticket_template_routes_1.default);
+apiRouter.use('/payments', payment_routes_1.default);
+apiRouter.use('/platform', platform_routes_1.default);
+apiRouter.use('/templates', template_routes_1.default);
+apiRouter.use('/store', store_routes_1.default);
+apiRouter.use('/public/store', public_store_routes_1.default);
+apiRouter.use('/public/portal', public_portal_routes_1.default);
+apiRouter.use('/support', support_routes_1.default);
+apiRouter.use('/billing', billing_routes_1.default);
+apiRouter.use('/automations', automation_routes_1.default);
+// Mount with both prefixes for maximum reliability in production/dev
+app.use('/api', apiRouter);
+app.use('/', apiRouter);
 // ── API Documentation (Swagger UI) ──────────────────────
 app.use('/docs', docs_routes_1.default);
 // Main Healthcheck
