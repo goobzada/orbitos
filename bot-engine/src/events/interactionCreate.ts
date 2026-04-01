@@ -55,9 +55,14 @@ export default {
             try {
                 const { data: guildData } = await coreApi.get(`/internal/guilds/${interaction.guildId}/modules`);
                 const verificationModule = (guildData.modules || []).find((m: any) => m.key === 'verification');
-                const roleId = verificationModule?.config?.roleId;
+                const advancedVerificationModule = (guildData.modules || []).find((m: any) => m.key === 'advanced_verification');
+                const roleId = verificationModule?.config?.roleId
+                    || verificationModule?.config?.requiredRole
+                    || advancedVerificationModule?.config?.roleId
+                    || advancedVerificationModule?.config?.requiredRole
+                    || '';
                 if (!roleId) {
-                    return interaction.reply({ content: '❌ Papel de verificação não configurado. Contate um administrador.', ephemeral: true });
+                    return interaction.reply({ content: '❌ Cargo de verificação não configurado. Configure o cargo em **Dashboard → Módulos → Verificação**.', ephemeral: true });
                 }
                 const member = await interaction.guild?.members.fetch(interaction.user.id);
                 if (!member) return interaction.reply({ content: '❌ Não foi possível encontrar seu perfil no servidor.', ephemeral: true });
@@ -245,7 +250,7 @@ export default {
                     try {
                         const embed = new EmbedBuilder()
                             .setTitle(translation.name)
-                            .setDescription(translation.description + '\n\nClique no botao abaixo para interagir.')
+                            .setDescription(translation.description + '\n\nClique no botão abaixo para interagir.')
                             .setColor(0x00B0F4)
                             .setFooter({ text: `OrbitOS • ${lang}` });
 
