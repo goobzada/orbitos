@@ -81,6 +81,40 @@ export default {
             }
         }
 
+        // ── VERIFICAÇÃO AVANÇADA — CONFIRMAÇÃO (customId: advanced_verify_confirm_GUILDID) ───
+        if (interaction.isButton() && interaction.customId.startsWith('advanced_verify_confirm_')) {
+            if (!interaction.guildId) return;
+            try {
+                const { data: guildData } = await coreApi.get(`/internal/guilds/${interaction.guildId}/modules`);
+                const advModule = (guildData.modules || []).find((m: any) => m.key === 'advanced_verification');
+                const verModule = (guildData.modules || []).find((m: any) => m.key === 'verification');
+                const roleId = advModule?.config?.requiredRole
+                    || advModule?.config?.roleId
+                    || verModule?.config?.requiredRole
+                    || verModule?.config?.roleId
+                    || '';
+                if (!roleId) {
+                    return interaction.reply({ content: '❌ Cargo de verificação não configurado. Configure o campo **Required Role** em **Dashboard → Módulos → Verificação Avançada**.', ephemeral: true });
+                }
+                const member = await interaction.guild?.members.fetch(interaction.user.id);
+                if (!member) return interaction.reply({ content: '❌ Não foi possível encontrar seu perfil no servidor.', ephemeral: true });
+                if (member.roles.cache.has(roleId)) {
+                    return interaction.reply({ content: '✅ Você já está verificado!', ephemeral: true });
+                }
+                await member.roles.add(roleId);
+                return interaction.reply({ content: '✅ Verificação concluída! Bem-vindo ao servidor.', ephemeral: true });
+            } catch (e: any) {
+                const isMissingPerms = e.message?.includes('Missing Permissions');
+                log.error('[ADV_VERIFICATION] Erro: ' + e.message);
+                return interaction.reply({
+                    content: isMissingPerms
+                        ? '❌ Bot sem permissão para atribuir cargos. Verifique a hierarquia do cargo.'
+                        : '❌ Erro ao processar verificação. Tente novamente.',
+                    ephemeral: true
+                });
+            }
+        }
+
         // ── SLASH COMMANDS ────────────────────────────────────────────
         if (interaction.isChatInputCommand()) {
             log.event(`Slash Command: /${interaction.commandName} por ${interaction.user.tag}`);
@@ -293,14 +327,20 @@ export default {
                             if (advConfig.message) {
                                 embed.setDescription(advConfig.message);
                             }
-                            const btnLabel = lang === 'pt-BR' ? '🔐 Verificar Conta' : lang === 'es-ES' ? '🔐 Verificar Cuenta' : '🔐 Verify Account';
-                            // If an external URL is configured, use a Link button; otherwise use role-assign button
+                            const btnLabel = lang === 'pt-BR' ? '🤖 Verificar Conta' : lang === 'es-ES' ? '🤖 Verificar Cuenta' : '🤖 Verify Account';
                             const externalUrl = advConfig.url || advConfig.verificationUrl || '';
                             if (externalUrl) {
+                                // Link para site externo + botão de confirmação para receber o cargo
+                                const confirmLabel = lang === 'pt-BR' ? '✅ Já verifiquei' : lang === 'es-ES' ? '✅ Ya verifiqué' : '✅ Already verified';
                                 components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
-                                    new ButtonBuilder().setLabel(btnLabel).setStyle(ButtonStyle.Link).setURL(externalUrl)
+                                    new ButtonBuilder().setLabel(btnLabel).setStyle(ButtonStyle.Link).setURL(externalUrl),
+                                    new ButtonBuilder()
+                                        .setCustomId(`advanced_verify_confirm_${interaction.guildId}`)
+                                        .setLabel(confirmLabel)
+                                        .setStyle(ButtonStyle.Success)
                                 ));
                             } else {
+                                // Sem URL: botão direto que atribui o cargo
                                 components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
                                     new ButtonBuilder().setCustomId('verification_verify').setLabel(btnLabel).setStyle(ButtonStyle.Success)
                                 ));
