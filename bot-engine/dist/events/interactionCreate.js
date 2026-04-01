@@ -47,26 +47,26 @@ exports.default = {
     name: discord_js_1.Events.InteractionCreate,
     once: false,
     async execute(interaction) {
-        // Passa a intera├º├úo para m├│dulo Allowlist V2
+        // Passa a interação para módulo Allowlist V2
         if ('customId' in interaction && typeof interaction.customId === 'string' && interaction.customId.startsWith('allowlist_')) {
             await (0, allowlist_flow_1.handleAllowlistInteraction)(interaction);
             return;
         }
-        // ΓöÇΓöÇ WHITELIST QUIZ (customIds: whitelist_quiz_*, quiz_ans_*) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // ── WHITELIST QUIZ (customIds: whitelist_quiz_*, quiz_ans_*) ────────────
         if ('customId' in interaction && typeof interaction.customId === 'string' && (interaction.customId.startsWith('whitelist_quiz') ||
             interaction.customId.startsWith('quiz_ans_'))) {
             const { default: WhitelistQuizModule } = await Promise.resolve().then(() => __importStar(require('../modules/automation/whitelist_quiz')));
             await WhitelistQuizModule?.handleInteraction?.(interaction);
             return;
         }
-        // ΓöÇΓöÇ WHITELIST SIMPLES (customIds: whitelist_start_*, wl_*) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-        // NOTA: whitelist_quiz_* foi tratado acima ΓÇö n├úo entra aqui
+        // ── WHITELIST SIMPLES (customIds: whitelist_start_*, wl_*) ──────────────
+        // NOTA: whitelist_quiz_* foi tratado acima — não entra aqui
         if ('customId' in interaction && typeof interaction.customId === 'string' && ((interaction.customId.startsWith('whitelist_') && !interaction.customId.startsWith('whitelist_quiz')) ||
             interaction.customId.startsWith('wl_'))) {
             await (0, simple_whitelist_1.handleSimpleWhitelist)(interaction);
             return;
         }
-        // ΓöÇΓöÇ VERIFICA├ç├âO SIMPLES (customId: verification_verify) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // ── VERIFICAÇÂO SIMPLES (customId: verification_verify) ───────────────────
         if (interaction.isButton() && interaction.customId === 'verification_verify') {
             if (!interaction.guildId)
                 return;
@@ -75,33 +75,33 @@ exports.default = {
                 const verificationModule = (guildData.modules || []).find((m) => m.key === 'verification');
                 const roleId = verificationModule?.config?.roleId;
                 if (!roleId) {
-                    return interaction.reply({ content: 'Γ¥î Papel de verifica├º├úo n├úo configurado. Contate um administrador.', ephemeral: true });
+                    return interaction.reply({ content: '❌ Papel de verificação não configurado. Contate um administrador.', ephemeral: true });
                 }
                 const member = await interaction.guild?.members.fetch(interaction.user.id);
                 if (!member)
-                    return interaction.reply({ content: 'Γ¥î N├úo foi poss├¡vel encontrar seu perfil no servidor.', ephemeral: true });
+                    return interaction.reply({ content: '❌ Não foi possível encontrar seu perfil no servidor.', ephemeral: true });
                 if (member.roles.cache.has(roleId)) {
-                    return interaction.reply({ content: 'Γ£à Voc├¬ j├í est├í verificado!', ephemeral: true });
+                    return interaction.reply({ content: '✅ Você já está verificado!', ephemeral: true });
                 }
                 await member.roles.add(roleId);
-                return interaction.reply({ content: 'Γ£à Verifica├º├úo conclu├¡da! Bem-vindo ao servidor.', ephemeral: true });
+                return interaction.reply({ content: '✅ Verificação concluída! Bem-vindo ao servidor.', ephemeral: true });
             }
             catch (e) {
                 const isMissingPerms = e.message?.includes('Missing Permissions');
                 logger_1.log.error('[VERIFICATION] Erro ao verificar membro: ' + e.message);
                 const errMsg = isMissingPerms
-                    ? 'Γ¥î Bot sem permiss├úo para atribuir cargos. Verifique se o bot tem a permiss├úo **Gerenciar Cargos** e se o cargo de verifica├º├úo est├í abaixo do cargo do bot na hierarquia.'
-                    : 'Γ¥î Erro ao processar verifica├º├úo. Tente novamente.';
+                    ? '❌ Bot sem permissão para atribuir cargos. Verifique se o bot tem a permissão **Gerenciar Cargos** e se o cargo de verificação está abaixo do cargo do bot na hierarquia.'
+                    : '❌ Erro ao processar verificação. Tente novamente.';
                 return interaction.reply({ content: errMsg, ephemeral: true });
             }
         }
-        // ΓöÇΓöÇ SLASH COMMANDS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // ── SLASH COMMANDS ────────────────────────────────────────────
         if (interaction.isChatInputCommand()) {
             logger_1.log.event(`Slash Command: /${interaction.commandName} por ${interaction.user.tag}`);
             const command = interaction.client.commands?.get(interaction.commandName);
             if (!command) {
-                logger_1.log.warn(`Comando /${interaction.commandName} n├úo encontrado.`);
-                return interaction.reply({ content: 'Γ¥î Comando n├úo encontrado.', ephemeral: true });
+                logger_1.log.warn(`Comando /${interaction.commandName} não encontrado.`);
+                return interaction.reply({ content: '❌ Comando não encontrado.', ephemeral: true });
             }
             try {
                 await command.execute(interaction);
@@ -109,16 +109,16 @@ exports.default = {
             catch (error) {
                 logger_1.log.error(`Erro ao executar /${interaction.commandName}: ${error}`);
                 if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({ content: 'Γ¥î Ocorreu um erro ao executar este comando!', ephemeral: true });
+                    await interaction.followUp({ content: '❌ Ocorreu um erro ao executar este comando!', ephemeral: true });
                 }
                 else {
-                    await interaction.reply({ content: 'Γ¥î Ocorreu um erro ao executar este comando!', ephemeral: true });
+                    await interaction.reply({ content: '❌ Ocorreu um erro ao executar este comando!', ephemeral: true });
                 }
             }
             return;
         }
-        // ΓöÇΓöÇ BOT├âO: Abrir Ticket (criado pelo /setup) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-        // customId = 'open_ticket' ΓÇö Deve mostrar select de categorias ou modal direto
+        // ── BOTÂO: Abrir Ticket (criado pelo /setup) ─────────────────────────────
+        // customId = 'open_ticket' — Deve mostrar select de categorias ou modal direto
         if (interaction.isButton() && interaction.customId === 'open_ticket') {
             let lang = 'pt-BR';
             let categories = [];
@@ -128,7 +128,7 @@ exports.default = {
                 const ticketMod = data.modules?.find((m) => m.key === 'ticket');
                 categories = ticketMod?.config?.ticketCategories || [];
             }
-            catch (e) { /* usa padr├úo */ }
+            catch (e) { /* usa padrão */ }
             const { tickets: ticketStrings } = (0, translations_1.getTranslation)(lang);
             if (categories.length === 0) {
                 // Sem categorias configuradas ΓåÆ abre modal direto (fluxo simples)
@@ -143,9 +143,9 @@ exports.default = {
                     .setRequired(true)
                     .setMaxLength(100)), new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.TextInputBuilder()
                     .setCustomId('ticket_description')
-                    .setLabel(lang === 'pt-BR' ? 'Descri├º├úo' : 'Description')
+                    .setLabel(lang === 'pt-BR' ? 'Descrição' : 'Description')
                     .setStyle(discord_js_1.TextInputStyle.Paragraph)
-                    .setPlaceholder(lang === 'pt-BR' ? 'Explique em detalhes o que voc├¬ precisa...' : 'Explain in detail...')
+                    .setPlaceholder(lang === 'pt-BR' ? 'Explique em detalhes o que você precisa...' : 'Explain in detail...')
                     .setRequired(true)
                     .setMaxLength(800)));
                 return interaction.showModal(modal);
@@ -167,7 +167,7 @@ exports.default = {
             const row = new discord_js_1.ActionRowBuilder().addComponents(selectMenu);
             return interaction.reply({ content: lang === 'pt-BR' ? '≡ƒôé Selecione a categoria do seu ticket:' : '≡ƒôé Select your ticket category:', components: [row], ephemeral: true });
         }
-        // ΓöÇΓöÇ SELECT MENU: /painel deploy panel ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // ── SELECT MENU: /painel deploy panel ────────────────────────
         if (interaction.isStringSelectMenu() && interaction.customId === 'painel_select_module') {
             const value = interaction.values[0];
             await interaction.deferUpdate();
@@ -233,7 +233,7 @@ exports.default = {
                 }
             }
             else {
-                // ΓöÇΓöÇ M├│dulos com painel gen├⌐rico configur├ível ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+                // ── Módulos com painel genérico configurável ─────────────────
                 const translation = moduleNames[value];
                 if (translation) {
                     try {
@@ -265,7 +265,7 @@ exports.default = {
                             if (verConfig.message) {
                                 embed.setDescription(verConfig.message);
                             }
-                            const btnLabel = lang === 'pt-BR' ? 'Γ£à Verificar' : lang === 'es-ES' ? 'Γ£à Verificar' : 'Γ£à Verify';
+                            const btnLabel = lang === 'pt-BR' ? '✅ Verificar' : lang === 'es-ES' ? '✅ Verificar' : '✅ Verify';
                             components.push(new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.ButtonBuilder().setCustomId('verification_verify').setLabel(btnLabel).setStyle(discord_js_1.ButtonStyle.Success)));
                         }
                         else if (value === 'advanced_verification') {
@@ -292,12 +292,12 @@ exports.default = {
                             else {
                                 await channelToSend.send({ embeds: [embed] });
                             }
-                            return interaction.followUp({ content: `Γ£à ${translation.name} sent!`, ephemeral: true });
+                            return interaction.followUp({ content: `✅ ${translation.name} sent!`, ephemeral: true });
                         }
                     }
                     catch (e) {
                         logger_1.log.error(`Erro ao enviar painel ${value}: ` + e);
-                        return interaction.followUp({ content: `Γ¥î Error sending \`${value}\` panel.`, ephemeral: true });
+                        return interaction.followUp({ content: `❌ Error sending \`${value}\` panel.`, ephemeral: true });
                     }
                 }
                 else {
@@ -308,27 +308,27 @@ exports.default = {
                 }
             }
         }
-        // ΓöÇΓöÇ STORE / LOJA (customIds: store_browse, store_buy_*) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // ── STORE / LOJA (customIds: store_browse, store_buy_*) ──────────────────
         if ('customId' in interaction && typeof interaction.customId === 'string' && (interaction.customId === 'store_browse' ||
             interaction.customId.startsWith('store_buy_'))) {
             const { default: StoreModule } = await Promise.resolve().then(() => __importStar(require('../modules/automation/store')));
             await StoreModule?.handleInteraction?.(interaction);
             return;
         }
-        // ΓöÇΓöÇ GIVEAWAY / SORTEIO (customIds: giveaway_join_*) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // ── GIVEAWAY / SORTEIO (customIds: giveaway_join_*) ────────────────────
         if ('customId' in interaction && typeof interaction.customId === 'string' && (interaction.customId.startsWith('giveaway_join_'))) {
             const { default: GiveawayModule } = await Promise.resolve().then(() => __importStar(require('../modules/automation/giveaway')));
             await GiveawayModule?.handleInteraction?.(interaction);
             return;
         }
-        // ΓöÇΓöÇ APPLICATION / FORMUL├üRIO (customIds: application_*, app_*) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // ── APPLICATION / FORMULÃRIO (customIds: application_*, app_*) ────────
         if ('customId' in interaction && typeof interaction.customId === 'string' && (interaction.customId === 'application_start' ||
             interaction.customId.startsWith('app_'))) {
             const { default: ApplicationModule } = await Promise.resolve().then(() => __importStar(require('../modules/automation/application')));
             await ApplicationModule?.handleInteraction?.(interaction);
             return;
         }
-        // ΓöÇΓöÇ BOT├òES: Modulos ainda n├úo implementados ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // ── BOTÔES: Modulos ainda não implementados ──────────────────────────────
         // Evita timeout silencioso (This interaction failed)
         if (interaction.isButton()) {
             if (interaction.customId === 'giveaway_join') {
@@ -336,12 +336,12 @@ exports.default = {
                 return;
             }
             if (interaction.customId === 'application_start') {
-                await interaction.reply({ content: '≡ƒô¥ Os formul├írios est├úo sendo atualizados. Volte logo!', ephemeral: true });
+                await interaction.reply({ content: '📥 Os formulários estão sendo atualizados. Volte logo!', ephemeral: true });
                 return;
             }
         }
-        // ΓöÇΓöÇ SELECT MENU: Open Ticket Category ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-        // CRITICO: mostrar modal IMEDIATAMENTE (sem API call ΓÇö Discord tem 3s de limite)
+        // ── SELECT MENU: Open Ticket Category ───────────────────────────────
+        // CRITICO: mostrar modal IMEDIATAMENTE (sem API call — Discord tem 3s de limite)
         if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_select_category') {
             const categoryBase64 = interaction.values[0].replace('cat_', '');
             const modal = new discord_js_1.ModalBuilder()
@@ -356,15 +356,15 @@ exports.default = {
                 .setMaxLength(100);
             const descInput = new discord_js_1.TextInputBuilder()
                 .setCustomId('ticket_description')
-                .setLabel('Descri├º├úo')
+                .setLabel('Descrição')
                 .setStyle(discord_js_1.TextInputStyle.Paragraph)
-                .setPlaceholder('Explique em detalhes o que voc├¬ precisa...')
+                .setPlaceholder('Explique em detalhes o que você precisa...')
                 .setRequired(true)
                 .setMaxLength(800);
             modal.addComponents(new discord_js_1.ActionRowBuilder().addComponents(subjectInput), new discord_js_1.ActionRowBuilder().addComponents(descInput));
             return interaction.showModal(modal);
         }
-        // ΓöÇΓöÇ MODAL SUBMIT: Ticket criado ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // ── MODAL SUBMIT: Ticket criado ────────────────────────────────
         if (interaction.isModalSubmit() && interaction.customId.startsWith('ticket_modal')) {
             await interaction.deferReply({ ephemeral: true });
             const subject = interaction.fields.getTextInputValue('ticket_subject');
@@ -466,7 +466,7 @@ exports.default = {
                 return interaction.editReply({ content: failMsg });
             }
         }
-        // ΓöÇΓöÇ BOT├âO: Fechar Ticket ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // ── BOTÂO: Fechar Ticket ───────────────────────────────────────
         if (interaction.isButton() && (interaction.customId.startsWith('close_ticket_') || interaction.customId.startsWith('finalize_ticket_'))) {
             const ticketId = interaction.customId.includes('close_ticket_')
                 ? interaction.customId.replace('close_ticket_', '')
@@ -502,7 +502,7 @@ exports.default = {
             catch {
                 // Ignore when user has DMs disabled.
             }
-            const deleteMsg = lang === 'pt-BR' ? '≡ƒùæ∩╕Å Canal ser├í exclu├¡do em 5 segundos...' : lang === 'es-ES' ? '≡ƒùæ∩╕Å El canal ser├í eliminado en 5 segundos...' : '≡ƒùæ∩╕Å Channel will be deleted in 5 seconds...';
+            const deleteMsg = lang === 'pt-BR' ? '🗑️ Canal será excluído em 5 segundos...' : lang === 'es-ES' ? '🗑️ El canal será eliminado en 5 segundos...' : '🗑️ Channel will be deleted in 5 seconds...';
             setTimeout(() => interaction.channel?.delete().catch(() => null), 5000);
             return interaction.editReply({ content: deleteMsg });
         }
@@ -514,7 +514,7 @@ exports.default = {
                 lang = data.language || 'pt-BR';
             }
             catch (e) { }
-            const msg = lang === 'pt-BR' ? `Γ£à <@${interaction.user.id}> assumiu este ticket.` : `Γ£à <@${interaction.user.id}> assumed this ticket.`;
+            const msg = lang === 'pt-BR' ? `✅ <@${interaction.user.id}> assumiu este ticket.` : `✅ <@${interaction.user.id}> assumed this ticket.`;
             return interaction.editReply({ content: msg });
         }
     }
