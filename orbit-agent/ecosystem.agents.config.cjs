@@ -19,9 +19,9 @@ module.exports = {
         {
             name: 'orbitos-agent-supervisor',
             script: 'dist/index.js',
-            cwd: '/home/orbit/orbitos/orbit-agent',
+            cwd: '/var/www/orbitos/orbit-agent',
             // env_file garante que PM2 carrega o .env ANTES de iniciar o processo
-            env_file: '/home/orbit/orbitos/orbit-agent/.env',
+            env_file: '/var/www/orbitos/orbit-agent/.env',
             watch: false,
             autorestart: true,
             max_restarts: 10,
