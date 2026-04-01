@@ -19,9 +19,10 @@ export default function PlatformBilling() {
     const distribution = overview?.orgDistribution || {};
 
     const planStats = [
-        { name: "FREE", count: distribution.FREE || 0, revenue: "R$ 0", color: "text-muted-foreground" },
-        { name: "PRO", count: distribution.PRO || 0, revenue: `R$ ${(distribution.PRO * 450).toLocaleString()}`, color: "text-violet-400" },
-        { name: "ENTERPRISE", count: distribution.ENTERPRISE || 0, revenue: `R$ ${(distribution.ENTERPRISE * 1200).toLocaleString()}`, color: "text-amber-400" },
+        { name: "FREE",       count: distribution.FREE       || 0, revenue: "R$ 0",                                                                     color: "text-muted-foreground" },
+        { name: "PRO",        count: distribution.PRO        || 0, revenue: `R$ ${((distribution.PRO       || 0) * 29  * 12).toLocaleString()}/ano`, color: "text-violet-400" },
+        { name: "ENTERPRISE", count: distribution.ENTERPRISE || 0, revenue: `R$ ${((distribution.ENTERPRISE || 0) * 99  * 12).toLocaleString()}/ano`, color: "text-amber-400" },
+        { name: "MAX",        count: distribution.MAX        || 0, revenue: `R$ ${((distribution.MAX        || 0) * 299     ).toLocaleString()}/ano`, color: "text-rose-400" },
     ];
 
     return (

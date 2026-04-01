@@ -174,6 +174,14 @@ export default function BillingPage() {
     ];
 
 
+    // Static color map — avoids broken Tailwind dynamic class generation
+    const PLAN_COLORS: Record<string, { border: string; from: string; badgeBg: string; badgeText: string; badgeBorder: string }> = {
+        free:       { border: 'border-slate-500/30',  from: 'from-slate-500/5',  badgeBg: 'bg-slate-500/20',  badgeText: 'text-slate-300',  badgeBorder: 'border-slate-500/30' },
+        pro:        { border: 'border-violet-500/30', from: 'from-violet-500/5', badgeBg: 'bg-violet-500/20', badgeText: 'text-violet-300', badgeBorder: 'border-violet-500/30' },
+        enterprise: { border: 'border-amber-500/30',  from: 'from-amber-500/5',  badgeBg: 'bg-amber-500/20',  badgeText: 'text-amber-300',  badgeBorder: 'border-amber-500/30' },
+        max:        { border: 'border-rose-500/30',   from: 'from-rose-500/5',   badgeBg: 'bg-rose-500/20',   badgeText: 'text-rose-300',   badgeBorder: 'border-rose-500/30' },
+    };
+
     // Buscar status de faturamento real
     const { data: billingStatus, isLoading: isBillingLoading } = useBillingStatus(activeOrg?.id || null);
     const checkoutMutation = useCheckoutSession();
@@ -185,6 +193,7 @@ export default function BillingPage() {
     const rawPlan = (billingStatus?.plan || activeOrg?.plan || 'FREE').toLowerCase();
     const currentPlanId = rawPlan;
     const current = localPlans.find(p => p.id === currentPlanId) || localPlans[0];
+    const planColors = PLAN_COLORS[currentPlanId] || PLAN_COLORS.free;
 
     const usageServers = billingStatus?.usage?.servers ?? (activeOrg as any)?._count?.servers ?? 0;
     const usageTickets = billingStatus?.usage?.tickets ?? 0;
@@ -466,7 +475,7 @@ export default function BillingPage() {
 
             {/* Current plan summary */}
             <div className="grid gap-4 md:grid-cols-3">
-                <Card className={`col-span-2 border-${current.id === 'pro' ? 'violet' : current.id === 'enterprise' ? 'amber' : 'slate'}-500/30 bg-gradient-to-br from-${current.id === 'pro' ? 'violet' : current.id === 'enterprise' ? 'amber' : 'slate'}-500/5 to-transparent`}>
+                <Card className={`col-span-2 ${planColors.border} bg-gradient-to-br ${planColors.from} to-transparent`}>
                     <CardHeader className="flex flex-row items-start justify-between">
                         <div>
                             <CardTitle className="flex items-center gap-2">
@@ -477,7 +486,7 @@ export default function BillingPage() {
                                 {current.id === 'free' ? t.billing.plans.free.description : t.billing.manage_subscription}
                             </CardDescription>
                         </div>
-                        <Badge className={`bg-${current.id === 'pro' ? 'violet' : current.id === 'enterprise' ? 'amber' : 'slate'}-500/20 text-${current.id === 'pro' ? 'violet' : current.id === 'enterprise' ? 'amber' : 'slate'}-300 border-${current.id === 'pro' ? 'violet' : current.id === 'enterprise' ? 'amber' : 'slate'}-500/30`}>
+                        <Badge className={`${planColors.badgeBg} ${planColors.badgeText} ${planColors.badgeBorder}`}>
                             {current.name}
                         </Badge>
                     </CardHeader>
@@ -505,12 +514,13 @@ export default function BillingPage() {
                             size="sm"
                             className="gap-2"
                             onClick={handleCustomerPortal}
-                            disabled={customerPortalMutation.isPending || current.id === 'free'}
+                            disabled={customerPortalMutation.isPending || current.id === 'free' || !subscription}
+                            title={!subscription ? 'Plano gerenciado manualmente — sem assinatura Stripe ativa' : undefined}
                         >
                             <CreditCard className="w-4 h-4" />
                             {t.billing.update_card}
                         </Button>
-                        {!isCanceling && current.id !== 'free' && (
+                        {!isCanceling && current.id !== 'free' && !!subscription && (
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -525,7 +535,7 @@ export default function BillingPage() {
                 </Card>
 
                 {current.id !== 'free' && (
-                    <Card className="border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-transparent">
+                    <Card className={`${planColors.border} bg-gradient-to-br ${planColors.from} to-transparent`}>
                         <CardHeader>
                             <CardTitle className="text-base">{t.billing.upcoming_invoice}</CardTitle>
                         </CardHeader>
@@ -562,13 +572,14 @@ export default function BillingPage() {
             {/* Plan cards */}
             <div>
                 <h2 className="text-xl font-bold mb-4">{t.billing.choose_plan}</h2>
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
                     {localPlans.map((plan) => {
                         const isCurrentPlan = plan.id === current.id;
+                        const cardHighlight = isCurrentPlan ? `${planColors.border} shadow-lg` : '';
                         return (
                             <Card
                                 key={plan.id}
-                                className={`relative flex flex-col ${isCurrentPlan ? `border-violet-500/50 shadow-lg shadow-violet-500/10` : ""} transition-all hover:-translate-y-0.5`}
+                                className={`relative flex flex-col ${cardHighlight} transition-all hover:-translate-y-0.5`}
                             >
                                 {plan.badge && (
                                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
