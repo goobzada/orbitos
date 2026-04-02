@@ -62,7 +62,7 @@ export default {
                     || advancedVerificationModule?.config?.requiredRole
                     || '';
                 if (!roleId) {
-                    return interaction.reply({ content: '❌ Cargo de verificação não configurado. Configure o cargo em **Dashboard → Módulos → Verificação**.', ephemeral: true });
+                    return interaction.reply({ content: '❌ Cargo de verificação não configurado.\n\n**Como configurar:**\n1. Acesse o Dashboard → Security → Verificação Avançada\n2. Preencha o campo **"Cargo de Verificado (ID)"** com o ID do cargo do Discord\n3. Clique em **Salvar Alterações**\n4. Teste novamente este botão\n\n💡 Para copiar o ID do cargo: Discord → Configurações do Servidor → Cargos → clique direito no cargo → **Copiar ID**', ephemeral: true });
                 }
                 const member = await interaction.guild?.members.fetch(interaction.user.id);
                 if (!member) return interaction.reply({ content: '❌ Não foi possível encontrar seu perfil no servidor.', ephemeral: true });
