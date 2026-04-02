@@ -288,4 +288,125 @@ export class InternalController {
             products
         });
     }
+
+    // ─── SISTEMA DE NÍVEIS / XP ─────────────────────────────────────────────────
+
+    // Fórmula: XP total para atingir nível N = 5*N^2 + 50*N + 100
+    private xpForLevel(level: number): number {
+        return 5 * level * level + 50 * level + 100;
+    }
+
+    // Calcula nível a partir do XP total
+    private calcLevel(totalXp: number): { level: number; xpInLevel: number; xpToNext: number } {
+        let level = 0;
+        let xpUsed = 0;
+        while (true) {
+            const needed = this.xpForLevel(level);
+            if (xpUsed + needed > totalXp) {
+                return { level, xpInLevel: totalXp - xpUsed, xpToNext: needed };
+            }
+            xpUsed += needed;
+            level++;
+        }
+    }
+
+    // POST /internal/levels/xp — adiciona XP a um membro
+    async addXp(req: Request, res: Response) {
+        const { guildId, userId, username, avatarUrl, xpGain } = req.body;
+        if (!guildId || !userId || !username) {
+            return res.status(400).json({ error: 'guildId, userId e username são obrigatórios.' });
+        }
+        const gain = typeof xpGain === 'number' ? Math.min(Math.max(xpGain, 1), 50) : 15;
+
+        const existing = await (prisma as any).memberXP.findUnique({
+            where: { discordGuildId_discordUserId: { discordGuildId: guildId, discordUserId: userId } }
+        });
+
+        const prevTotalXp = existing?.totalXp ?? 0;
+        const newTotalXp = prevTotalXp + gain;
+
+        const prev = this.calcLevel(prevTotalXp);
+        const next = this.calcLevel(newTotalXp);
+        const leveledUp = next.level > prev.level;
+
+        // Ranking position
+        const rank = await (prisma as any).memberXP.count({
+            where: { discordGuildId: guildId, totalXp: { gt: newTotalXp } }
+        });
+
+        const member = await (prisma as any).memberXP.upsert({
+            where: { discordGuildId_discordUserId: { discordGuildId: guildId, discordUserId: userId } },
+            create: {
+                discordGuildId: guildId,
+                discordUserId: userId,
+                username,
+                avatarUrl: avatarUrl || null,
+                xp: next.xpInLevel,
+                totalXp: newTotalXp,
+                level: next.level,
+                lastMessageAt: new Date(),
+            },
+            update: {
+                username,
+                avatarUrl: avatarUrl || null,
+                xp: next.xpInLevel,
+                totalXp: newTotalXp,
+                level: next.level,
+                lastMessageAt: new Date(),
+            }
+        });
+
+        return res.json({
+            leveledUp,
+            level: next.level,
+            xpInLevel: next.xpInLevel,
+            xpToNext: next.xpToNext,
+            totalXp: newTotalXp,
+            rank: rank + 1,
+        });
+    }
+
+    // GET /internal/levels/:guildId/:userId — retorna XP/rank de um membro
+    async getMemberXp(req: Request, res: Response) {
+        const { guildId, userId } = req.params as { guildId: string; userId: string };
+
+        const member = await (prisma as any).memberXP.findUnique({
+            where: { discordGuildId_discordUserId: { discordGuildId: guildId, discordUserId: userId } }
+        });
+
+        if (!member) {
+            const calc = this.calcLevel(0);
+            return res.json({ level: 0, xpInLevel: 0, xpToNext: calc.xpToNext, totalXp: 0, rank: null });
+        }
+
+        const rank = await (prisma as any).memberXP.count({
+            where: { discordGuildId: guildId, totalXp: { gt: member.totalXp } }
+        });
+
+        const calc = this.calcLevel(member.totalXp);
+        return res.json({
+            level: member.level,
+            xpInLevel: calc.xpInLevel,
+            xpToNext: calc.xpToNext,
+            totalXp: member.totalXp,
+            username: member.username,
+            avatarUrl: member.avatarUrl,
+            rank: rank + 1,
+        });
+    }
+
+    // GET /internal/levels/:guildId/ranking — top 10
+    async getGuildRanking(req: Request, res: Response) {
+        const { guildId } = req.params as { guildId: string };
+        const limit = Math.min(parseInt((req.query.limit as string) || '10'), 50);
+
+        const members = await (prisma as any).memberXP.findMany({
+            where: { discordGuildId: guildId },
+            orderBy: { totalXp: 'desc' },
+            take: limit,
+            select: { discordUserId: true, username: true, avatarUrl: true, level: true, totalXp: true, xp: true }
+        });
+
+        return res.json(members.map((m: any, i: number) => ({ ...m, rank: i + 1 })));
+    }
 }

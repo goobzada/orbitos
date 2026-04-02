@@ -58,4 +58,9 @@ internalRoutes.post('/allowlist/forms/:id/submit', allowlistCtrl.submitForm);
 // Loja
 internalRoutes.get('/store/products/:guildId', ctrl.getStoreProducts.bind(ctrl));
 
+// Sistema de Níveis / XP
+internalRoutes.post('/levels/xp', ctrl.addXp.bind(ctrl));
+internalRoutes.get('/levels/:guildId/ranking', ctrl.getGuildRanking.bind(ctrl));
+internalRoutes.get('/levels/:guildId/:userId', ctrl.getMemberXp.bind(ctrl));
+
 export default internalRoutes;

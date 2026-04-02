@@ -769,6 +769,19 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
                                     </div>
 
                                     <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-4">
+                                        {/* Canal de notificação de level-up */}
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Canal de Level-Up</Label>
+                                            <Input
+                                                placeholder="ID do canal (ex: 1021307...)"
+                                                className="h-9 bg-slate-950 border-slate-800 text-xs font-mono"
+                                                value={config.rankChannelId || ''}
+                                                onChange={(e) => setConfig({ ...config, rankChannelId: e.target.value })}
+                                            />
+                                            <p className="text-[9px] text-slate-600 italic">Onde o bot anuncia os level-ups. Se vazio, anuncia no canal onde o membro falou.</p>
+                                        </div>
+
+                                        {/* Multiplicador de XP */}
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center">
                                                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Multiplicador de XP</Label>
@@ -777,12 +790,29 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
                                             <Input
                                                 type="number"
                                                 step="0.1"
+                                                min="0.1"
+                                                max="10"
                                                 className="h-9 bg-slate-950 border-slate-800 text-xs text-indigo-400 font-bold"
                                                 value={config.xpMultiplier || 1.0}
                                                 onChange={(e) => setConfig({ ...config, xpMultiplier: parseFloat(e.target.value) })}
                                             />
+                                            <p className="text-[9px] text-slate-600 italic">15–25 XP por mensagem (cooldown 1 min). Multiplique para boostar XP.</p>
                                         </div>
 
+                                        {/* Mensagem de level-up customizada */}
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Mensagem de Level-Up</Label>
+                                            <textarea
+                                                rows={2}
+                                                placeholder="Parabéns {user}, você chegou no nível {level}! 🎉"
+                                                className="w-full rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 p-2 resize-none focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                value={config.levelUpMessage || ''}
+                                                onChange={(e) => setConfig({ ...config, levelUpMessage: e.target.value })}
+                                            />
+                                            <p className="text-[9px] text-slate-600 italic">Variáveis: <code className="text-slate-400">{'{user}'}</code> e <code className="text-slate-400">{'{level}'}</code></p>
+                                        </div>
+
+                                        {/* XP em Voz */}
                                         <div className="flex items-center justify-between p-3 rounded-lg bg-slate-950 border border-slate-800">
                                             <div className="space-y-0.5">
                                                 <Label className="text-xs font-bold text-emerald-500/80 uppercase">XP em Voz</Label>

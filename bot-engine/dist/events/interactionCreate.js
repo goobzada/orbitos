@@ -80,7 +80,7 @@ exports.default = {
                     || advancedVerificationModule?.config?.requiredRole
                     || '';
                 if (!roleId) {
-                    return interaction.reply({ content: '❌ Cargo de verificação não configurado. Configure o cargo em **Dashboard → Módulos → Verificação**.', ephemeral: true });
+                    return interaction.reply({ content: '❌ Cargo de verificação não configurado.\n\n**Como configurar:**\n1. Acesse o Dashboard → Security → Verificação Avançada\n2. Preencha o campo **"Cargo de Verificado (ID)"** com o ID do cargo do Discord\n3. Clique em **Salvar Alterações**\n4. Teste novamente este botão\n\n💡 Para copiar o ID do cargo: Discord → Configurações do Servidor → Cargos → clique direito no cargo → **Copiar ID**', ephemeral: true });
                 }
                 const member = await interaction.guild?.members.fetch(interaction.user.id);
                 if (!member)
@@ -89,7 +89,45 @@ exports.default = {
                     return interaction.reply({ content: '✅ Você já está verificado!', ephemeral: true });
                 }
                 await member.roles.add(roleId);
-                return interaction.reply({ content: '✅ Verificação concluída! Bem-vindo ao servidor.', ephemeral: true });
+                const bannerUrl1 = verificationModule?.config?.bannerUrl || advancedVerificationModule?.config?.bannerUrl || '';
+                const customWelcome1 = verificationModule?.config?.welcomeMessage || advancedVerificationModule?.config?.welcomeMessage || '';
+                const memberCount1 = interaction.guild.memberCount;
+                const defaultDesc1 = `Olá <@${interaction.user.id}> 👋\n` +
+                    `» Verificação concluída com sucesso!\n` +
+                    `» Você agora tem acesso completo ao servidor.\n` +
+                    `» Não esqueça de ler as regras do servidor.\n\n` +
+                    `Bom divertimento e seja muito bem-vindo! 🎉`;
+                const welcomeEmbed1 = new discord_js_1.EmbedBuilder()
+                    .setColor(0x57F287)
+                    .setTitle(`🎉 Bem-vindo(a), ${interaction.user.username}!`)
+                    .setDescription(customWelcome1 || defaultDesc1)
+                    .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
+                    .addFields({ name: '👥 Total de Membros', value: `**${memberCount1}**`, inline: true })
+                    .setFooter({ text: `${interaction.guild.name} • Verificação`, iconURL: interaction.guild.iconURL() || undefined })
+                    .setTimestamp();
+                if (bannerUrl1)
+                    welcomeEmbed1.setImage(bannerUrl1);
+                // Envia no canal de boas-vindas configurado, se existir
+                const welcomeMod1 = (guildData.modules || []).find((m) => m.key === 'welcome_message');
+                const welcomeChannelId1 = welcomeMod1?.config?.channelId;
+                if (welcomeChannelId1) {
+                    try {
+                        const wCh1 = interaction.guild.channels.cache.get(welcomeChannelId1)
+                            || await interaction.guild.channels.fetch(welcomeChannelId1).catch(() => null);
+                        if (wCh1 && 'send' in wCh1)
+                            await wCh1.send({ embeds: [welcomeEmbed1] });
+                    }
+                    catch (err) {
+                        logger_1.log.warn('[VERIFICATION] Erro ao enviar no canal de boas-vindas: ' + err);
+                    }
+                    return interaction.reply({ content: '✅ Verificação concluída! Seja bem-vindo(a).', ephemeral: true });
+                }
+                else {
+                    // Fallback: envia no canal atual e apaga em 10s
+                    const replyVerif = await interaction.reply({ embeds: [welcomeEmbed1], ephemeral: false, fetchReply: true });
+                    setTimeout(() => replyVerif.delete().catch(() => { }), 10000);
+                    return;
+                }
             }
             catch (e) {
                 const isMissingPerms = e.message?.includes('Missing Permissions');
@@ -98,6 +136,80 @@ exports.default = {
                     ? '❌ Bot sem permissão para atribuir cargos. Verifique se o bot tem a permissão **Gerenciar Cargos** e se o cargo de verificação está abaixo do cargo do bot na hierarquia.'
                     : '❌ Erro ao processar verificação. Tente novamente.';
                 return interaction.reply({ content: errMsg, ephemeral: true });
+            }
+        }
+        // ── VERIFICAÇÃO AVANÇADA — CONFIRMAÇÃO (customId: advanced_verify_confirm_GUILDID) ───
+        if (interaction.isButton() && interaction.customId.startsWith('advanced_verify_confirm_')) {
+            if (!interaction.guildId)
+                return;
+            try {
+                const { data: guildData } = await api_client_1.default.get(`/internal/guilds/${interaction.guildId}/modules`);
+                const advModule = (guildData.modules || []).find((m) => m.key === 'advanced_verification');
+                const verModule = (guildData.modules || []).find((m) => m.key === 'verification');
+                const roleId = advModule?.config?.requiredRole
+                    || advModule?.config?.roleId
+                    || verModule?.config?.requiredRole
+                    || verModule?.config?.roleId
+                    || '';
+                if (!roleId) {
+                    return interaction.reply({ content: '❌ Cargo de verificação não configurado. Configure o campo **Required Role** em **Dashboard → Módulos → Verificação Avançada**.', ephemeral: true });
+                }
+                const member = await interaction.guild?.members.fetch(interaction.user.id);
+                if (!member)
+                    return interaction.reply({ content: '❌ Não foi possível encontrar seu perfil no servidor.', ephemeral: true });
+                if (member.roles.cache.has(roleId)) {
+                    return interaction.reply({ content: '✅ Você já está verificado!', ephemeral: true });
+                }
+                await member.roles.add(roleId);
+                const bannerUrl2 = advModule?.config?.bannerUrl || verModule?.config?.bannerUrl || '';
+                const customWelcome2 = advModule?.config?.welcomeMessage || verModule?.config?.welcomeMessage || '';
+                const memberCount2 = interaction.guild.memberCount;
+                const defaultDesc2 = `Olá <@${interaction.user.id}> 👋\n` +
+                    `» Verificação concluída com sucesso!\n` +
+                    `» Você agora tem acesso completo ao servidor.\n` +
+                    `» Não esqueça de ler as regras do servidor.\n\n` +
+                    `Bom divertimento e seja muito bem-vindo! 🎉`;
+                const welcomeEmbed2 = new discord_js_1.EmbedBuilder()
+                    .setColor(0x57F287)
+                    .setTitle(`🎉 Bem-vindo(a), ${interaction.user.username}!`)
+                    .setDescription(customWelcome2 || defaultDesc2)
+                    .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
+                    .addFields({ name: '👥 Total de Membros', value: `**${memberCount2}**`, inline: true })
+                    .setFooter({ text: `${interaction.guild.name} • Verificação`, iconURL: interaction.guild.iconURL() || undefined })
+                    .setTimestamp();
+                if (bannerUrl2)
+                    welcomeEmbed2.setImage(bannerUrl2);
+                // Envia no canal de boas-vindas configurado, se existir
+                const welcomeMod2 = (guildData.modules || []).find((m) => m.key === 'welcome_message');
+                const welcomeChannelId2 = welcomeMod2?.config?.channelId;
+                if (welcomeChannelId2) {
+                    try {
+                        const wCh2 = interaction.guild.channels.cache.get(welcomeChannelId2)
+                            || await interaction.guild.channels.fetch(welcomeChannelId2).catch(() => null);
+                        if (wCh2 && 'send' in wCh2)
+                            await wCh2.send({ embeds: [welcomeEmbed2] });
+                    }
+                    catch (err) {
+                        logger_1.log.warn('[ADV_VERIFICATION] Erro ao enviar no canal de boas-vindas: ' + err);
+                    }
+                    return interaction.reply({ content: '✅ Verificação concluída! Seja bem-vindo(a).', ephemeral: true });
+                }
+                else {
+                    // Fallback: envia no canal atual e apaga em 10s
+                    const replyAdv = await interaction.reply({ embeds: [welcomeEmbed2], ephemeral: false, fetchReply: true });
+                    setTimeout(() => replyAdv.delete().catch(() => { }), 10000);
+                    return;
+                }
+            }
+            catch (e) {
+                const isMissingPerms = e.message?.includes('Missing Permissions');
+                logger_1.log.error('[ADV_VERIFICATION] Erro: ' + e.message);
+                return interaction.reply({
+                    content: isMissingPerms
+                        ? '❌ Bot sem permissão para atribuir cargos. Verifique a hierarquia do cargo.'
+                        : '❌ Erro ao processar verificação. Tente novamente.',
+                    ephemeral: true
+                });
             }
         }
         // ── SLASH COMMANDS ────────────────────────────────────────────
@@ -279,13 +391,18 @@ exports.default = {
                             if (advConfig.message) {
                                 embed.setDescription(advConfig.message);
                             }
-                            const btnLabel = lang === 'pt-BR' ? '🔐 Verificar Conta' : lang === 'es-ES' ? '🔐 Verificar Cuenta' : '🔐 Verify Account';
-                            // If an external URL is configured, use a Link button; otherwise use role-assign button
+                            const btnLabel = lang === 'pt-BR' ? '🤖 Verificar Conta' : lang === 'es-ES' ? '🤖 Verificar Cuenta' : '🤖 Verify Account';
                             const externalUrl = advConfig.url || advConfig.verificationUrl || '';
                             if (externalUrl) {
-                                components.push(new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.ButtonBuilder().setLabel(btnLabel).setStyle(discord_js_1.ButtonStyle.Link).setURL(externalUrl)));
+                                // Link para site externo + botão de confirmação para receber o cargo
+                                const confirmLabel = lang === 'pt-BR' ? '✅ Já verifiquei' : lang === 'es-ES' ? '✅ Ya verifiqué' : '✅ Already verified';
+                                components.push(new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.ButtonBuilder().setLabel(btnLabel).setStyle(discord_js_1.ButtonStyle.Link).setURL(externalUrl), new discord_js_1.ButtonBuilder()
+                                    .setCustomId(`advanced_verify_confirm_${interaction.guildId}`)
+                                    .setLabel(confirmLabel)
+                                    .setStyle(discord_js_1.ButtonStyle.Success)));
                             }
                             else {
+                                // Sem URL: botão direto que atribui o cargo
                                 components.push(new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.ButtonBuilder().setCustomId('verification_verify').setLabel(btnLabel).setStyle(discord_js_1.ButtonStyle.Success)));
                             }
                         }
