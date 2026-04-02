@@ -71,17 +71,18 @@ export default {
                 }
                 await member.roles.add(roleId);
                 const bannerUrl1 = verificationModule?.config?.bannerUrl || advancedVerificationModule?.config?.bannerUrl || '';
+                const customWelcome1 = verificationModule?.config?.welcomeMessage || advancedVerificationModule?.config?.welcomeMessage || '';
                 const memberCount1 = interaction.guild!.memberCount;
+                const defaultDesc1 =
+                    `Olá <@${interaction.user.id}> 👋\n` +
+                    `» Verificação concluída com sucesso!\n` +
+                    `» Você agora tem acesso ao servidor de programação.\n` +
+                    `» Não esqueça de ler as regras antes de começar.\n\n` +
+                    `Seja bem-vindo(a) à comunidade! Aqui você vai aprender, crescer e colaborar com outros devs. 🚀`;
                 const welcomeEmbed1 = new EmbedBuilder()
                     .setColor(0x57F287)
                     .setTitle(`🎉 Bem-vindo(a), ${interaction.user.username}!`)
-                    .setDescription(
-                        `Olá <@${interaction.user.id}> 👋\n` +
-                        `» Verificação concluída com sucesso!\n` +
-                        `» Você agora tem acesso completo ao servidor.\n` +
-                        `» Não esqueça de ler as regras do servidor.\n\n` +
-                        `Bom divertimento e seja muito bem-vindo! 🎉`
-                    )
+                    .setDescription(customWelcome1 || defaultDesc1)
                     .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
                     .addFields({ name: '👥 Total de Membros', value: `**${memberCount1}**`, inline: true })
                     .setFooter({ text: `${interaction.guild!.name} • Verificação`, iconURL: interaction.guild!.iconURL() || undefined })
@@ -122,17 +123,18 @@ export default {
                 }
                 await member.roles.add(roleId);
                 const bannerUrl2 = advModule?.config?.bannerUrl || verModule?.config?.bannerUrl || '';
+                const customWelcome2 = advModule?.config?.welcomeMessage || verModule?.config?.welcomeMessage || '';
                 const memberCount2 = interaction.guild!.memberCount;
+                const defaultDesc2 =
+                    `Olá <@${interaction.user.id}> 👋\n` +
+                    `» Verificação concluída com sucesso!\n` +
+                    `» Você agora tem acesso ao servidor de programação.\n` +
+                    `» Não esqueça de ler as regras antes de começar.\n\n` +
+                    `Seja bem-vindo(a) à comunidade! Aqui você vai aprender, crescer e colaborar com outros devs. 🚀`;
                 const welcomeEmbed2 = new EmbedBuilder()
                     .setColor(0x57F287)
                     .setTitle(`🎉 Bem-vindo(a), ${interaction.user.username}!`)
-                    .setDescription(
-                        `Olá <@${interaction.user.id}> 👋\n` +
-                        `» Verificação concluída com sucesso!\n` +
-                        `» Você agora tem acesso completo ao servidor.\n` +
-                        `» Não esqueça de ler as regras do servidor.\n\n` +
-                        `Bom divertimento e seja muito bem-vindo! 🎉`
-                    )
+                    .setDescription(customWelcome2 || defaultDesc2)
                     .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
                     .addFields({ name: '👥 Total de Membros', value: `**${memberCount2}**`, inline: true })
                     .setFooter({ text: `${interaction.guild!.name} • Verificação`, iconURL: interaction.guild!.iconURL() || undefined })

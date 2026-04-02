@@ -984,6 +984,17 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
                                     </div>
 
                                     <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Mensagem de Boas-vindas <span className="text-slate-600 normal-case font-normal">(opcional)</span></Label>
+                                        <textarea
+                                            className="w-full min-h-[80px] rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-400 focus:border-blue-500 outline-none transition-all"
+                                            placeholder="Olá {user} 👋\n» Verificação concluída!\nSeja bem-vindo(a) à comunidade!"
+                                            value={config.welcomeMessage || ''}
+                                            onChange={(e) => setConfig({ ...config, welcomeMessage: e.target.value })}
+                                        />
+                                        <p className="text-[9px] text-slate-500">Texto exibido no embed após a verificação. Se vazio, usa o texto padrão da plataforma. Suporta <strong className="text-slate-400">{'{'}user{'}'}</strong> para mencionar o membro.</p>
+                                    </div>
+
+                                    <div className="space-y-2">
                                         <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Banner da Mensagem de Boas-vindas <span className="text-slate-600 normal-case font-normal">(opcional)</span></Label>
                                         <Input
                                             className="h-9 bg-slate-900 border-slate-800 font-mono text-xs text-purple-300"
@@ -1028,6 +1039,17 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
                                             value={config.message || ''}
                                             onChange={(e) => setConfig({ ...config, message: e.target.value })}
                                         />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Mensagem de Boas-vindas <span className="text-slate-600 normal-case font-normal">(opcional)</span></Label>
+                                        <textarea
+                                            className="w-full min-h-[80px] rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-400 focus:border-emerald-500 outline-none transition-all"
+                                            placeholder="Olá {user} 👋\n» Verificação concluída!\nSeja bem-vindo(a) à comunidade!"
+                                            value={config.welcomeMessage || ''}
+                                            onChange={(e) => setConfig({ ...config, welcomeMessage: e.target.value })}
+                                        />
+                                        <p className="text-[9px] text-slate-500">Texto exibido no embed após a verificação. Se vazio, usa o texto padrão da plataforma. Suporta <strong className="text-slate-400">{'{'}user{'}'}</strong> para mencionar o membro.</p>
                                     </div>
 
                                     <div className="space-y-2">
