@@ -76,9 +76,9 @@ export default {
                 const defaultDesc1 =
                     `Olá <@${interaction.user.id}> 👋\n` +
                     `» Verificação concluída com sucesso!\n` +
-                    `» Você agora tem acesso ao servidor de programação.\n` +
-                    `» Não esqueça de ler as regras antes de começar.\n\n` +
-                    `Seja bem-vindo(a) à comunidade! Aqui você vai aprender, crescer e colaborar com outros devs. 🚀`;
+                    `» Você agora tem acesso completo ao servidor.\n` +
+                    `» Não esqueça de ler as regras do servidor.\n\n` +
+                    `Bom divertimento e seja muito bem-vindo! 🎉`;
                 const welcomeEmbed1 = new EmbedBuilder()
                     .setColor(0x57F287)
                     .setTitle(`🎉 Bem-vindo(a), ${interaction.user.username}!`)
@@ -139,9 +139,9 @@ export default {
                 const defaultDesc2 =
                     `Olá <@${interaction.user.id}> 👋\n` +
                     `» Verificação concluída com sucesso!\n` +
-                    `» Você agora tem acesso ao servidor de programação.\n` +
-                    `» Não esqueça de ler as regras antes de começar.\n\n` +
-                    `Seja bem-vindo(a) à comunidade! Aqui você vai aprender, crescer e colaborar com outros devs. 🚀`;
+                    `» Você agora tem acesso completo ao servidor.\n` +
+                    `» Não esqueça de ler as regras do servidor.\n\n` +
+                    `Bom divertimento e seja muito bem-vindo! 🎉`;
                 const welcomeEmbed2 = new EmbedBuilder()
                     .setColor(0x57F287)
                     .setTitle(`🎉 Bem-vindo(a), ${interaction.user.username}!`)
