@@ -274,6 +274,17 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
                                             </div>
                                         </>
                                     )}
+                                    {module.key === 'advanced_verification' && (
+                                        <>
+                                            <p className="text-[11px] text-slate-300 leading-relaxed">
+                                                Exige que o usuário vincule uma conta externa (ex: GitHub, Steam) para provar sua identidade antes de entrar.
+                                            </p>
+                                            <div className="p-2 rounded bg-slate-950 border border-slate-800">
+                                                <p className="text-[9px] font-bold text-violet-400 uppercase mb-1">💡 Dica:</p>
+                                                <p className="text-[10px] text-slate-400">Preencha o <strong className="text-slate-300">Canal de Verificação</strong> para o bot enviar o painel automaticamente quando um membro entrar.</p>
+                                            </div>
+                                        </>
+                                    )}
                                     {module.key === 'report' && (
                                         <>
                                             <p className="text-[11px] text-slate-300 leading-relaxed">
@@ -1692,7 +1703,7 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
                                 </div>
                             )}
 
-                            {!['welcome_message', 'autorole', 'giveaway', 'ticket', 'level_system', 'anti_raid', 'suggestion', 'rules_accept', 'verification', 'report', 'application', 'store_panel', 'growth_stats', 'engagement_stats', 'revenue_stats', 'activity_stats', 'whitelist', 'server_status', 'whitelist_quiz', 'coupon', 'ranking', 'faction_system', 'judicial_system', 'in_game_logs', 'anti_alt', 'mod_logs'].includes(module.key) && (
+                            {!['welcome_message', 'autorole', 'giveaway', 'ticket', 'level_system', 'anti_raid', 'suggestion', 'rules_accept', 'verification', 'advanced_verification', 'report', 'application', 'store_panel', 'growth_stats', 'engagement_stats', 'revenue_stats', 'activity_stats', 'whitelist', 'server_status', 'whitelist_quiz', 'coupon', 'ranking', 'faction_system', 'judicial_system', 'in_game_logs', 'anti_alt', 'mod_logs'].includes(module.key) && (
                                 <div className="space-y-6">
                                     <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800 space-y-4">
                                         <div className="flex items-center gap-2 text-slate-400 mb-2">
