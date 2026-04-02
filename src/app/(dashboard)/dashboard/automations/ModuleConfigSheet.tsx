@@ -926,6 +926,65 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
                                 </div>
                             )}
 
+                            {module.key === 'advanced_verification' && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm mb-2">
+                                        <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                            <ShieldCheck className="h-5 w-5 text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-slate-200">Verificação Avançada</h3>
+                                            <p className="text-[10px] text-slate-500 uppercase tracking-tight">Verificação por Site Externo</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Canal de Verificação (ID)</Label>
+                                            <Input
+                                                className="h-9 bg-slate-900 border-slate-800 font-mono text-xs"
+                                                placeholder="Ex: 1021810593236516930"
+                                                value={config.channelId || ''}
+                                                onChange={(e) => setConfig({ ...config, channelId: e.target.value })}
+                                            />
+                                            <p className="text-[9px] text-slate-500">Canal onde o bot envia o painel quando um membro entra.</p>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Cargo de Verificado (ID) *</Label>
+                                            <Input
+                                                className="h-9 bg-slate-900 border-slate-800 font-mono text-xs text-blue-300"
+                                                placeholder="Ex: 1234567890123456789"
+                                                value={config.requiredRole || ''}
+                                                onChange={(e) => setConfig({ ...config, requiredRole: e.target.value })}
+                                            />
+                                            <p className="text-[9px] text-slate-500">Cargo que o membro recebe ao concluir a verificação. <strong className="text-slate-400">Obrigatório.</strong></p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">URL do Site de Verificação <span className="text-slate-600 normal-case font-normal">(opcional)</span></Label>
+                                        <Input
+                                            className="h-9 bg-slate-900 border-slate-800 font-mono text-xs text-blue-400"
+                                            placeholder="https://seusite.com/verificar"
+                                            value={config.url || ''}
+                                            onChange={(e) => setConfig({ ...config, url: e.target.value })}
+                                        />
+                                        <p className="text-[9px] text-slate-500">Se preenchida, aparece botão de link + botão ✅ "Já verifiquei" para atribuir o cargo.</p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Mensagem do Painel <span className="text-slate-600 normal-case font-normal">(opcional)</span></Label>
+                                        <textarea
+                                            className="w-full min-h-[80px] rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-400 focus:border-blue-500 outline-none transition-all"
+                                            placeholder="⚙️ Sistema de proteção contra BOTs. Clique abaixo para confirmar que você não é um robô."
+                                            value={config.message || ''}
+                                            onChange={(e) => setConfig({ ...config, message: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             {module.key === 'verification' && (
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm mb-2">
