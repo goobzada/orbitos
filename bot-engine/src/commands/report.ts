@@ -16,17 +16,19 @@ export default {
         .addStringOption(o => o.setName('evidencia').setDescription('Link de evidência (imagem, mensagem, etc)').setRequired(false)),
 
     async execute(interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply({ ephemeral: true });
-
         const target = interaction.options.getUser('membro', true);
         const motivo = interaction.options.getString('motivo', true);
         const evidencia = interaction.options.getString('evidencia') || null;
 
+        const autoDelete = (msg: string) =>
+            interaction.reply({ content: msg, ephemeral: true, fetchReply: true })
+                .then(r => setTimeout(() => interaction.deleteReply().catch(() => {}), 10000));
+
         if (target.id === interaction.user.id) {
-            return interaction.editReply('❌ Você não pode reportar a si mesmo.');
+            return autoDelete('❌ Você não pode reportar a si mesmo.');
         }
         if (target.bot) {
-            return interaction.editReply('❌ Você não pode reportar um bot.');
+            return autoDelete('❌ Você não pode reportar um bot.');
         }
 
         // Buscar configuração do módulo
@@ -42,7 +44,7 @@ export default {
         }
 
         if (!reportChannelId) {
-            return interaction.editReply('❌ O canal de denúncias não está configurado. Acesse o Dashboard → Support → Denúncias → configure o canal.');
+            return autoDelete('❌ O canal de denúncias não está configurado. Acesse o Dashboard → Support → Denúncias → configure o canal.');
         }
 
         // Montar o embed da denúncia
@@ -68,17 +70,16 @@ export default {
                 || await interaction.guild!.channels.fetch(reportChannelId).catch(() => null);
 
             if (!reportCh || !('send' in reportCh)) {
-                return interaction.editReply('❌ Não consegui acessar o canal de denúncias. Verifique as permissões do bot.');
+                return autoDelete('❌ Não consegui acessar o canal de denúncias. Verifique as permissões do bot.');
             }
 
             await (reportCh as TextChannel).send({ embeds: [reportEmbed] });
             log.event(`[REPORT] ${interaction.user.tag} reportou ${target.tag} em ${interaction.guild?.name}`);
         } catch (err: any) {
             log.error('[REPORT] Erro ao enviar denúncia: ' + err.message);
-            return interaction.editReply('❌ Erro ao enviar a denúncia. Tente novamente.');
+            return autoDelete('❌ Erro ao enviar a denúncia. Tente novamente.');
         }
 
-        // Deletar a mensagem do usuário se anônimo (não aplicável em slash, mas registra)
-        return interaction.editReply('✅ Sua denúncia foi enviada com sucesso para a equipe. Obrigado por ajudar a manter a comunidade segura!');
+        return autoDelete('✅ Sua denúncia foi enviada com sucesso para a equipe. Obrigado por ajudar a manter a comunidade segura!');
     }
 };
