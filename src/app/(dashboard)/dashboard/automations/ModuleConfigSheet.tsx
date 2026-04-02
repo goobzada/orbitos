@@ -982,6 +982,17 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
                                             onChange={(e) => setConfig({ ...config, message: e.target.value })}
                                         />
                                     </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Banner da Mensagem de Boas-vindas <span className="text-slate-600 normal-case font-normal">(opcional)</span></Label>
+                                        <Input
+                                            className="h-9 bg-slate-900 border-slate-800 font-mono text-xs text-purple-300"
+                                            placeholder="https://i.imgur.com/seuBanner.png"
+                                            value={config.bannerUrl || ''}
+                                            onChange={(e) => setConfig({ ...config, bannerUrl: e.target.value })}
+                                        />
+                                        <p className="text-[9px] text-slate-500">Imagem exibida no embed de boas-vindas quando o membro conclui a verificação.</p>
+                                    </div>
                                 </div>
                             )}
 
@@ -1017,6 +1028,17 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
                                             value={config.message || ''}
                                             onChange={(e) => setConfig({ ...config, message: e.target.value })}
                                         />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Banner da Mensagem de Boas-vindas <span className="text-slate-600 normal-case font-normal">(opcional)</span></Label>
+                                        <Input
+                                            className="h-9 bg-slate-900 border-slate-800 font-mono text-xs text-purple-300"
+                                            placeholder="https://i.imgur.com/seuBanner.png"
+                                            value={config.bannerUrl || ''}
+                                            onChange={(e) => setConfig({ ...config, bannerUrl: e.target.value })}
+                                        />
+                                        <p className="text-[9px] text-slate-500">Imagem exibida no embed de boas-vindas quando o membro conclui a verificação.</p>
                                     </div>
                                 </div>
                             )}

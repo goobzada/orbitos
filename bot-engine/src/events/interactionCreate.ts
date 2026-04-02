@@ -70,7 +70,17 @@ export default {
                     return interaction.reply({ content: '✅ Você já está verificado!', ephemeral: true });
                 }
                 await member.roles.add(roleId);
-                const replyVerif = await interaction.reply({ content: '✅ Verificação concluída! Bem-vindo ao servidor.', ephemeral: false, fetchReply: true });
+                const bannerUrl1 = verificationModule?.config?.bannerUrl || advancedVerificationModule?.config?.bannerUrl || '';
+                const welcomeEmbed1 = new EmbedBuilder()
+                    .setColor(0x57F287)
+                    .setAuthor({ name: '✅  Verificação Concluída', iconURL: interaction.user.displayAvatarURL() })
+                    .setTitle(`Bem-vindo(a), ${interaction.user.username}!`)
+                    .setDescription(`Você foi verificado com sucesso e agora tem acesso completo ao **${interaction.guild!.name}**.\n\n> Aproveite o servidor e bom divertimento! 🎉`)
+                    .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
+                    .setFooter({ text: interaction.guild!.name, iconURL: interaction.guild!.iconURL() || undefined })
+                    .setTimestamp();
+                if (bannerUrl1) welcomeEmbed1.setImage(bannerUrl1);
+                const replyVerif = await interaction.reply({ embeds: [welcomeEmbed1], ephemeral: false, fetchReply: true });
                 setTimeout(() => replyVerif.delete().catch(() => {}), 10000);
                 return;
             } catch (e: any) {
@@ -104,7 +114,17 @@ export default {
                     return interaction.reply({ content: '✅ Você já está verificado!', ephemeral: true });
                 }
                 await member.roles.add(roleId);
-                const replyAdv = await interaction.reply({ content: '✅ Verificação concluída! Bem-vindo ao servidor.', ephemeral: false, fetchReply: true });
+                const bannerUrl2 = advModule?.config?.bannerUrl || verModule?.config?.bannerUrl || '';
+                const welcomeEmbed2 = new EmbedBuilder()
+                    .setColor(0x57F287)
+                    .setAuthor({ name: '✅  Verificação Concluída', iconURL: interaction.user.displayAvatarURL() })
+                    .setTitle(`Bem-vindo(a), ${interaction.user.username}!`)
+                    .setDescription(`Você foi verificado com sucesso e agora tem acesso completo ao **${interaction.guild!.name}**.\n\n> Aproveite o servidor e bom divertimento! 🎉`)
+                    .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
+                    .setFooter({ text: interaction.guild!.name, iconURL: interaction.guild!.iconURL() || undefined })
+                    .setTimestamp();
+                if (bannerUrl2) welcomeEmbed2.setImage(bannerUrl2);
+                const replyAdv = await interaction.reply({ embeds: [welcomeEmbed2], ephemeral: false, fetchReply: true });
                 setTimeout(() => replyAdv.delete().catch(() => {}), 10000);
                 return;
             } catch (e: any) {
