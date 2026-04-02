@@ -71,13 +71,20 @@ export default {
                 }
                 await member.roles.add(roleId);
                 const bannerUrl1 = verificationModule?.config?.bannerUrl || advancedVerificationModule?.config?.bannerUrl || '';
+                const memberCount1 = interaction.guild!.memberCount;
                 const welcomeEmbed1 = new EmbedBuilder()
                     .setColor(0x57F287)
-                    .setAuthor({ name: '✅  Verificação Concluída', iconURL: interaction.user.displayAvatarURL() })
-                    .setTitle(`Bem-vindo(a), ${interaction.user.username}!`)
-                    .setDescription(`Você foi verificado com sucesso e agora tem acesso completo ao **${interaction.guild!.name}**.\n\n> Aproveite o servidor e bom divertimento! 🎉`)
+                    .setTitle(`🎉 Bem-vindo(a), ${interaction.user.username}!`)
+                    .setDescription(
+                        `Olá <@${interaction.user.id}> 👋\n` +
+                        `» Verificação concluída com sucesso!\n` +
+                        `» Você agora tem acesso completo ao servidor.\n` +
+                        `» Não esqueça de ler as regras do servidor.\n\n` +
+                        `Bom divertimento e seja muito bem-vindo! 🎉`
+                    )
                     .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
-                    .setFooter({ text: interaction.guild!.name, iconURL: interaction.guild!.iconURL() || undefined })
+                    .addFields({ name: '👥 Total de Membros', value: `**${memberCount1}**`, inline: true })
+                    .setFooter({ text: `${interaction.guild!.name} • Verificação`, iconURL: interaction.guild!.iconURL() || undefined })
                     .setTimestamp();
                 if (bannerUrl1) welcomeEmbed1.setImage(bannerUrl1);
                 const replyVerif = await interaction.reply({ embeds: [welcomeEmbed1], ephemeral: false, fetchReply: true });
@@ -115,13 +122,20 @@ export default {
                 }
                 await member.roles.add(roleId);
                 const bannerUrl2 = advModule?.config?.bannerUrl || verModule?.config?.bannerUrl || '';
+                const memberCount2 = interaction.guild!.memberCount;
                 const welcomeEmbed2 = new EmbedBuilder()
                     .setColor(0x57F287)
-                    .setAuthor({ name: '✅  Verificação Concluída', iconURL: interaction.user.displayAvatarURL() })
-                    .setTitle(`Bem-vindo(a), ${interaction.user.username}!`)
-                    .setDescription(`Você foi verificado com sucesso e agora tem acesso completo ao **${interaction.guild!.name}**.\n\n> Aproveite o servidor e bom divertimento! 🎉`)
+                    .setTitle(`🎉 Bem-vindo(a), ${interaction.user.username}!`)
+                    .setDescription(
+                        `Olá <@${interaction.user.id}> 👋\n` +
+                        `» Verificação concluída com sucesso!\n` +
+                        `» Você agora tem acesso completo ao servidor.\n` +
+                        `» Não esqueça de ler as regras do servidor.\n\n` +
+                        `Bom divertimento e seja muito bem-vindo! 🎉`
+                    )
                     .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
-                    .setFooter({ text: interaction.guild!.name, iconURL: interaction.guild!.iconURL() || undefined })
+                    .addFields({ name: '👥 Total de Membros', value: `**${memberCount2}**`, inline: true })
+                    .setFooter({ text: `${interaction.guild!.name} • Verificação`, iconURL: interaction.guild!.iconURL() || undefined })
                     .setTimestamp();
                 if (bannerUrl2) welcomeEmbed2.setImage(bannerUrl2);
                 const replyAdv = await interaction.reply({ embeds: [welcomeEmbed2], ephemeral: false, fetchReply: true });
