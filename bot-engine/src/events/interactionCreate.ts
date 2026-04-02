@@ -92,16 +92,18 @@ export default {
                 const welcomeMod1 = (guildData.modules || []).find((m: any) => m.key === 'welcome_message');
                 const welcomeChannelId1 = welcomeMod1?.config?.channelId;
                 if (welcomeChannelId1) {
-                    const { TextChannel } = await import('discord.js');
-                    const wCh1 = interaction.guild!.channels.cache.get(welcomeChannelId1);
-                    if (wCh1 && 'send' in wCh1) await (wCh1 as any).send({ embeds: [welcomeEmbed1] });
+                    try {
+                        const wCh1 = interaction.guild!.channels.cache.get(welcomeChannelId1)
+                            || await interaction.guild!.channels.fetch(welcomeChannelId1).catch(() => null);
+                        if (wCh1 && 'send' in wCh1) await (wCh1 as any).send({ embeds: [welcomeEmbed1] });
+                    } catch (err) { log.warn('[VERIFICATION] Erro ao enviar no canal de boas-vindas: ' + err); }
+                    return interaction.reply({ content: '✅ Verificação concluída! Seja bem-vindo(a).', ephemeral: true });
                 } else {
                     // Fallback: envia no canal atual e apaga em 10s
                     const replyVerif = await interaction.reply({ embeds: [welcomeEmbed1], ephemeral: false, fetchReply: true });
                     setTimeout(() => replyVerif.delete().catch(() => {}), 10000);
                     return;
                 }
-                return interaction.reply({ content: '✅ Verificação concluída! Seja bem-vindo(a).', ephemeral: true });
             } catch (e: any) {
                 const isMissingPerms = e.message?.includes('Missing Permissions');
                 log.error('[VERIFICATION] Erro ao verificar membro: ' + e.message);
@@ -155,15 +157,18 @@ export default {
                 const welcomeMod2 = (guildData.modules || []).find((m: any) => m.key === 'welcome_message');
                 const welcomeChannelId2 = welcomeMod2?.config?.channelId;
                 if (welcomeChannelId2) {
-                    const wCh2 = interaction.guild!.channels.cache.get(welcomeChannelId2);
-                    if (wCh2 && 'send' in wCh2) await (wCh2 as any).send({ embeds: [welcomeEmbed2] });
+                    try {
+                        const wCh2 = interaction.guild!.channels.cache.get(welcomeChannelId2)
+                            || await interaction.guild!.channels.fetch(welcomeChannelId2).catch(() => null);
+                        if (wCh2 && 'send' in wCh2) await (wCh2 as any).send({ embeds: [welcomeEmbed2] });
+                    } catch (err) { log.warn('[ADV_VERIFICATION] Erro ao enviar no canal de boas-vindas: ' + err); }
+                    return interaction.reply({ content: '✅ Verificação concluída! Seja bem-vindo(a).', ephemeral: true });
                 } else {
                     // Fallback: envia no canal atual e apaga em 10s
                     const replyAdv = await interaction.reply({ embeds: [welcomeEmbed2], ephemeral: false, fetchReply: true });
                     setTimeout(() => replyAdv.delete().catch(() => {}), 10000);
                     return;
                 }
-                return interaction.reply({ content: '✅ Verificação concluída! Seja bem-vindo(a).', ephemeral: true });
             } catch (e: any) {
                 const isMissingPerms = e.message?.includes('Missing Permissions');
                 log.error('[ADV_VERIFICATION] Erro: ' + e.message);
