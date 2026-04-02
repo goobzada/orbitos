@@ -70,7 +70,9 @@ export default {
                     return interaction.reply({ content: '✅ Você já está verificado!', ephemeral: true });
                 }
                 await member.roles.add(roleId);
-                return interaction.reply({ content: '✅ Verificação concluída! Bem-vindo ao servidor.', ephemeral: true });
+                const replyVerif = await interaction.reply({ content: '✅ Verificação concluída! Bem-vindo ao servidor.', ephemeral: false, fetchReply: true });
+                setTimeout(() => replyVerif.delete().catch(() => {}), 10000);
+                return;
             } catch (e: any) {
                 const isMissingPerms = e.message?.includes('Missing Permissions');
                 log.error('[VERIFICATION] Erro ao verificar membro: ' + e.message);
@@ -102,7 +104,9 @@ export default {
                     return interaction.reply({ content: '✅ Você já está verificado!', ephemeral: true });
                 }
                 await member.roles.add(roleId);
-                return interaction.reply({ content: '✅ Verificação concluída! Bem-vindo ao servidor.', ephemeral: true });
+                const replyAdv = await interaction.reply({ content: '✅ Verificação concluída! Bem-vindo ao servidor.', ephemeral: false, fetchReply: true });
+                setTimeout(() => replyAdv.delete().catch(() => {}), 10000);
+                return;
             } catch (e: any) {
                 const isMissingPerms = e.message?.includes('Missing Permissions');
                 log.error('[ADV_VERIFICATION] Erro: ' + e.message);
