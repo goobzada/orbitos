@@ -7,6 +7,8 @@ const authController = new AuthController();
 
 authRoutes.get('/discord', authController.discordLogin);
 authRoutes.get('/discord/callback', authController.discordCallback);
+authRoutes.get('/github', authController.githubLogin);
+authRoutes.get('/github/callback', authController.githubCallback);
 authRoutes.post('/login', authController.mockDiscordLogin);
 authRoutes.post('/oauth-login', authController.oauthLogin);
 authRoutes.post('/discord/callback', authController.discordCallback);

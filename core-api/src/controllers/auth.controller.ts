@@ -121,9 +121,9 @@ export class AuthController {
             return res.status(400).json({ error: 'provider, providerUserId e username são obrigatórios' });
         }
 
-        const validProviders = ['discord', 'google', 'github'];
+        const validProviders = ['discord', 'github'];
         if (!validProviders.includes(provider)) {
-            return res.status(400).json({ error: 'Provider inválido. Use discord, google ou github.' });
+            return res.status(400).json({ error: 'Provider inválido. Use discord ou github.' });
         }
 
         try {
@@ -132,15 +132,12 @@ export class AuthController {
             // 1. Tentar achar por Provider ID específico
             type ProviderWhereClause =
                 | { discordId: string }
-                | { googleId: string }
                 | { githubId: string };
 
             let whereClause: ProviderWhereClause;
 
             if (provider === 'discord') {
                 whereClause = { discordId: providerUserId };
-            } else if (provider === 'google') {
-                whereClause = { googleId: providerUserId };
             } else if (provider === 'github') {
                 whereClause = { githubId: providerUserId };
             } else {
@@ -405,6 +402,162 @@ export class AuthController {
             }
 
             return res.status(500).json({ error: 'Falha interna durante callback do Discord', details: discordErrData || error.message });
+        }
+    }
+
+    // ─── NOVO: Rota de Login Real do GitHub ─────────────────────
+    async githubLogin(req: Request, res: Response) {
+        const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
+        const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || '';
+
+        if (!GITHUB_CLIENT_ID) {
+            return res.status(500).json({ error: 'GITHUB_CLIENT_ID não configurado.' });
+        }
+
+        const params = new URLSearchParams({
+            client_id: GITHUB_CLIENT_ID,
+            scope: 'read:user user:email',
+        });
+
+        if (GITHUB_REDIRECT_URI) {
+            params.append('redirect_uri', GITHUB_REDIRECT_URI);
+        }
+
+        return res.redirect(`https://github.com/login/oauth/authorize?${params.toString()}`);
+    }
+
+    // ─── NOVO: Rota de Callback Real do GitHub ─────────────────────
+    async githubCallback(req: Request, res: Response) {
+        try {
+            const code = req.query.code as string;
+
+            if (!code) {
+                console.error('[AUTH_CALLBACK_GITHUB_ERROR] Código ausente');
+                return res.redirect(302, '/login?error=no_token&detail=github_code_missing');
+            }
+
+            const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
+            const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || '';
+
+            // 1️⃣ Troca "code" por access_token no GitHub
+            const tokenResponse = await axios.post(
+                'https://github.com/login/oauth/access_token',
+                {
+                    client_id: GITHUB_CLIENT_ID,
+                    client_secret: GITHUB_CLIENT_SECRET,
+                    code,
+                },
+                {
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                }
+            );
+
+            const { access_token } = tokenResponse.data;
+
+            if (!access_token) {
+                console.error('[AUTH_CALLBACK_GITHUB_ERROR] Falha ao obter access_token', tokenResponse.data);
+                return res.redirect(302, '/login?error=github_token_failed');
+            }
+
+            // 2️⃣ Busca dados do usuário no GitHub
+            const userResponse = await axios.get('https://api.github.com/user', {
+                headers: {
+                    Authorization: `token ${access_token}`,
+                },
+            });
+
+            const githubUser = userResponse.data;
+
+            // 3️⃣ Busca email principal (GitHub pode retornar null no profile se for privado)
+            let email = githubUser.email;
+            if (!email) {
+                try {
+                    const emailsResponse = await axios.get('https://api.github.com/user/emails', {
+                        headers: { Authorization: `token ${access_token}` },
+                    });
+                    const primaryEmail = emailsResponse.data.find((e: any) => e.primary && e.verified);
+                    email = primaryEmail?.email;
+                } catch (e) {
+                    console.warn('[AUTH_GITHUB] Falha ao buscar emails secundários');
+                }
+            }
+
+            // 4️⃣ Upsert no Prisma
+            const user = await prisma.user.upsert({
+                where: { githubId: String(githubUser.id) },
+                create: {
+                    githubId: String(githubUser.id),
+                    username: githubUser.name || githubUser.login,
+                    avatar: githubUser.avatar_url,
+                    email: email || null,
+                    role: 'USER',
+                },
+                update: {
+                    username: githubUser.name || githubUser.login,
+                    avatar: githubUser.avatar_url,
+                    email: email || null,
+                },
+            });
+
+            // 5️⃣ Garantir Org/Membership OWNER
+            let org = await prisma.organization.findFirst({ where: { ownerId: user.id } });
+
+            if (!org) {
+                org = await prisma.organization.create({
+                    data: {
+                        name: `${user.username}'s HQ`,
+                        ownerId: user.id,
+                        plan: 'FREE'
+                    }
+                });
+
+                await prisma.organizationMember.create({
+                    data: {
+                        organizationId: org.id,
+                        userId: user.id,
+                        role: 'OWNER'
+                    }
+                });
+            } else {
+                await prisma.organizationMember.upsert({
+                    where: { organizationId_userId: { organizationId: org.id, userId: user.id } },
+                    update: {},
+                    create: {
+                        organizationId: org.id,
+                        userId: user.id,
+                        role: 'OWNER'
+                    }
+                });
+            }
+
+            // 6️⃣ Gera JWT
+            const token = jwt.sign(
+                {
+                    id: user.id,
+                    githubId: user.githubId,
+                    role: user.role,
+                    username: user.username,
+                    avatar: user.avatar,
+                },
+                JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+
+            /* FIX B: Use consistent cookie config helper */
+            res.cookie('token', token, {
+                ...getCookieConfig(),
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+            });
+
+            console.log(`[AUTH] ✅ GitHub callback OK — user: ${user.username} (${user.id})`);
+
+            return res.redirect(302, '/dashboard');
+
+        } catch (error: any) {
+            console.error('[AUTH_CALLBACK_GITHUB_ERROR]', error.message || error);
+            return res.redirect(302, `/login?error=github_callback_failed&detail=${encodeURIComponent(error.message || 'unknown')}`);
         }
     }
 

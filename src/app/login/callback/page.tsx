@@ -22,12 +22,12 @@ function CallbackContent() {
          * OAuth code is single-use, so we must prevent duplicate callback POSTs. */
         if (hasProcessedRef.current) return;
 
-        // Discord retornou erro direto na URL
+        // Discord/GitHub retornou erro direto na URL
         if (errorParam) {
             hasProcessedRef.current = true;
-            console.error('[CALLBACK] Discord retornou erro:', errorParam);
-            setErrorMsg(`Discord recusou o acesso: ${errorParam}`);
-            setTimeout(() => router.push('/login?error=discord_denied'), 3000);
+            console.error('[CALLBACK] Provider retornou erro:', errorParam);
+            setErrorMsg(`Acesso recusado: ${errorParam}`);
+            setTimeout(() => router.push('/login?error=auth_denied'), 3000);
             return;
         }
 
@@ -46,9 +46,12 @@ function CallbackContent() {
         hasProcessedRef.current = true;
         processedOAuthCodes.add(code);
 
+        const provider = searchParams.get('provider') || 'discord';
         const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').replace(/\/+$/, '');
-        window.location.replace(`${apiBase}/auth/discord/callback?code=${encodeURIComponent(code)}`);
-    }, [code, errorParam, router]);
+        
+        // Redireciona para o endpoint correto do backend (Discord ou GitHub)
+        window.location.replace(`${apiBase}/auth/${provider}/callback?code=${encodeURIComponent(code)}`);
+    }, [code, errorParam, router, searchParams]);
 
     if (errorMsg) {
         return (
@@ -62,6 +65,8 @@ function CallbackContent() {
         );
     }
 
+    const providerName = searchParams.get('provider') === 'github' ? 'GitHub' : 'Discord';
+
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
             <div className="relative mb-6">
@@ -70,7 +75,7 @@ function CallbackContent() {
                 </div>
                 <div className="absolute inset-0 rounded-full bg-violet-500/5 animate-ping" />
             </div>
-            <h2 className="text-xl font-semibold">Autenticando com Discord</h2>
+            <h2 className="text-xl font-semibold">Autenticando com {providerName}</h2>
             <p className="text-muted-foreground mt-2 text-sm">Aguarde, estamos validando seu acesso...</p>
         </div>
     );
