@@ -67,17 +67,25 @@ const level_system: BaseModule = {
                     : `<@${user.id}> subiu para o nível **${newLevel}**! 🎉`;
 
                 const embed = new EmbedBuilder()
-                    .setColor(0x5865F2)
-                    .setAuthor({ name: `${user.username} subiu de nível!`, iconURL: user.displayAvatarURL({ size: 64 }) })
-                    .setDescription(defaultMsg)
-                    .addFields(
-                        { name: '🏆 Nível', value: `**${newLevel}**`, inline: true },
-                        { name: '📊 Rank no Servidor', value: `**#${rank}**`, inline: true },
-                        { name: '⚡ Próximo Nível', value: `**${xpToNext} XP** necessários`, inline: true },
+                    .setColor(0x6366F1) // Indigo Premium
+                    .setAuthor({ 
+                        name: `Evolução de Nível • ${user.username}`, 
+                        iconURL: user.displayAvatarURL({ size: 64 }) 
+                    })
+                    .setDescription(
+                        `### ✨ Novo Nível Alcançado!\n` +
+                        `Parabéns <@${user.id}>, seu engajamento te levou a um novo patamar na nossa comunidade!\n\n` +
+                        `**ESTATÍSTICAS ATUAIS**\n` +
+                        `╰── Nível Atual: **\` ${newLevel} \`**\n` +
+                        `╰── Posição Global: **\` #${rank} \`**\n\n` +
+                        `**PRÓXIMO OBJETIVO**\n` +
+                        `╰── Faltam **\` ${xpToNext} \`** XP para o próximo nível.`
                     )
-                    .setThumbnail(user.displayAvatarURL({ size: 128 }))
-                    .setFooter({ text: guild.name, iconURL: guild.iconURL() || undefined })
-                    .setTimestamp();
+                    .setThumbnail(user.displayAvatarURL({ size: 256 }))
+                    .setFooter({ 
+                        text: `OrbitUp • Sistema de Engajamento`, 
+                        iconURL: guild.iconURL() || undefined 
+                    });
 
                 // 6. Enviar no canal configurado ou no canal atual
                 let targetChannel: TextChannel | null = null;
