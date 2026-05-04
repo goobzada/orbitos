@@ -86,19 +86,15 @@ export default {
                 const customWelcome1 = verificationModule?.config?.welcomeMessage || advancedVerificationModule?.config?.welcomeMessage || '';
                 const memberCount1 = guild.memberCount;
                 const defaultDesc1 =
-                    `Olá <@${interaction.user.id}> 👋\n\n` +
-                    `» ✨ **Verificação concluída com sucesso!**\n` +
-                    `» 🔓 Você agora tem acesso completo aos canais.\n` +
-                    `» 📜 Não esqueça de ler as diretrizes da comunidade.\n\n` +
-                    `Aproveite sua estadia e seja muito bem-vindo(a)! 🎉`;
+                    `Seja bem-vindo(a), **<@${interaction.user.id}>**!\n\n` +
+                    `Sua identidade foi confirmada e o acesso total à nossa comunidade foi liberado. Esperamos que você tenha uma excelente experiência conosco.\n\n` +
+                    `**Registro nº:** \`#${memberCount1}\``;
                 const welcomeEmbed1 = new EmbedBuilder()
-                    .setColor(0x57F287)
-                    .setTitle(`🎉 Bem-vindo(a), ${interaction.user.username}!`)
+                    .setColor(0x00B0F4)
+                    .setTitle(`✨ Acesso Liberado`)
                     .setDescription(customWelcome1 || defaultDesc1)
                     .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
-                    .addFields({ name: '👥 Total de Membros', value: `**${memberCount1}**`, inline: true })
-                    .setFooter({ text: `${guild.name} • Verificação`, iconURL: guild.iconURL() || undefined })
-                    .setTimestamp();
+                    .setFooter({ text: `${guild.name} • Sistema de Segurança`, iconURL: guild.iconURL() || undefined });
                 if (bannerUrl1) welcomeEmbed1.setImage(bannerUrl1);
                 // Envia no canal de boas-vindas configurado, se existir
                 const welcomeMod1 = (guildData.modules || []).find((m: any) => m.key === 'welcome_message');
@@ -159,19 +155,15 @@ export default {
                 const customWelcome2 = advModule?.config?.welcomeMessage || verModule?.config?.welcomeMessage || '';
                 const memberCount2 = guild.memberCount;
                 const defaultDesc2 =
-                    `Olá <@${interaction.user.id}> 👋\n\n` +
-                    `» ✨ **Verificação concluída com sucesso!**\n` +
-                    `» 🔓 Você agora tem acesso completo aos canais.\n` +
-                    `» 📜 Não esqueça de ler as diretrizes da comunidade.\n\n` +
-                    `Aproveite sua estadia e seja muito bem-vindo(a)! 🎉`;
+                    `Seja bem-vindo(a), **<@${interaction.user.id}>**!\n\n` +
+                    `Sua identidade foi confirmada e o acesso total à nossa comunidade foi liberado. Esperamos que você tenha uma excelente experiência conosco.\n\n` +
+                    `**Registro nº:** \`#${memberCount2}\``;
                 const welcomeEmbed2 = new EmbedBuilder()
-                    .setColor(0x57F287)
-                    .setTitle(`🎉 Bem-vindo(a), ${interaction.user.username}!`)
+                    .setColor(0x00B0F4)
+                    .setTitle(`✨ Acesso Liberado`)
                     .setDescription(customWelcome2 || defaultDesc2)
                     .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
-                    .addFields({ name: '👥 Total de Membros', value: `**${memberCount2}**`, inline: true })
-                    .setFooter({ text: `${guild.name} • Verificação`, iconURL: guild.iconURL() || undefined })
-                    .setTimestamp();
+                    .setFooter({ text: `${guild.name} • Sistema de Segurança`, iconURL: guild.iconURL() || undefined });
                 if (bannerUrl2) welcomeEmbed2.setImage(bannerUrl2);
                 // Envia no canal de boas-vindas configurado, se existir
                 const welcomeMod2 = (guildData.modules || []).find((m: any) => m.key === 'welcome_message');
