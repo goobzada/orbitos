@@ -19,6 +19,10 @@ npm install
 cd core-api && npm install && cd ..
 cd bot-engine && npm install && cd ..
 
+# 🛠️ Correção de permissões críticas
+echo "🔧 Ajustando permissões do Prisma..."
+chmod +x core-api/node_modules/.bin/prisma 2>/dev/null || true
+
 # 4. Gerar Build de tudo
 echo "🏗️ Gerando builds (API, Bot e Web)..."
 npm run build
