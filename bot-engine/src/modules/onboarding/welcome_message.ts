@@ -31,7 +31,7 @@ const welcome_message: BaseModule = {
                 const defaultDesc = 
                     `Olá {user}, ficamos muito felizes em ter você conosco no **{guild}**!\n\n` +
                     `» 📜 **Regras:** Não deixe de conferir nossas diretrizes.\n` +
-                    `» 👥 **Membros:** Agora somos **{memberCount}** integrantes.\n\n` +
+                    `» 👥 **Membros:** Agora somos **{memberCount}** membros.\n\n` +
                     `Sinta-se em casa e aproveite sua estadia! 🎉`;
 
                 const welcomeEmbed = new EmbedBuilder()
