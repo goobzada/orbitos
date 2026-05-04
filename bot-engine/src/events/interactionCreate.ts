@@ -86,11 +86,11 @@ export default {
                 const customWelcome1 = verificationModule?.config?.welcomeMessage || advancedVerificationModule?.config?.welcomeMessage || '';
                 const memberCount1 = guild.memberCount;
                 const defaultDesc1 =
-                    `Olá <@${interaction.user.id}> 👋\n` +
-                    `» Verificação concluída com sucesso!\n` +
-                    `» Você agora tem acesso completo ao servidor.\n` +
-                    `» Não esqueça de ler as regras do servidor.\n\n` +
-                    `Bom divertimento e seja muito bem-vindo! 🎉`;
+                    `Olá <@${interaction.user.id}> 👋\n\n` +
+                    `» ✨ **Verificação concluída com sucesso!**\n` +
+                    `» 🔓 Você agora tem acesso completo aos canais.\n` +
+                    `» 📜 Não esqueça de ler as diretrizes da comunidade.\n\n` +
+                    `Aproveite sua estadia e seja muito bem-vindo(a)! 🎉`;
                 const welcomeEmbed1 = new EmbedBuilder()
                     .setColor(0x57F287)
                     .setTitle(`🎉 Bem-vindo(a), ${interaction.user.username}!`)
@@ -159,11 +159,11 @@ export default {
                 const customWelcome2 = advModule?.config?.welcomeMessage || verModule?.config?.welcomeMessage || '';
                 const memberCount2 = guild.memberCount;
                 const defaultDesc2 =
-                    `Olá <@${interaction.user.id}> 👋\n` +
-                    `» Verificação concluída com sucesso!\n` +
-                    `» Você agora tem acesso completo ao servidor.\n` +
-                    `» Não esqueça de ler as regras do servidor.\n\n` +
-                    `Bom divertimento e seja muito bem-vindo! 🎉`;
+                    `Olá <@${interaction.user.id}> 👋\n\n` +
+                    `» ✨ **Verificação concluída com sucesso!**\n` +
+                    `» 🔓 Você agora tem acesso completo aos canais.\n` +
+                    `» 📜 Não esqueça de ler as diretrizes da comunidade.\n\n` +
+                    `Aproveite sua estadia e seja muito bem-vindo(a)! 🎉`;
                 const welcomeEmbed2 = new EmbedBuilder()
                     .setColor(0x57F287)
                     .setTitle(`🎉 Bem-vindo(a), ${interaction.user.username}!`)

@@ -25,22 +25,34 @@ const welcome_message: BaseModule = {
                 const channel = member.guild.channels.cache.get(channelId) as TextChannel;
                 if (!channel) return;
 
+                const communityName = config.communityName || 'Comunidade';
+                const defaultTitle = `✨ Bem-vindo(a) à nossa ${communityName}!`;
+                
+                const defaultDesc = 
+                    `Olá {user}, ficamos muito felizes em ter você conosco no **{guild}**!\n\n` +
+                    `» 📜 **Regras:** Não deixe de conferir nossas diretrizes.\n` +
+                    `» 👥 **Membros:** Agora somos **{memberCount}** integrantes.\n\n` +
+                    `Sinta-se em casa e aproveite sua estadia! 🎉`;
+
                 const welcomeEmbed = new EmbedBuilder()
-                    .setTitle(config.title || 'Seja bem-vindo!')
+                    .setTitle(config.title || defaultTitle)
                     .setDescription(
-                        (config.description || 'Olá {user}, seja muito bem-vindo ao servidor {guild}!')
-                            .replace('{user}', member.user.toString())
-                            .replace('{guild}', member.guild.name)
-                            .replace('{memberCount}', member.guild.memberCount.toString())
+                        (config.description || defaultDesc)
+                            .replace(/{user}/g, member.user.toString())
+                            .replace(/{guild}/g, member.guild.name)
+                            .replace(/{community}/g, communityName)
+                            .replace(/{memberCount}/g, member.guild.memberCount.toString())
                     )
                     .setColor(config.color || '#5865F2')
-                    .setThumbnail(member.user.displayAvatarURL());
+                    .setThumbnail(member.user.displayAvatarURL({ size: 256 }));
 
                 if (config.imageUrl) welcomeEmbed.setImage(config.imageUrl);
-                if (config.footer) welcomeEmbed.setFooter({ text: config.footer });
+                
+                const footerText = config.footer || `${member.guild.name} • Experiência Exclusiva`;
+                welcomeEmbed.setFooter({ text: footerText, iconURL: member.guild.iconURL() || undefined });
 
                 await channel.send({ content: config.mentionUser ? member.user.toString() : undefined, embeds: [welcomeEmbed] });
-                log.info(`[WELCOME] ✉️ Mensagem enviada para ${member.user.tag} no servidor ${member.guild.name}`);
+                log.info(`[WELCOME] ✉️ Mensagem elegante enviada para ${member.user.tag}`);
 
             } catch (error: any) {
                 log.error(`[WELCOME] ❌ Erro ao processar boas-vindas para ${member.user.tag}: ${error.message}`);
