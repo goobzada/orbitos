@@ -52,6 +52,7 @@ const verification_module: BaseModule = {
 
                 // ── Botões ─────────────────────────────────────────────────────
                 const components: ActionRowBuilder<ButtonBuilder>[] = [];
+                const guildId = member.guild.id;
 
                 if (isAdvanced && externalUrl) {
                     // Link para URL externa + botão de confirmação
@@ -61,7 +62,7 @@ const verification_module: BaseModule = {
                         new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder().setLabel(linkLabel).setStyle(ButtonStyle.Link).setURL(externalUrl),
                             new ButtonBuilder()
-                                .setCustomId(`advanced_verify_confirm_${member.guild.id}`)
+                                .setCustomId(`advanced_verify_confirm_${guildId}`)
                                 .setLabel(confirmLabel)
                                 .setStyle(ButtonStyle.Success)
                         )
@@ -72,15 +73,27 @@ const verification_module: BaseModule = {
                     components.push(
                         new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()
-                                .setCustomId('verification_verify')
+                                .setCustomId(`verification_verify_${guildId}`)
                                 .setLabel(btnLabel)
                                 .setStyle(ButtonStyle.Success)
                         )
                     );
                 }
 
-                await channel.send({ content: `<@${member.id}>`, embeds: [embed], components });
-                log.info(`[VERIFICATION] ✅ Painel enviado para ${member.user.tag} em ${member.guild.name}`);
+                // Tentar enviar por DM primeiro para ser privado
+                try {
+                    await member.send({ embeds: [embed], components });
+                    log.info(`[VERIFICATION] ✅ Painel enviado via DM para ${member.user.tag}`);
+                } catch (dmError) {
+                    // Se DM falhar (bloqueada), envia no canal
+                    const sentMessage = await channel.send({ content: `<@${member.id}>`, embeds: [embed], components });
+                    log.info(`[VERIFICATION] ✅ DM bloqueada, painel enviado no canal para ${member.user.tag}`);
+                    
+                    // Opcional: auto-deletar após 15 minutos se não verificado para manter o canal limpo
+                    setTimeout(() => {
+                        sentMessage.delete().catch(() => {});
+                    }, 15 * 60 * 1000);
+                }
 
             } catch (error: any) {
                 log.error(`[VERIFICATION] ❌ Erro ao enviar painel para ${member.user.tag}: ${error.message}`);

@@ -1,4 +1,4 @@
-﻿import {
+import {
     Events,
     Interaction,
     ButtonBuilder,
@@ -49,11 +49,13 @@ export default {
             return;
         }
 
-        // ── VERIFICAÇÃO SIMPLES (customId: verification_verify) ───────────────────
-        if (interaction.isButton() && interaction.customId === 'verification_verify') {
-            if (!interaction.guildId) return;
+        // ── VERIFICAÇÃO SIMPLES (customId: verification_verify ou verification_verify_GUILDID) ───
+        if (interaction.isButton() && (interaction.customId === 'verification_verify' || interaction.customId.startsWith('verification_verify_'))) {
+            const guildId = interaction.guildId || interaction.customId.split('_').pop();
+            if (!guildId) return;
+            
             try {
-                const { data: guildData } = await coreApi.get(`/internal/guilds/${interaction.guildId}/modules`);
+                const { data: guildData } = await coreApi.get(`/internal/guilds/${guildId}/modules`);
                 const verificationModule = (guildData.modules || []).find((m: any) => m.key === 'verification');
                 const advancedVerificationModule = (guildData.modules || []).find((m: any) => m.key === 'advanced_verification');
                 const roleId = verificationModule?.config?.roleId
@@ -61,18 +63,28 @@ export default {
                     || advancedVerificationModule?.config?.roleId
                     || advancedVerificationModule?.config?.requiredRole
                     || '';
+                
                 if (!roleId) {
-                    return interaction.reply({ content: '❌ Cargo de verificação não configurado.\n\n**Como configurar:**\n1. Acesse o Dashboard → Security → Verificação Avançada\n2. Preencha o campo **"Cargo de Verificado (ID)"** com o ID do cargo do Discord\n3. Clique em **Salvar Alterações**\n4. Teste novamente este botão\n\n💡 Para copiar o ID do cargo: Discord → Configurações do Servidor → Cargos → clique direito no cargo → **Copiar ID**', ephemeral: true });
+                    const setupMsg = '❌ Cargo de verificação não configurado.\n\n**Como configurar:**\n1. Acesse o Dashboard → Security → Verificação Avançada\n2. Preencha o campo **"Cargo de Verificado (ID)"** com o ID do cargo do Discord\n3. Clique em **Salvar Alterações**\n4. Teste novamente este botão';
+                    return interaction.reply({ content: setupMsg, ephemeral: true });
                 }
-                const member = await interaction.guild?.members.fetch(interaction.user.id);
+
+                const guild = interaction.client.guilds.cache.get(guildId) || await interaction.client.guilds.fetch(guildId);
+                const member = await guild.members.fetch(interaction.user.id);
                 if (!member) return interaction.reply({ content: '❌ Não foi possível encontrar seu perfil no servidor.', ephemeral: true });
                 if (member.roles.cache.has(roleId)) {
                     return interaction.reply({ content: '✅ Você já está verificado!', ephemeral: true });
                 }
                 await member.roles.add(roleId);
+
+                // Se for auto-verificação (tem ID no customId), apaga a mensagem original
+                if (interaction.customId.includes('_') && interaction.message.deletable) {
+                    interaction.message.delete().catch(() => {});
+                }
+
                 const bannerUrl1 = verificationModule?.config?.bannerUrl || advancedVerificationModule?.config?.bannerUrl || '';
                 const customWelcome1 = verificationModule?.config?.welcomeMessage || advancedVerificationModule?.config?.welcomeMessage || '';
-                const memberCount1 = interaction.guild!.memberCount;
+                const memberCount1 = guild.memberCount;
                 const defaultDesc1 =
                     `Olá <@${interaction.user.id}> 👋\n` +
                     `» Verificação concluída com sucesso!\n` +
@@ -85,7 +97,7 @@ export default {
                     .setDescription(customWelcome1 || defaultDesc1)
                     .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
                     .addFields({ name: '👥 Total de Membros', value: `**${memberCount1}**`, inline: true })
-                    .setFooter({ text: `${interaction.guild!.name} • Verificação`, iconURL: interaction.guild!.iconURL() || undefined })
+                    .setFooter({ text: `${guild.name} • Verificação`, iconURL: guild.iconURL() || undefined })
                     .setTimestamp();
                 if (bannerUrl1) welcomeEmbed1.setImage(bannerUrl1);
                 // Envia no canal de boas-vindas configurado, se existir
@@ -93,8 +105,8 @@ export default {
                 const welcomeChannelId1 = welcomeMod1?.config?.channelId;
                 if (welcomeChannelId1) {
                     try {
-                        const wCh1 = interaction.guild!.channels.cache.get(welcomeChannelId1)
-                            || await interaction.guild!.channels.fetch(welcomeChannelId1).catch(() => null);
+                        const wCh1 = guild.channels.cache.get(welcomeChannelId1)
+                            || await guild.channels.fetch(welcomeChannelId1).catch(() => null);
                         if (wCh1 && 'send' in wCh1) await (wCh1 as any).send({ embeds: [welcomeEmbed1] });
                     } catch (err) { log.warn('[VERIFICATION] Erro ao enviar no canal de boas-vindas: ' + err); }
                     return interaction.reply({ content: '✅ Verificação concluída! Seja bem-vindo(a).', ephemeral: true });
@@ -116,9 +128,10 @@ export default {
 
         // ── VERIFICAÇÃO AVANÇADA — CONFIRMAÇÃO (customId: advanced_verify_confirm_GUILDID) ───
         if (interaction.isButton() && interaction.customId.startsWith('advanced_verify_confirm_')) {
-            if (!interaction.guildId) return;
+            const guildId = interaction.guildId || interaction.customId.split('_').pop();
+            if (!guildId) return;
             try {
-                const { data: guildData } = await coreApi.get(`/internal/guilds/${interaction.guildId}/modules`);
+                const { data: guildData } = await coreApi.get(`/internal/guilds/${guildId}/modules`);
                 const advModule = (guildData.modules || []).find((m: any) => m.key === 'advanced_verification');
                 const verModule = (guildData.modules || []).find((m: any) => m.key === 'verification');
                 const roleId = advModule?.config?.requiredRole
@@ -129,15 +142,22 @@ export default {
                 if (!roleId) {
                     return interaction.reply({ content: '❌ Cargo de verificação não configurado. Configure o campo **Required Role** em **Dashboard → Módulos → Verificação Avançada**.', ephemeral: true });
                 }
-                const member = await interaction.guild?.members.fetch(interaction.user.id);
+                const guild = interaction.client.guilds.cache.get(guildId) || await interaction.client.guilds.fetch(guildId);
+                const member = await guild.members.fetch(interaction.user.id);
                 if (!member) return interaction.reply({ content: '❌ Não foi possível encontrar seu perfil no servidor.', ephemeral: true });
                 if (member.roles.cache.has(roleId)) {
                     return interaction.reply({ content: '✅ Você já está verificado!', ephemeral: true });
                 }
                 await member.roles.add(roleId);
+
+                // Apaga a mensagem original de verificação (sempre tem guildId no customId para Advanced)
+                if (interaction.message.deletable) {
+                    interaction.message.delete().catch(() => {});
+                }
+
                 const bannerUrl2 = advModule?.config?.bannerUrl || verModule?.config?.bannerUrl || '';
                 const customWelcome2 = advModule?.config?.welcomeMessage || verModule?.config?.welcomeMessage || '';
-                const memberCount2 = interaction.guild!.memberCount;
+                const memberCount2 = guild.memberCount;
                 const defaultDesc2 =
                     `Olá <@${interaction.user.id}> 👋\n` +
                     `» Verificação concluída com sucesso!\n` +
@@ -150,7 +170,7 @@ export default {
                     .setDescription(customWelcome2 || defaultDesc2)
                     .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
                     .addFields({ name: '👥 Total de Membros', value: `**${memberCount2}**`, inline: true })
-                    .setFooter({ text: `${interaction.guild!.name} • Verificação`, iconURL: interaction.guild!.iconURL() || undefined })
+                    .setFooter({ text: `${guild.name} • Verificação`, iconURL: guild.iconURL() || undefined })
                     .setTimestamp();
                 if (bannerUrl2) welcomeEmbed2.setImage(bannerUrl2);
                 // Envia no canal de boas-vindas configurado, se existir
@@ -158,8 +178,8 @@ export default {
                 const welcomeChannelId2 = welcomeMod2?.config?.channelId;
                 if (welcomeChannelId2) {
                     try {
-                        const wCh2 = interaction.guild!.channels.cache.get(welcomeChannelId2)
-                            || await interaction.guild!.channels.fetch(welcomeChannelId2).catch(() => null);
+                        const wCh2 = guild.channels.cache.get(welcomeChannelId2)
+                            || await guild.channels.fetch(welcomeChannelId2).catch(() => null);
                         if (wCh2 && 'send' in wCh2) await (wCh2 as any).send({ embeds: [welcomeEmbed2] });
                     } catch (err) { log.warn('[ADV_VERIFICATION] Erro ao enviar no canal de boas-vindas: ' + err); }
                     return interaction.reply({ content: '✅ Verificação concluída! Seja bem-vindo(a).', ephemeral: true });
