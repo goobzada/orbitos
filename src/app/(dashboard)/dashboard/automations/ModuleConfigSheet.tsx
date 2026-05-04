@@ -409,10 +409,27 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
                                                     <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">URL da Imagem (Banner)</Label>
                                                     <Input
                                                         className="h-9 bg-slate-950 border-slate-800 font-mono text-xs text-slate-400"
-                                                        placeholder="https://..."
+                                                        placeholder="https://... (link direto .png ou .jpg)"
                                                         value={config.imageUrl || ''}
                                                         onChange={(e) => setConfig({ ...config, imageUrl: e.target.value })}
                                                     />
+                                                    <p className="text-[9px] text-slate-500 italic">💡 Use links diretos (terminados em .png, .jpg ou .gif).</p>
+                                                    
+                                                    {config.imageUrl && (
+                                                        <div className="mt-2 relative rounded-lg overflow-hidden border border-slate-800 bg-slate-950/50 aspect-video flex items-center justify-center">
+                                                            <img 
+                                                                src={config.imageUrl} 
+                                                                alt="Preview" 
+                                                                className="max-h-full max-w-full object-contain"
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                                }}
+                                                            />
+                                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                                                                <Layout className="h-8 w-8 text-slate-500" />
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Posição da Imagem</Label>
