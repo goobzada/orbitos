@@ -43,16 +43,27 @@ const welcome_message: BaseModule = {
                             .replace(/{community}/g, communityName)
                             .replace(/{memberCount}/g, member.guild.memberCount.toString())
                     )
-                    .setColor(config.color || '#5865F2')
-                    .setThumbnail(member.user.displayAvatarURL({ size: 256 }));
+                    .setColor(config.color || '#5865F2');
 
-                if (config.imageUrl) welcomeEmbed.setImage(config.imageUrl);
+                // Lógica de Imagem/Banner/Thumbnail
+                if (config.imageUrl) {
+                    if (config.imagePosition === 'top') {
+                        welcomeEmbed.setThumbnail(config.imageUrl);
+                    } else {
+                        welcomeEmbed.setImage(config.imageUrl);
+                        // Se for banner largo, ainda podemos mostrar o avatar do user como miniatura
+                        welcomeEmbed.setThumbnail(member.user.displayAvatarURL({ size: 256 }));
+                    }
+                } else {
+                    // Padrão: mostra apenas avatar do usuário
+                    welcomeEmbed.setThumbnail(member.user.displayAvatarURL({ size: 256 }));
+                }
                 
                 const footerText = config.footer || `${member.guild.name} • Experiência Exclusiva`;
                 welcomeEmbed.setFooter({ text: footerText, iconURL: member.guild.iconURL() || undefined });
 
                 await channel.send({ content: config.mentionUser ? member.user.toString() : undefined, embeds: [welcomeEmbed] });
-                log.info(`[WELCOME] ✉️ Mensagem elegante enviada para ${member.user.tag}`);
+                log.info(`[WELCOME] ✉️ Mensagem elegante com imagem enviada para ${member.user.tag}`);
 
             } catch (error: any) {
                 log.error(`[WELCOME] ❌ Erro ao processar boas-vindas para ${member.user.tag}: ${error.message}`);

@@ -397,6 +397,46 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <div className="space-y-4 pt-4 border-t border-slate-800/50">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Layout className="h-3 w-3 text-pink-400" />
+                                                <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Imagens & Branding</h4>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">URL da Imagem (Banner)</Label>
+                                                    <Input
+                                                        className="h-9 bg-slate-950 border-slate-800 font-mono text-xs text-slate-400"
+                                                        placeholder="https://..."
+                                                        value={config.imageUrl || ''}
+                                                        onChange={(e) => setConfig({ ...config, imageUrl: e.target.value })}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Posição da Imagem</Label>
+                                                    <select
+                                                        className="w-full h-9 rounded-md bg-slate-950 border border-slate-800 px-3 text-xs text-slate-400 outline-none focus:border-pink-500 transition-all"
+                                                        value={config.imagePosition || 'bottom'}
+                                                        onChange={(e) => setConfig({ ...config, imagePosition: e.target.value })}
+                                                    >
+                                                        <option value="bottom">Banner Largo (Rodapé)</option>
+                                                        <option value="top">Miniatura (Topo Direita)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Texto do Rodapé (Footer)</Label>
+                                                <Input
+                                                    className="h-9 bg-slate-950 border-slate-800 text-xs text-slate-400"
+                                                    placeholder="OrbitOS • Experiência Exclusiva"
+                                                    value={config.footer || ''}
+                                                    onChange={(e) => setConfig({ ...config, footer: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
