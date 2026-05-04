@@ -370,9 +370,9 @@ export default {
                     try {
                         const embed = new EmbedBuilder()
                             .setTitle(translation.name)
-                            .setDescription(translation.description + '\n\nClique no botão abaixo para interagir.')
+                            .setDescription(translation.description)
                             .setColor(0x00B0F4)
-                            .setFooter({ text: `OrbitOS • ${lang}` });
+                            .setFooter({ text: `OrbitUp • Sistema de Segurança`, iconURL: interaction.guild?.iconURL() || undefined });
 
                         const components: ActionRowBuilder<any>[] = [];
 
