@@ -47,10 +47,20 @@ const welcome_message: BaseModule = {
 
                 // Lógica de Imagem/Banner/Thumbnail
                 if (config.imageUrl) {
+                    let finalImageUrl = config.imageUrl;
+                    
+                    // Auto-fix common imgur links
+                    if (finalImageUrl.includes('imgur.com/') && !finalImageUrl.includes('i.imgur.com')) {
+                        const id = finalImageUrl.split('/').pop();
+                        if (id && !id.includes('.')) {
+                            finalImageUrl = `https://i.imgur.com/${id}.png`;
+                        }
+                    }
+
                     if (config.imagePosition === 'top') {
-                        welcomeEmbed.setThumbnail(config.imageUrl);
+                        welcomeEmbed.setThumbnail(finalImageUrl);
                     } else {
-                        welcomeEmbed.setImage(config.imageUrl);
+                        welcomeEmbed.setImage(finalImageUrl);
                         // Se for banner largo, ainda podemos mostrar o avatar do user como miniatura
                         welcomeEmbed.setThumbnail(member.user.displayAvatarURL({ size: 256 }));
                     }

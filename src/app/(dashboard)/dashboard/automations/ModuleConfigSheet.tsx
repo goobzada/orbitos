@@ -411,7 +411,17 @@ export function ModuleConfigSheet({ isOpen, onClose, module, organizationId }: M
                                                         className="h-9 bg-slate-950 border-slate-800 font-mono text-xs text-slate-400"
                                                         placeholder="https://... (link direto .png ou .jpg)"
                                                         value={config.imageUrl || ''}
-                                                        onChange={(e) => setConfig({ ...config, imageUrl: e.target.value })}
+                                                        onChange={(e) => {
+                                                            let val = e.target.value;
+                                                            // Auto-fix common imgur links
+                                                            if (val.includes('imgur.com/') && !val.includes('i.imgur.com')) {
+                                                                const id = val.split('/').pop();
+                                                                if (id && !id.includes('.')) {
+                                                                    val = `https://i.imgur.com/${id}.png`;
+                                                                }
+                                                            }
+                                                            setConfig({ ...config, imageUrl: val });
+                                                        }}
                                                     />
                                                     <p className="text-[9px] text-slate-500 italic">💡 Use links diretos (terminados em .png, .jpg ou .gif).</p>
                                                     
