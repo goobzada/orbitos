@@ -147,10 +147,10 @@ export const UI_STRINGS: Record<string, any> = {
         openDashboard: 'Abrir Dashboard',
         placeholder: 'Escolha um módulo para enviar...',
         deploySuccess: '✅ Painel enviado com sucesso!',
-        apiOffline: '❌ **API offline** — O servidor OrbitOS não está respondendo.',
-        notLinked: '❌ **Servidor não vinculado** — Este servidor Discord não está associado a nenhuma organização.',
-        authFailed: '❌ **Autenticação interna falhou**.',
-        unexpected: '❌ Erro inesperado ao buscar configuração do servidor.'
+        apiOffline: '📡 **Instabilidade na Conexão** — Não foi possível estabelecer comunicação com os serviços centrais da OrbitUp.',
+        notLinked: '🛰️ **Sincronização Necessária** — Este servidor ainda não foi vinculado ao ecossistema OrbitUp.',
+        authFailed: '🔒 **Acesso Restrito** — Falha na autenticação das credenciais de integração.',
+        unexpected: '⚠️ **Erro de Processamento** — Ocorreu uma falha inesperada ao sincronizar os dados.'
     },
     'en-US': {
         title: '⚙️ Control Center — OrbitOS',
@@ -163,10 +163,10 @@ export const UI_STRINGS: Record<string, any> = {
         openDashboard: 'Open Dashboard',
         placeholder: 'Choose a module to send...',
         deploySuccess: '✅ Panel sent successfully!',
-        apiOffline: '❌ **API offline** — OrbitOS server is not responding.',
-        notLinked: '❌ **Server not linked** — This Discord server is not associated with any organization.',
-        authFailed: '❌ **Internal authentication failed**.',
-        unexpected: '❌ Unexpected error fetching server configuration.'
+        apiOffline: '📡 **Connection Instability** — Could not establish communication with OrbitUp central services.',
+        notLinked: '🛰️ **Sync Required** — This server has not been linked to the OrbitUp ecosystem yet.',
+        authFailed: '🔒 **Restricted Access** — Integration credentials authentication failed.',
+        unexpected: '⚠️ **Processing Error** — An unexpected failure occurred while syncing data.'
     },
     'es-ES': {
         title: '⚙️ Centro de Control — OrbitOS',
@@ -179,10 +179,10 @@ export const UI_STRINGS: Record<string, any> = {
         openDashboard: 'Abrir Panel',
         placeholder: 'Elija un módulo para enviar...',
         deploySuccess: '✅ ¡Panel enviado con éxito!',
-        apiOffline: '❌ **API fuera de línea** — El servidor OrbitOS no responde.',
-        notLinked: '❌ **Servidor no vinculado** — Este servidor de Discord no está asociado a ninguna organización.',
-        authFailed: '❌ **Error de autenticación interna**.',
-        unexpected: '❌ Error inesperado al obtener la configuración del servidor.'
+        apiOffline: '📡 **Instabilidade de Conexión** — No se pudo establecer comunicación con los servicios centrales de OrbitUp.',
+        notLinked: '🛰️ **Sincronización Necesaria** — Este servidor aún no ha sido vinculado al ecosistema OrbitUp.',
+        authFailed: '🔒 **Acceso Restringido** — Falló la autenticación de las credenciales de integración.',
+        unexpected: '⚠️ **Error de Procesamiento** — Ocurrió un fallo inesperado al sincronizar los datos.'
     }
 };
 

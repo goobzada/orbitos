@@ -95,25 +95,27 @@ export default {
 
             if (!error.response) {
                 errorEmbed = new EmbedBuilder()
-                    .setColor(0xFF4444)
-                    .setTitle('⚠️ API Offline')
-                    .setDescription('O servidor OrbitOS não está respondendo no momento.\n\nTente novamente em alguns instantes ou verifique o status em [orbitup.io](https://orbitup.io).')
-                    .setFooter({ text: 'OrbitOS • status.orbitup.io' });
+                    .setColor(0xFF5F5F) // Soft Red Premium
+                    .setTitle('📡 Instabilidade na Conexão')
+                    .setDescription(
+                        `Não foi possível estabelecer uma comunicação com os serviços centrais da **OrbitUp**.\n\n` +
+                        `Isso pode ocorrer devido a manutenções programadas ou instabilidade temporária na rede. Nossa equipe técnica já foi notificada.`
+                    )
+                    .setFooter({ text: 'OrbitUp • Central de Status: status.orbitup.io' });
 
             } else if (status === 404) {
                 errorEmbed = new EmbedBuilder()
                     .setColor(0xFFAA00)
-                    .setTitle('🔗 Servidor não vinculado')
+                    .setTitle('🛰️ Sincronização Necessária')
                     .setDescription(
-                        `Este servidor Discord (**${interaction.guild?.name || interaction.guildId}**) ainda não está associado a nenhuma organização OrbitOS.\n\n` +
-                        `**Para vincular este servidor:**\n` +
-                        `1️⃣ Acesse o painel em [orbitup.io](${dashboardUrl})\n` +
-                        `2️⃣ Vá em **Servidores → Adicionar Servidor**\n` +
-                        `3️⃣ Use o Guild ID: \`${interaction.guildId}\`\n\n` +
-                        `Após vincular, use \`/painel\` novamente.`
+                        `Este servidor Discord ainda não foi vinculado ao ecossistema da **OrbitUp**.\n\n` +
+                        `**Para iniciar a integração:**\n` +
+                        `╰── Acesse o painel em [orbitup.io](${dashboardUrl})\n` +
+                        `╰── Vá em **Servidores → Vincular Novo**\n` +
+                        `╰── Utilize o ID: **\`${interaction.guildId}\`**\n\n` +
+                        `Após o vínculo, as automações estarão prontas para uso.`
                     )
-                    .setFooter({ text: `Guild ID: ${interaction.guildId}` })
-                    .setTimestamp();
+                    .setFooter({ text: `ID do Servidor: ${interaction.guildId}` });
 
                 const linkBtn = new ButtonBuilder()
                     .setLabel('Vincular Agora')
@@ -126,14 +128,14 @@ export default {
 
             } else if (status === 401 || status === 403) {
                 errorEmbed = new EmbedBuilder()
-                    .setColor(0xFF4444)
-                    .setTitle('🔒 Erro de Autenticação')
-                    .setDescription('Falha na autenticação interna. Contate o administrador da plataforma.');
+                    .setColor(0xFF5F5F)
+                    .setTitle('🔒 Acesso Restrito')
+                    .setDescription('As credenciais deste servidor são inválidas ou o acesso foi revogado. Por favor, verifique as chaves de integração no Dashboard.');
             } else {
                 errorEmbed = new EmbedBuilder()
-                    .setColor(0xFF4444)
-                    .setTitle('❌ Erro Inesperado')
-                    .setDescription(`Não foi possível carregar a configuração deste servidor.\nCódigo: \`${status || 'UNKNOWN'}\``);
+                    .setColor(0xFF5F5F)
+                    .setTitle('⚠️ Erro de Processamento')
+                    .setDescription(`Ocorreu uma falha inesperada ao processar sua solicitação.\nCódigo de Rastreio: **\`${status || 'UNKNOWN'}\`**`);
             }
 
             return interaction.editReply({ embeds: [errorEmbed] });

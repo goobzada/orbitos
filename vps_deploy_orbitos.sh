@@ -34,3 +34,4 @@ pm2 save
 echo "✅ DEPLOY DO ORBITOS FINALIZADO COM SUCESSO!"
 echo "📍 Web: Porta 3001"
 echo "📍 API: Porta 4000"
+
