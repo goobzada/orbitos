@@ -22,12 +22,11 @@ if (!INTERNAL_KEY || INTERNAL_KEY.trim() === '') {
     }
 }
 
-const RESOLVED_KEY = INTERNAL_KEY || (process.env.NODE_ENV === 'production' ? '' : 'saasbot-internal-dev-only');
-
 export const internalMiddleware = (req: Request, res: Response, next: NextFunction): void => {
     const key = req.headers['x-internal-service-key'];
+    const RESOLVED_KEY = (process.env.INTERNAL_SERVICE_KEY || '').trim();
 
-    if (!RESOLVED_KEY || !key || key !== RESOLVED_KEY) {
+    if (!RESOLVED_KEY || !key || key.toString().trim() !== RESOLVED_KEY) {
         console.warn(`[INTERNAL] ⛔ Tentativa de acesso interno com chave inválida. IP: ${req.ip}`);
         res.status(403).json({ error: 'Acesso interno restrito. Service key inválida.' });
         return;

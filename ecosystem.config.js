@@ -9,6 +9,10 @@ module.exports = {
             env: {
                 NODE_ENV: "production",
                 PORT: 4000
+            },
+            env_production: {
+                NODE_ENV: "production",
+                PORT: 4000
             }
         },
         {
@@ -19,6 +23,9 @@ module.exports = {
             watch: false,
             env: {
                 NODE_ENV: "production"
+            },
+            env_production: {
+                NODE_ENV: "production"
             }
         },
         {
@@ -28,6 +35,10 @@ module.exports = {
             args: "start",
             watch: false,
             env: {
+                NODE_ENV: "production",
+                PORT: 3001
+            },
+            env_production: {
                 NODE_ENV: "production",
                 PORT: 3001
             }
