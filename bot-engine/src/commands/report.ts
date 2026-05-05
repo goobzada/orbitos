@@ -47,39 +47,54 @@ export default {
             return autoDelete('❌ O canal de denúncias não está configurado. Acesse o Dashboard → Support → Denúncias → configure o canal.');
         }
 
-        // Montar o embed da denúncia
+        // Montar o embed da denúncia (Para a Staff)
         const reportEmbed = new EmbedBuilder()
             .setColor(0xFF4040)
-            .setTitle('🚨 Nova Denúncia Recebida')
-            .addFields(
-                { name: '👤 Reportado', value: `<@${target.id}> (${target.username})`, inline: true },
-                { name: anonymous ? '🕵️ Denunciante' : '👮 Denunciante', value: anonymous ? '*(anônimo)*' : `<@${interaction.user.id}> (${interaction.user.username})`, inline: true },
-                { name: '📋 Motivo', value: motivo },
-            )
+            .setTitle('🚨 Denúncia de Membro — Central de Segurança')
             .setThumbnail(target.displayAvatarURL({ size: 128 }))
-            .setFooter({ text: `Servidor: ${interaction.guild?.name} • Canal: #${(interaction.channel as any)?.name || 'desconhecido'}` })
+            .addFields(
+                { name: '👤 Indivíduo Reportado', value: `<@${target.id}>\nID: \`${target.id}\``, inline: true },
+                { name: anonymous ? '🕵️ Autor da Denúncia' : '👮 Autor da Denúncia', value: anonymous ? '*(Mantido em Sigilo)*' : `<@${interaction.user.id}>\nID: \`${interaction.user.id}\``, inline: true },
+                { name: '📋 Detalhamento do Motivo', value: `\`\`\`${motivo}\`\`\`` },
+            )
+            .setFooter({ text: `Protocolo OrbitUp • Local: #${(interaction.channel as any)?.name || 'desconhecido'}` })
             .setTimestamp();
 
         if (evidencia) {
-            reportEmbed.addFields({ name: '🔗 Evidência', value: evidencia });
+            reportEmbed.addFields({ name: '🔗 Evidências Anexadas', value: evidencia });
         }
 
-        // Enviar no canal de denúncias
+        // Enviar no canal de denúncias (Secret Staff Channel)
         try {
             const reportCh = interaction.guild!.channels.cache.get(reportChannelId)
                 || await interaction.guild!.channels.fetch(reportChannelId).catch(() => null);
 
             if (!reportCh || !('send' in reportCh)) {
-                return autoDelete('❌ Não consegui acessar o canal de denúncias. Verifique as permissões do bot.');
+                return interaction.reply({ 
+                    content: '❌ **Erro de Configuração:** O canal de denúncias não foi encontrado ou está inacessível para a staff.', 
+                    ephemeral: true 
+                });
             }
 
             await (reportCh as TextChannel).send({ embeds: [reportEmbed] });
+            
+            // Sucesso Privado (Apenas o usuário vê)
+            const successEmbed = new EmbedBuilder()
+                .setColor(0x2ECC71)
+                .setTitle('✅ Denúncia Enviada com Sucesso')
+                .setDescription(
+                    'Sua denúncia foi processada e enviada diretamente para a nossa equipe de moderação.\n\n' +
+                    '🛡️ **Privacidade Garantida**: Esta mensagem é visível apenas para você. Ninguém mais no canal sabe que você realizou esta denúncia.'
+                )
+                .setFooter({ text: 'OrbitUp • Mantendo a comunidade segura' });
+
+            await interaction.reply({ embeds: [successEmbed], ephemeral: true });
+            
             log.event(`[REPORT] ${interaction.user.tag} reportou ${target.tag} em ${interaction.guild?.name}`);
+
         } catch (err: any) {
             log.error('[REPORT] Erro ao enviar denúncia: ' + err.message);
-            return autoDelete('❌ Erro ao enviar a denúncia. Tente novamente.');
+            return interaction.reply({ content: '❌ Ocorreu uma falha ao processar sua denúncia. Tente novamente mais tarde.', ephemeral: true });
         }
-
-        return autoDelete('✅ Sua denúncia foi enviada com sucesso para a equipe. Obrigado por ajudar a manter a comunidade segura!');
     }
 };

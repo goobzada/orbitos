@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder, CommandInteraction, Client } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, ChatInputCommandInteraction, Client } from 'discord.js';
 import coreApi from '../utils/api-client';
 import { UI_STRINGS } from '../utils/translations';
 
@@ -12,7 +12,7 @@ export default {
                 .setRequired(false)
         ),
 
-    async execute(interaction: CommandInteraction) {
+    async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply();
 
         const targetUser = interaction.options.getUser('usuario') || interaction.user;
