@@ -85,8 +85,8 @@ export default {
             return interaction.editReply({ embeds: [embed], components: [row] });
 
         } catch (error: any) {
-            console.error('[PainelCmd] ❌ Erro:', error?.response?.data || error?.message);
-
+            console.error('[PainelCmd] ❌ Erro Detalhado:', error?.response?.data || error);
+            
             const status = error?.response?.status;
             const dashboardUrl = process.env.DASHBOARD_URL || 'https://orbitup.io';
 
