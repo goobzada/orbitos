@@ -23,11 +23,15 @@ if (!INTERNAL_KEY || INTERNAL_KEY.trim() === '') {
 }
 
 export const internalMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-    const key = req.headers['x-internal-service-key'];
+    const key = req.headers['x-internal-service-key'] as string;
     const RESOLVED_KEY = (process.env.INTERNAL_SERVICE_KEY || '').trim();
 
+    // Diagnóstico temporário para resolver o problema de conexão
+    const receivedSnippet = key ? `${key.substring(0, 4)}...` : 'AUSENTE';
+    const expectedSnippet = RESOLVED_KEY ? `${RESOLVED_KEY.substring(0, 4)}...` : 'AUSENTE';
+    
     if (!RESOLVED_KEY || !key || key.toString().trim() !== RESOLVED_KEY) {
-        console.warn(`[INTERNAL] ⛔ Tentativa de acesso interno com chave inválida. IP: ${req.ip}`);
+        console.warn(`[INTERNAL] ⛔ Chave Inválida. Recebida: [${receivedSnippet}] | Esperada: [${expectedSnippet}] | IP: ${req.ip}`);
         res.status(403).json({ error: 'Acesso interno restrito. Service key inválida.' });
         return;
     }
