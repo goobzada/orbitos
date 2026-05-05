@@ -13,12 +13,14 @@ export default {
         .setDescription('🚨 Reportar um membro ou situação para a staff')
         .addUserOption(o => o.setName('membro').setDescription('Membro a ser reportado').setRequired(true))
         .addStringOption(o => o.setName('motivo').setDescription('Descreva o motivo da denúncia').setRequired(true))
-        .addStringOption(o => o.setName('evidencia').setDescription('Link de evidência (imagem, mensagem, etc)').setRequired(false)),
+        .addAttachmentOption(o => o.setName('arquivo').setDescription('Anexe uma imagem ou vídeo de evidência').setRequired(false))
+        .addStringOption(o => o.setName('evidencia').setDescription('Link extra de evidência (opcional)').setRequired(false)),
 
     async execute(interaction: ChatInputCommandInteraction) {
         const target = interaction.options.getUser('membro', true);
         const motivo = interaction.options.getString('motivo', true);
         const evidencia = interaction.options.getString('evidencia') || null;
+        const arquivo = interaction.options.getAttachment('arquivo');
 
         const autoDelete = (msg: string) =>
             interaction.reply({ content: msg, ephemeral: true, fetchReply: true })
@@ -60,8 +62,18 @@ export default {
             .setFooter({ text: `Protocolo OrbitUp • Local: #${(interaction.channel as any)?.name || 'desconhecido'}` })
             .setTimestamp();
 
-        if (evidencia) {
-            reportEmbed.addFields({ name: '🔗 Evidências Anexadas', value: evidencia });
+        if (evidencia || arquivo) {
+            const evidenceText = [
+                evidencia ? `🔗 **Link:** ${evidencia}` : null,
+                arquivo ? `📁 **Arquivo:** [Clique para Ver](${arquivo.url})` : null
+            ].filter(Boolean).join('\n');
+            
+            reportEmbed.addFields({ name: '🔗 Evidências Anexadas', value: evidenceText });
+            
+            // Se o arquivo for uma imagem, mostrar no embed
+            if (arquivo && arquivo.contentType?.startsWith('image/')) {
+                reportEmbed.setImage(arquivo.url);
+            }
         }
 
         // Enviar no canal de denúncias (Secret Staff Channel)
