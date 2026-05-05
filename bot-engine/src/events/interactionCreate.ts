@@ -313,9 +313,14 @@ export default {
                         .setDescription((config.panelDescription || ticketStrings.panelDesc).slice(0, 4096))
                         .setColor(safeColor);
 
-                    // Only set image if panelBanner is a valid http/https URL
-                    if (config.panelBanner && /^https?:\/\/.+/.test(config.panelBanner)) {
-                        embed.setImage(config.panelBanner);
+                    // Premium Banner Fallback System
+                    const defaultBanner = 'https://i.imgur.com/p2w5jO8.png'; // Link estável do OrbitUp Assets
+                    const finalBanner = (config.panelBanner && /^https?:\/\/.+/.test(config.panelBanner))
+                        ? config.panelBanner
+                        : defaultBanner;
+
+                    if (finalBanner) {
+                        embed.setImage(finalBanner);
                     }
 
                     // Use default category if config has no categories or an empty array
