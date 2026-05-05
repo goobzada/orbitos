@@ -389,6 +389,10 @@ export default {
                             components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
                                 new ButtonBuilder().setCustomId('giveaway_join').setLabel('Participar do Sorteio').setStyle(ButtonStyle.Primary)
                             ));
+                        } else if (value === 'report') {
+                            components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
+                                new ButtonBuilder().setCustomId('report_open_modal').setLabel('🚨 Realizar Denúncia').setStyle(ButtonStyle.Danger)
+                            ));
                         } else if (value === 'application') {
                             components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
                                 new ButtonBuilder().setCustomId('application_start').setLabel('Preencher Formulario').setStyle(ButtonStyle.Primary)
@@ -481,16 +485,104 @@ export default {
             return;
         }
 
-        // ── BOTÕES: Modulos ainda não implementados ──────────────────────────────
-        // Evita timeout silencioso (This interaction failed)
-        if (interaction.isButton()) {
-            if (interaction.customId === 'giveaway_join') {
-                await interaction.reply({ content: '🎉 Use o comando `/giveaway start` para criar um sorteio real!', ephemeral: true });
-                return;
+        // ── REPORT MODAL: Abertura ───────────────────────────────
+        if (interaction.isButton() && interaction.customId === 'report_open_modal') {
+            const modal = new ModalBuilder()
+                .setCustomId('report_modal')
+                .setTitle('🚨 Realizar Denúncia');
+
+            const targetInput = new TextInputBuilder()
+                .setCustomId('report_target')
+                .setLabel('Quem você deseja reportar?')
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder('Ex: @Usuario ou ID do jogador')
+                .setRequired(true)
+                .setMaxLength(100);
+
+            const reasonInput = new TextInputBuilder()
+                .setCustomId('report_reason')
+                .setLabel('Qual o motivo da denúncia?')
+                .setStyle(TextInputStyle.Paragraph)
+                .setPlaceholder('Descreva detalhadamente o ocorrido...')
+                .setRequired(true)
+                .setMaxLength(1000);
+
+            const evidenceInput = new TextInputBuilder()
+                .setCustomId('report_evidence')
+                .setLabel('Link de prova (opcional)')
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder('Link de imagem ou vídeo (Imgur, YouTube, etc)')
+                .setRequired(false)
+                .setMaxLength(500);
+
+            modal.addComponents(
+                new ActionRowBuilder<TextInputBuilder>().addComponents(targetInput),
+                new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput),
+                new ActionRowBuilder<TextInputBuilder>().addComponents(evidenceInput),
+            );
+
+            return interaction.showModal(modal);
+        }
+
+        // ── REPORT MODAL: Processamento ────────────────────────────────
+        if (interaction.isModalSubmit() && interaction.customId === 'report_modal') {
+            await interaction.deferReply({ ephemeral: true });
+
+            const targetRaw = interaction.fields.getTextInputValue('report_target');
+            const reason = interaction.fields.getTextInputValue('report_reason');
+            const evidence = interaction.fields.getTextInputValue('report_evidence');
+            const guild = interaction.guild!;
+            const user = interaction.user;
+
+            let reportChannelId: string | null = null;
+            let anonymous = false;
+            try {
+                const { data } = await coreApi.get(`/internal/guilds/${guild.id}/modules`);
+                const mod = (data.modules || []).find((m: any) => m.key === 'report');
+                reportChannelId = mod?.config?.channelId || null;
+                anonymous = mod?.config?.anonymous || false;
+            } catch (err: any) { }
+
+            if (!reportChannelId) {
+                return interaction.editReply({ content: '❌ O canal de denúncias não está configurado no dashboard.' });
             }
-            if (interaction.customId === 'application_start') {
-                await interaction.reply({ content: '📥 Os formulários estão sendo atualizados. Volte logo!', ephemeral: true });
-                return;
+
+            const staffEmbed = new EmbedBuilder()
+                .setColor(0xFF4040)
+                .setTitle('🚨 Nova Denúncia (Via Painel)')
+                .addFields(
+                    { name: '👤 Indivíduo Reportado', value: targetRaw, inline: true },
+                    { name: anonymous ? '🕵️ Autor' : '👮 Autor', value: anonymous ? '*(Mantido em Sigilo)*' : `<@${user.id}>`, inline: true },
+                    { name: '📋 Detalhamento', value: `\`\`\`${reason}\`\`\`` },
+                )
+                .setFooter({ text: `Protocolo OrbitUp • Local: #${(interaction.channel as any)?.name || 'desconhecido'}` })
+                .setTimestamp();
+
+            if (evidence) {
+                staffEmbed.addFields({ name: '🔗 Evidências', value: evidence });
+                if (evidence.match(/\.(jpeg|jpg|gif|png)$/) != null) {
+                    staffEmbed.setImage(evidence);
+                }
+            }
+
+            try {
+                const reportCh = guild.channels.cache.get(reportChannelId)
+                    || await guild.channels.fetch(reportChannelId).catch(() => null);
+
+                if (reportCh && 'send' in reportCh) {
+                    await (reportCh as any).send({ embeds: [staffEmbed] });
+                    
+                    const successEmbed = new EmbedBuilder()
+                        .setColor(0x2ECC71)
+                        .setTitle('✅ Denúncia Processada')
+                        .setDescription('Sua denúncia foi enviada com segurança para a nossa equipe de staff. Obrigado pelo feedback!')
+                        .setFooter({ text: 'OrbitUp • Mantendo a comunidade segura' });
+
+                    return interaction.editReply({ embeds: [successEmbed] });
+                }
+            } catch (e) {
+                log.error('Erro ao processar modal de denúncia: ' + e);
+                return interaction.editReply({ content: '❌ Falha ao enviar denúncia.' });
             }
         }
 
