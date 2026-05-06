@@ -15,6 +15,7 @@ import {
 import { log } from '../utils/logger';
 import coreApi from '../utils/api-client';
 import { ticketOpenedEmbed, ticketClosedEmbed } from '../utils/embeds';
+import { distube } from '../modules/entertainment/music';
 import { handleAllowlistInteraction } from '../modules/allowlistV2/allowlist-flow';
 import { handleSimpleWhitelist } from '../modules/simple-whitelist';
 import { getTranslation, MODULE_EMOJIS } from '../utils/translations';
@@ -389,6 +390,12 @@ export default {
                             components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
                                 new ButtonBuilder().setCustomId('giveaway_join').setLabel('Participar do Sorteio').setStyle(ButtonStyle.Primary)
                             ));
+                        } else if (value === 'music_system') {
+                            components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
+                                new ButtonBuilder().setCustomId('music_play_pause').setLabel('⏯️ Play/Pause').setStyle(ButtonStyle.Primary),
+                                new ButtonBuilder().setCustomId('music_skip').setLabel('⏭️ Skip').setStyle(ButtonStyle.Secondary),
+                                new ButtonBuilder().setCustomId('music_stop').setLabel('⏹️ Stop').setStyle(ButtonStyle.Danger)
+                            ));
                         } else if (value === 'report') {
                             components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(
                                 new ButtonBuilder().setCustomId('report_open_modal').setLabel('🚨 Realizar Denúncia').setStyle(ButtonStyle.Danger)
@@ -483,6 +490,36 @@ export default {
             const { default: ApplicationModule } = await import('../modules/automation/application');
             await ApplicationModule?.handleInteraction?.(interaction);
             return;
+        }
+
+        // ── MUSIC BUTTONS: Controle ───────────────────────────────
+        if (interaction.isButton() && interaction.customId.startsWith('music_')) {
+            const queue = (distube as any).getQueue(interaction.guildId!);
+            if (!queue) return interaction.reply({ content: '❌ Não há nada tocando no momento!', ephemeral: true });
+
+            if (interaction.customId === 'music_play_pause') {
+                if (queue.paused) {
+                    queue.resume();
+                    return interaction.reply({ content: '▶️ Música retomada!', ephemeral: true });
+                } else {
+                    queue.pause();
+                    return interaction.reply({ content: '⏸️ Música pausada!', ephemeral: true });
+                }
+            }
+
+            if (interaction.customId === 'music_skip') {
+                try {
+                    await (distube as any).skip(interaction.guildId!);
+                    return interaction.reply({ content: '⏭️ Música pulada!', ephemeral: true });
+                } catch (e) {
+                    return interaction.reply({ content: '❌ Não há mais músicas na fila.', ephemeral: true });
+                }
+            }
+
+            if (interaction.customId === 'music_stop') {
+                await (distube as any).stop(interaction.guildId!);
+                return interaction.reply({ content: '⏹️ Reprodução parada.', ephemeral: true });
+            }
         }
 
         // ── REPORT MODAL: Abertura ───────────────────────────────
