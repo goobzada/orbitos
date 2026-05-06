@@ -3,9 +3,10 @@ import { DisTube, Song } from 'distube';
 import { YouTubePlugin } from '@distube/youtube';
 import { SpotifyPlugin } from '@distube/spotify';
 import { SoundCloudPlugin } from '@distube/soundcloud';
+import path from 'path';
+import ffmpegPath from 'ffmpeg-static';
 import { BaseModule } from '../BaseModule';
 import { log } from '../../utils/logger';
-import ffmpegPath from 'ffmpeg-static';
 
 export let distube: DisTube;
 
@@ -15,17 +16,21 @@ const music_module: BaseModule = {
     category: 'Entertainment',
 
     init: (client: Client) => {
+        const absoluteFfmpegPath = ffmpegPath ? path.resolve(ffmpegPath) : 'ffmpeg';
+        
         distube = new DisTube(client, {
             emitNewSongOnly: true,
             emitAddSongWhenCreatingQueue: false,
             emitAddListWhenCreatingQueue: false,
+            leaveOnEmpty: true,
+            leaveOnStop: true,
             plugins: [
                 new YouTubePlugin(),
                 new SpotifyPlugin(),
                 new SoundCloudPlugin(),
             ],
             ffmpeg: {
-                path: ffmpegPath || 'ffmpeg'
+                path: absoluteFfmpegPath
             }
         });
 
