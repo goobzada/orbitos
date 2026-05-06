@@ -515,10 +515,19 @@ export default {
                 .setRequired(false)
                 .setMaxLength(500);
 
+            const anonymousInput = new TextInputBuilder()
+                .setCustomId('report_anonymous')
+                .setLabel('Deseja manter anonimato? (Sim/Não)')
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder('Digite Sim para se manter anônimo')
+                .setRequired(true)
+                .setMaxLength(3);
+
             modal.addComponents(
                 new ActionRowBuilder<TextInputBuilder>().addComponents(targetInput),
                 new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput),
                 new ActionRowBuilder<TextInputBuilder>().addComponents(evidenceInput),
+                new ActionRowBuilder<TextInputBuilder>().addComponents(anonymousInput),
             );
 
             return interaction.showModal(modal);
@@ -531,16 +540,17 @@ export default {
             const targetRaw = interaction.fields.getTextInputValue('report_target');
             const reason = interaction.fields.getTextInputValue('report_reason');
             const evidence = interaction.fields.getTextInputValue('report_evidence');
+            const anonChoice = interaction.fields.getTextInputValue('report_anonymous').toLowerCase();
             const guild = interaction.guild!;
             const user = interaction.user;
 
+            const isAnonymous = anonChoice.includes('s') || anonChoice.includes('y');
+
             let reportChannelId: string | null = null;
-            let anonymous = false;
             try {
                 const { data } = await coreApi.get(`/internal/guilds/${guild.id}/modules`);
                 const mod = (data.modules || []).find((m: any) => m.key === 'report');
                 reportChannelId = mod?.config?.channelId || null;
-                anonymous = mod?.config?.anonymous || false;
             } catch (err: any) { }
 
             if (!reportChannelId) {
@@ -552,11 +562,16 @@ export default {
                 .setTitle('🚨 Nova Denúncia (Via Painel)')
                 .addFields(
                     { name: '👤 Indivíduo Reportado', value: targetRaw, inline: true },
-                    { name: anonymous ? '🕵️ Autor' : '👮 Autor', value: anonymous ? '*(Mantido em Sigilo)*' : `<@${user.id}>`, inline: true },
+                    { name: isAnonymous ? '🕵️ Autor' : '👮 Autor', value: isAnonymous ? '*(Mantido em Sigilo)*' : `<@${user.id}>\nID: \`${user.id}\``, inline: true },
                     { name: '📋 Detalhamento', value: `\`\`\`${reason}\`\`\`` },
                 )
                 .setFooter({ text: `Protocolo OrbitUp • Local: #${(interaction.channel as any)?.name || 'desconhecido'}` })
                 .setTimestamp();
+
+            // Se NÃO for anônimo, o avatar do denunciante aparece no Thumbnail
+            if (!isAnonymous) {
+                staffEmbed.setThumbnail(user.displayAvatarURL({ size: 128 }));
+            }
 
             if (evidence) {
                 staffEmbed.addFields({ name: '🔗 Evidências', value: evidence });
