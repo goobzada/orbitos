@@ -41,6 +41,7 @@ export const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildModeration,    // necessário para ban/kick
         GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates,   // necessário para o módulo de música
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
