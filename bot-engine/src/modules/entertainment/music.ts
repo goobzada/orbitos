@@ -26,7 +26,7 @@ const music_module: BaseModule = {
         });
 
         // Evento: Quando uma música começa a tocar
-        distube.on('playSong', (queue, song: Song) => {
+        distube.on('playSong', (queue: any, song: Song) => {
             const channel = queue.textChannel as TextChannel;
             if (!channel) return;
 
@@ -43,12 +43,12 @@ const music_module: BaseModule = {
                 .setFooter({ text: 'OrbitUp Music • Qualidade Ultra-Premium' });
 
             channel.send({ embeds: [embed] }).then(msg => {
-                setTimeout(() => msg.delete().catch(() => {}), song.duration * 1000);
+                setTimeout(() => msg.delete().catch(() => {}), (song.duration || 30) * 1000);
             });
         });
 
         // Evento: Quando uma música é adicionada à fila
-        distube.on('addSong', (queue, song: Song) => {
+        distube.on('addSong', (queue: any, song: Song) => {
             const channel = queue.textChannel as TextChannel;
             if (!channel) return;
 
@@ -62,8 +62,8 @@ const music_module: BaseModule = {
             });
         });
 
-        distube.on('error', (channel, e) => {
-            if (channel) {
+        distube.on('error', (channel: any, e: Error) => {
+            if (channel && 'send' in channel) {
                 (channel as TextChannel).send(`❌ Ocorreu um erro: ${e.message.slice(0, 200)}`);
             }
             log.error('[MUSIC] ❌ Erro no DisTube: ' + e);
