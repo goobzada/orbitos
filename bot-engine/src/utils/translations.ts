@@ -30,6 +30,7 @@ export const MODULE_EMOJIS: Record<string, string> = {
     conditional_workflow: '⚙️',
     trigger_system: '⚡',
     coupon: '🎁',
+    music_system: '🎵',
     default: '📦',
 };
 
@@ -66,6 +67,7 @@ export const MODULE_NAMES: Record<string, Record<string, { name: string; descrip
         trigger_system: { name: 'Gatilhos', description: 'Respostas automáticas por palavras.' },
         whitelist: { name: 'Whitelist Manual', description: 'Processo tradicional de aprovação.' },
         coupon: { name: 'Cupons', description: 'Gestão de descontos e promoções.' },
+        music_system: { name: 'Sistema de Música', description: 'Painel de controle para tocar músicas e playlists.' },
     },
     'en-US': {
         ticket: { name: 'Ticket System', description: 'Professional support and assistance center.' },
@@ -99,6 +101,7 @@ export const MODULE_NAMES: Record<string, Record<string, { name: string; descrip
         trigger_system: { name: 'Triggers', description: 'Keyword auto-responses.' },
         whitelist: { name: 'Manual Whitelist', description: 'Traditional approval process.' },
         coupon: { name: 'Coupons', description: 'Discount and promotion management.' },
+        music_system: { name: 'Music System', description: 'Control panel to play songs and playlists.' },
     }
 };
 
