@@ -26,7 +26,7 @@ const music_module: BaseModule = {
         });
 
         // Evento: Quando uma música começa a tocar
-        distube.on('playSong', (queue: any, song: Song) => {
+        (distube as any).on('playSong', (queue: any, song: Song) => {
             const channel = queue.textChannel as TextChannel;
             if (!channel) return;
 
@@ -48,7 +48,7 @@ const music_module: BaseModule = {
         });
 
         // Evento: Quando uma música é adicionada à fila
-        distube.on('addSong', (queue: any, song: Song) => {
+        (distube as any).on('addSong', (queue: any, song: Song) => {
             const channel = queue.textChannel as TextChannel;
             if (!channel) return;
 
@@ -62,7 +62,7 @@ const music_module: BaseModule = {
             });
         });
 
-        distube.on('error', (channel: any, e: Error) => {
+        (distube as any).on('error', (channel: any, e: Error) => {
             if (channel && 'send' in channel) {
                 (channel as TextChannel).send(`❌ Ocorreu um erro: ${e.message.slice(0, 200)}`);
             }
