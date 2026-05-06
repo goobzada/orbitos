@@ -53,6 +53,9 @@ export const modules = [
     { key: 'revenue_stats', name: 'Estatísticas Financeiras', category: 'Analytics', description: 'Acompanhe o faturamento da sua comunidade.' },
     { key: 'activity_stats', name: 'Estatísticas de Atividade', category: 'Analytics', description: 'Logs de atividade por cargo ou membro.' },
     { key: 'whitelist_quiz', name: 'Quiz de Whitelist Automático', category: 'Game Integration', description: 'Teste de conhecimentos RP com aprovação automática baseada em acertos.' },
+    
+    // Entertainment
+    { key: 'music_system', name: 'Sistema de Música', category: 'Entertainment', description: 'Tocar músicas e playlists do YouTube/Spotify com qualidade premium.' },
 ];
 
 export const presets = [
@@ -285,6 +288,12 @@ export const presets = [
     {
         moduleKey: 'activity_stats', communityType: 'general',
         config: { trackVoiceTime: true, trackMessageCount: true }
+    },
+    
+    // Entertainment Presets
+    {
+        moduleKey: 'music_system', communityType: 'general',
+        config: { defaultVolume: 50, autoLeaveVoice: true }
     }
 ];
 
