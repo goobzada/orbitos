@@ -22,8 +22,6 @@ const music_module: BaseModule = {
             emitNewSongOnly: true,
             emitAddSongWhenCreatingQueue: false,
             emitAddListWhenCreatingQueue: false,
-            leaveOnEmpty: true,
-            leaveOnStop: true,
             plugins: [
                 new YouTubePlugin(),
                 new SpotifyPlugin(),
