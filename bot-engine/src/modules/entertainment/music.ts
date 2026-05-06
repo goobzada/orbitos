@@ -72,9 +72,9 @@ const music_module: BaseModule = {
         log.info('[MUSIC] 🎵 Módulo de música inicializado com suporte a YT/Spotify/SC.');
     },
 
-    handleAction: async (action: string, params: any) => {
+    handleAction: async (action: string, params: any): Promise<void> => {
         // Reservado para integração com Dashboard futuramente
-        return null;
+        return;
     }
 };
 
