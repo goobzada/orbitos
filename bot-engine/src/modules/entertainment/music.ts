@@ -5,6 +5,7 @@ import { SpotifyPlugin } from '@distube/spotify';
 import { SoundCloudPlugin } from '@distube/soundcloud';
 import { BaseModule } from '../BaseModule';
 import { log } from '../../utils/logger';
+import ffmpegPath from 'ffmpeg-static';
 
 export let distube: DisTube;
 
@@ -23,6 +24,9 @@ const music_module: BaseModule = {
                 new SpotifyPlugin(),
                 new SoundCloudPlugin(),
             ],
+            ffmpeg: {
+                path: ffmpegPath || 'ffmpeg'
+            }
         });
 
         // Evento: Quando uma música começa a tocar
