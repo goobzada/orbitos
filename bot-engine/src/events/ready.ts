@@ -1,5 +1,6 @@
 import { Events, Client } from 'discord.js';
 import { log } from '../utils/logger';
+import { InviteTracker } from '../utils/InviteTracker';
 
 export default {
     name: Events.ClientReady,
@@ -26,6 +27,8 @@ export default {
                     icon: guild.iconURL({ size: 128 }),
                     memberCount: guild.memberCount
                 });
+
+                await InviteTracker.init(guild);
                 log.info(`[AUTO-SYNC] Guild ${guild.name} sincronizada.`);
             } catch (err: any) {
                 if (err.response?.status === 404) {

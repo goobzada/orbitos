@@ -3,6 +3,7 @@ import { InternalController } from '../controllers/internal.controller';
 import { InternalAllowlistController } from '../controllers/internal-allowlist.controller';
 import { InternalGiveawayController } from '../controllers/internal-giveaway.controller';
 import { InternalApplicationController } from '../controllers/internal-application.controller';
+import { InternalReferralController } from '../controllers/internal-referral.controller';
 import { internalMiddleware } from '../middlewares/internal.middleware';
 
 import { checkPlanLimit } from '../middlewares/plan-limit.middleware';
@@ -12,6 +13,7 @@ const ctrl = new InternalController();
 const allowlistCtrl = new InternalAllowlistController();
 const giveawayCtrl = new InternalGiveawayController();
 const appCtrl = new InternalApplicationController();
+const referralCtrl = new InternalReferralController();
 
 // Todas as rotas aqui exigem a Service Key do Bot (x-internal-service-key header)
 internalRoutes.use(internalMiddleware);
@@ -62,5 +64,10 @@ internalRoutes.get('/store/products/:guildId', ctrl.getStoreProducts.bind(ctrl))
 internalRoutes.post('/levels/xp', ctrl.addXp.bind(ctrl));
 internalRoutes.get('/levels/:guildId/ranking', ctrl.getGuildRanking.bind(ctrl));
 internalRoutes.get('/levels/:guildId/:userId', ctrl.getMemberXp.bind(ctrl));
+
+// Referências (Referral)
+internalRoutes.post('/referrals/add', referralCtrl.addReferral.bind(referralCtrl));
+internalRoutes.get('/referrals/ranking', referralCtrl.getRanking.bind(referralCtrl));
+internalRoutes.get('/referrals/stats', referralCtrl.getUserStats.bind(referralCtrl));
 
 export default internalRoutes;

@@ -1,6 +1,7 @@
 import { Events, GuildMember, EmbedBuilder, TextChannel } from 'discord.js';
 import { log } from '../utils/logger';
 import coreApi from '../utils/api-client';
+import { InviteTracker } from '../utils/InviteTracker';
 
 export default {
     name: Events.GuildMemberAdd,
@@ -8,6 +9,21 @@ export default {
     async execute(member: GuildMember) {
         const guild = member.guild;
         log.event(`Novo membro: ${member.user.tag} em ${guild.name}`);
+
+        // Tenta descobrir quem convidou
+        const invite = await InviteTracker.findInviter(guild);
+        if (invite && invite.inviter) {
+            try {
+                await coreApi.post('/internal/referrals/add', {
+                    discordGuildId: guild.id,
+                    referrerId: invite.inviter.id,
+                    referredId: member.id
+                });
+                log.info(`[REFERRAL] ${member.user.tag} foi convidado por ${invite.inviter.tag}`);
+            } catch (err: any) {
+                log.error(`[REFERRAL] Erro ao registrar indicação: ${err.message}`);
+            }
+        }
 
         // Notifica Core API (para auto-role e registro)
         try {
