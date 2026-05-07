@@ -31,6 +31,7 @@ export const MODULE_EMOJIS: Record<string, string> = {
     trigger_system: '⚡',
     coupon: '🎁',
     music_system: '🎵',
+    referral_system: '🤝',
     default: '📦',
 };
 
@@ -68,6 +69,7 @@ export const MODULE_NAMES: Record<string, Record<string, { name: string; descrip
         whitelist: { name: 'Whitelist Manual', description: 'Processo tradicional de aprovação.' },
         coupon: { name: 'Cupons', description: 'Gestão de descontos e promoções.' },
         music_system: { name: 'Sistema de Música', description: 'Painel de controle para tocar músicas e playlists.' },
+        referral_system: { name: 'Sistema de Referências', description: 'Gestão de convites, indicações e prêmios.' },
     },
     'en-US': {
         ticket: { name: 'Ticket System', description: 'Professional support and assistance center.' },
@@ -102,6 +104,7 @@ export const MODULE_NAMES: Record<string, Record<string, { name: string; descrip
         whitelist: { name: 'Manual Whitelist', description: 'Traditional approval process.' },
         coupon: { name: 'Coupons', description: 'Discount and promotion management.' },
         music_system: { name: 'Music System', description: 'Control panel to play songs and playlists.' },
+        referral_system: { name: 'Referral System', description: 'Manage invites, referrals, and rewards.' },
     }
 };
 

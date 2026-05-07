@@ -20,6 +20,7 @@ export const modules = [
     { key: 'ranking', name: 'Rankings/Leaderboard', category: 'Engagement', description: 'Exiba os membros mais ativos ou com mais XP.' },
     { key: 'giveaway', name: 'Sorteios', category: 'Engagement', description: 'Crie e gerencie sorteios automáticos no Discord.' },
     { key: 'poll', name: 'Votações/Enquetes', category: 'Engagement', description: 'Crie enquetes interativas para a comunidade.' },
+    { key: 'referral_system', name: 'Sistema de Referências', category: 'Engagement', description: 'Sistema de convites e ranking de indicações com prêmios.' },
 
     // Monetization
     { key: 'store_panel', name: 'Painel da Loja', category: 'Monetization', description: 'Exibe os produtos da sua loja diretamente no Discord.' },
@@ -185,14 +186,16 @@ export const presets = [
     },
 
     // Report Presets
-
-    // Report Presets
     {
         moduleKey: 'report', communityType: 'general',
         config: { channelId: '', anonymous: true }
     },
 
-    // --- NOVO: Presets para preencher os 21 módulos faltantes ---
+    // Referral System Presets
+    {
+        moduleKey: 'referral_system', communityType: 'general',
+        config: { points_per_referral: 1, min_account_age_days: 7, log_channel_id: null }
+    },
 
     // Monetization Presets
     {
