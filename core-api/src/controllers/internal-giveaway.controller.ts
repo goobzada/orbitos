@@ -4,7 +4,7 @@ import prisma from '../lib/prisma';
 export class InternalGiveawayController {
     // Cria um novo sorteio (chamado via comando do Bot)
     async createGiveaway(req: Request, res: Response) {
-        const { discordGuildId, title, prize, winnersCount, durationMinutes, authorId, channelId } = req.body;
+        const { discordGuildId, title, prize, imageUrl, winnersCount, durationMinutes, authorId, channelId } = req.body;
 
         try {
             const server = await prisma.server.findUnique({
@@ -22,6 +22,7 @@ export class InternalGiveawayController {
                     serverId: server.id,
                     title,
                     prize,
+                    imageUrl,
                     winnersCount: parseInt(winnersCount) || 1,
                     endsAt,
                     authorId,

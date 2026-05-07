@@ -22,6 +22,7 @@ export default {
                 .addIntegerOption(opt => opt.setName('duration').setDescription('Duração em minutos').setRequired(true))
                 .addIntegerOption(opt => opt.setName('winners').setDescription('Quantidade de vencedores').setRequired(false))
                 .addStringOption(opt => opt.setName('title').setDescription('Título personalizado').setRequired(false))
+                .addAttachmentOption(opt => opt.setName('image').setDescription('Imagem ilustrativa do prêmio').setRequired(false))
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
@@ -36,6 +37,7 @@ export default {
             const duration = interaction.options.getInteger('duration', true);
             const winners = interaction.options.getInteger('winners') || 1;
             const title = interaction.options.getString('title') || '🎉 Novo Sorteio!';
+            const image = interaction.options.getAttachment('image');
 
             try {
                 // 1. Registra na API
@@ -43,6 +45,7 @@ export default {
                     discordGuildId: interaction.guildId,
                     title,
                     prize,
+                    imageUrl: image?.url || null,
                     winnersCount: winners,
                     durationMinutes: duration,
                     authorId: interaction.user.id,
@@ -62,6 +65,7 @@ export default {
                         `⏰ **Encerra em:** <t:${timestamp}:R> (<t:${timestamp}:f>)`
                     )
                     .setColor(0x5865F2)
+                    .setImage(giveaway.imageUrl || null)
                     .setFooter({ text: 'OrbitOS Giveaway System • Boa sorte!' })
                     .setTimestamp();
 

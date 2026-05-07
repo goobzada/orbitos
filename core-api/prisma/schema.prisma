@@ -66,6 +66,8 @@ model Organization {
   communityType        String                @default("general") // game, music, study, business, general, creator, dev
   language             String                @default("pt-BR") // pt-BR, en-US, es-ES
   modules              OrganizationModule[]
+  referrals            Referral[]
+  referralRankings     ReferralRanking[]
 }
 
 model Store {
@@ -766,6 +768,7 @@ model Giveaway {
   title          String
   description    String?
   prize          String
+  imageUrl       String?   // Link da imagem do prêmio
   winnersCount   Int       @default(1)
   status         String    @default("ACTIVE") // ACTIVE, ENDED, CANCELLED
   endsAt         DateTime
@@ -794,6 +797,31 @@ model GiveawayParticipant {
   giveaway   Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
 
   @@unique([giveawayId, userId])
+}
+
+model Referral {
+  id             String   @id @default(uuid())
+  organizationId String
+  referrerId     String   // ID Discord de quem indicou
+  referredId     String   @unique // ID Discord de quem entrou
+  joinedAt       DateTime @default(now())
+  
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  @@index([organizationId])
+  @@index([referrerId])
+}
+
+model ReferralRanking {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String   // ID Discord do usuário
+  points         Int      @default(0)
+  updatedAt      DateTime @updatedAt
+  
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  @@unique([organizationId, userId])
 }
 
 model ApplicationForm {
